@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { cn, formatCurrency, formatVolume } from '@/lib/utils'
 import type { ContractWithTiers, Currency, CoverageLevel } from '@/lib/types'
 
@@ -36,16 +36,17 @@ const BADGE_STYLES = {
 }
 
 export default function ContractCard({ contract, currency, badge }: Props) {
+  const router = useRouter()
   const slug = contract.category.slug
   const tiers = [...contract.coverage_tiers].sort((a, b) =>
-    a.name === 'basic' ? -1 : 1
+    a.name === 'basic' ? -1 : b.name === 'basic' ? 1 : 0
   )
 
   return (
-    <Link
-      href={`/markets/${contract.slug}`}
+    <article
+      onClick={() => router.push(`/markets/${contract.slug}`)}
       className={cn(
-        'relative block cursor-pointer overflow-hidden rounded-card border border-white/[0.07] bg-bg-card p-[18px]',
+        'relative cursor-pointer overflow-hidden rounded-card border border-white/[0.07] bg-bg-card p-[18px]',
         'transition-all duration-200 hover:-translate-y-0.5 hover:bg-bg-card-hover hover:border-white/15',
         'before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-card',
         'card-fadein',
@@ -73,7 +74,7 @@ export default function ContractCard({ contract, currency, badge }: Props) {
         {contract.icon_url ? (
           <img src={contract.icon_url} alt="" className="h-5 w-5" />
         ) : (
-          <span>◆</span>
+          <span aria-hidden="true">◆</span>
         )}
       </div>
 
@@ -106,18 +107,19 @@ export default function ContractCard({ contract, currency, badge }: Props) {
       {/* Footer */}
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5 font-mono text-[10px] font-medium text-insu-muted">
-          <span className="inline-block h-[5px] w-[5px] rounded-full bg-insu-green vol-dot-pulse" />
+          <span aria-hidden="true" className="inline-block h-[5px] w-[5px] rounded-full bg-insu-green vol-dot-pulse" />
           {formatVolume(contract.total_volume_usd)} Vol.
         </span>
         <button
           onClick={(e) => {
-            e.preventDefault()
+            e.stopPropagation()
+            router.push(`/markets/${contract.slug}`)
           }}
           className="rounded-lg bg-insu-text px-3.5 py-1.5 text-[12px] font-bold text-bg transition-all hover:scale-105 hover:bg-insu-accent"
         >
           Buy now
         </button>
       </div>
-    </Link>
+    </article>
   )
 }

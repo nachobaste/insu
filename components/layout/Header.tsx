@@ -26,12 +26,10 @@ export default function Header() {
         <Search size={13} className="flex-shrink-0 text-insu-muted" />
         <input
           type="text"
+          aria-label="Search contracts"
           placeholder="Search contracts, events, locations…"
           className="flex-1 bg-transparent font-body text-[13.5px] text-insu-text outline-none placeholder:text-insu-muted"
         />
-        <kbd className="rounded border border-white/[0.07] bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] text-insu-muted">
-          /
-        </kbd>
       </div>
 
       <div className="flex-1" />

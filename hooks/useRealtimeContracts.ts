@@ -20,9 +20,10 @@ export function useRealtimeContracts(initial: ContractWithTiers[]) {
           table: 'contracts',
         },
         (payload) => {
+          const { category, coverage_tiers, ...flatFields } = payload.new as Partial<ContractWithTiers> & { id: string }
           setContracts((prev) =>
             prev.map((c) =>
-              c.id === payload.new.id ? { ...c, ...(payload.new as Partial<ContractWithTiers>) } : c
+              c.id === flatFields.id ? { ...c, ...flatFields } : c
             )
           )
         }
@@ -42,7 +43,7 @@ export function useRealtimeContracts(initial: ContractWithTiers[]) {
                 ? {
                     ...c,
                     coverage_tiers: c.coverage_tiers.map((t) =>
-                      t.id === updatedTier.id ? { ...t, ...payload.new } : t
+                      t.id === updatedTier.id ? { ...t, ...(payload.new as Partial<typeof t>) } : t
                     ),
                   }
                 : c

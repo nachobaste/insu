@@ -27,6 +27,7 @@ export default function CategoryTabs({ categories, activeSlug, onSelect }: Props
   return (
     <nav
       role="tablist"
+      aria-label="Contract categories"
       className="flex overflow-x-auto border-b border-white/[0.07] bg-bg/70 px-8 scrollbar-none backdrop-blur-md"
     >
       {categories.map((cat) => {

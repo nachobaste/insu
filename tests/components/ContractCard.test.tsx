@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import ContractCard from '@/components/contracts/ContractCard'
 import type { ContractWithTiers } from '@/lib/types'
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}))
 
 const mockContract: ContractWithTiers = {
   id: 'abc-123',
