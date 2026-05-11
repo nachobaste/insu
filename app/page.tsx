@@ -38,7 +38,10 @@ async function getPlatformStats() {
     .select('total_volume_usd')
     .eq('status', 'active')
 
-  const totalVolumeUsd = (data ?? []).reduce((sum, c) => sum + (c.total_volume_usd ?? 0), 0)
+  const totalVolumeUsd = (data as Array<{ total_volume_usd: number | null }> ?? []).reduce(
+    (sum, c) => sum + (c.total_volume_usd ?? 0),
+    0
+  )
 
   const { count: activeContracts } = await supabase
     .from('contracts')
