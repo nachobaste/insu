@@ -10,6 +10,9 @@ export function useRealtimeContracts(initial: ContractWithTiers[]) {
   useEffect(() => {
     const supabase = createClient()
 
+    // No-op when Supabase env vars are not configured (e.g. during e2e smoke tests)
+    if (!supabase) return
+
     const channel = supabase
       .channel('contracts-realtime')
       .on(
@@ -54,7 +57,7 @@ export function useRealtimeContracts(initial: ContractWithTiers[]) {
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      if (supabase) supabase.removeChannel(channel)
     }
   }, [])
 

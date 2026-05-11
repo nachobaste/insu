@@ -18,6 +18,11 @@ export default function LoginForm() {
     setError(null)
 
     const supabase = createClient()
+    if (!supabase) {
+      setError('Supabase is not configured.')
+      setLoading(false)
+      return
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
