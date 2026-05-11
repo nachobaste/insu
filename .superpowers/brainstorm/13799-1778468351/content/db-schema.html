@@ -1,0 +1,174 @@
+<h2>Insu — Database Schema</h2>
+<p class="subtitle">Designed for all 6 sub-projects from day 1. PostgreSQL via Supabase.</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px">
+
+  <!-- profiles -->
+  <div style="background:#0d1117;border:1px solid #6c9bff;border-radius:8px;padding:14px;font-size:12px">
+    <div style="color:#6c9bff;font-weight:bold;font-size:13px;margin-bottom:8px;font-family:monospace">profiles</div>
+    <div style="color:#ccc;line-height:1.9;font-family:monospace">
+      <span style="color:#f8c555">id</span> uuid PK → auth.users<br>
+      full_name text<br>
+      role <span style="color:#aaa">'hedger'|'provider'|'admin'|'both'</span><br>
+      preferred_currency <span style="color:#aaa">'USD'|'MXN'</span><br>
+      stripe_customer_id text<br>
+      conekta_customer_id text<br>
+      created_at timestamptz
+    </div>
+  </div>
+
+  <!-- categories -->
+  <div style="background:#0d1117;border:1px solid #6c9bff;border-radius:8px;padding:14px;font-size:12px">
+    <div style="color:#6c9bff;font-weight:bold;font-size:13px;margin-bottom:8px;font-family:monospace">categories</div>
+    <div style="color:#ccc;line-height:1.9;font-family:monospace">
+      <span style="color:#f8c555">id</span> uuid PK<br>
+      name text <span style="color:#aaa">'Urban'|'Nature'|'Experiences'|'Events'</span><br>
+      slug text UNIQUE<br>
+      color text <span style="color:#aaa">(hex for tab)</span><br>
+      icon_url text<br>
+      display_order int
+    </div>
+  </div>
+
+  <!-- contracts -->
+  <div style="background:#0d1117;border:2px solid #f8c555;border-radius:8px;padding:14px;font-size:12px">
+    <div style="color:#f8c555;font-weight:bold;font-size:13px;margin-bottom:8px;font-family:monospace">contracts ⭐</div>
+    <div style="color:#ccc;line-height:1.9;font-family:monospace">
+      <span style="color:#f8c555">id</span> uuid PK<br>
+      slug text UNIQUE<br>
+      title text<br>
+      <span style="color:#aaa">category_id</span> uuid → categories<br>
+      status <span style="color:#aaa">'active'|'settled'|'cancelled'</span><br>
+      trigger_type <span style="color:#aaa">'weather'|'urban'|'event'|'manual'</span><br>
+      trigger_condition jsonb <span style="color:#555">-- flexible per type</span><br>
+      trigger_deadline timestamptz<br>
+      location jsonb <span style="color:#555">-- {lat, lng, city}</span><br>
+      icon_url text<br>
+      total_volume_usd numeric<br>
+      total_volume_mxn numeric<br>
+      settled_outcome boolean<br>
+      <span style="color:#aaa">created_by</span> uuid → profiles<br>
+      created_at, settled_at timestamptz
+    </div>
+  </div>
+
+  <!-- coverage_tiers -->
+  <div style="background:#0d1117;border:2px solid #f8c555;border-radius:8px;padding:14px;font-size:12px">
+    <div style="color:#f8c555;font-weight:bold;font-size:13px;margin-bottom:8px;font-family:monospace">coverage_tiers ⭐</div>
+    <div style="color:#ccc;line-height:1.9;font-family:monospace">
+      <span style="color:#f8c555">id</span> uuid PK<br>
+      <span style="color:#aaa">contract_id</span> uuid → contracts<br>
+      name <span style="color:#aaa">'basic'|'premium'</span><br>
+      premium_usd numeric <span style="color:#555">-- Black-Scholes output</span><br>
+      payout_usd numeric<br>
+      premium_mxn numeric<br>
+      payout_mxn numeric<br>
+      max_capacity_usd numeric<br>
+      current_capacity_usd numeric<br>
+      last_priced_at timestamptz<br>
+      pricing_inputs jsonb <span style="color:#555">-- BS inputs snapshot</span>
+    </div>
+  </div>
+
+  <!-- hedger_positions -->
+  <div style="background:#0d1117;border:1px solid #90ee90;border-radius:8px;padding:14px;font-size:12px">
+    <div style="color:#90ee90;font-weight:bold;font-size:13px;margin-bottom:8px;font-family:monospace">hedger_positions</div>
+    <div style="color:#ccc;line-height:1.9;font-family:monospace">
+      <span style="color:#f8c555">id</span> uuid PK<br>
+      <span style="color:#aaa">user_id</span> uuid → profiles<br>
+      <span style="color:#aaa">contract_id</span> uuid → contracts<br>
+      <span style="color:#aaa">tier_id</span> uuid → coverage_tiers<br>
+      premium_paid_usd numeric<br>
+      payout_amount_usd numeric<br>
+      premium_paid_mxn numeric<br>
+      payout_amount_mxn numeric<br>
+      currency <span style="color:#aaa">'USD'|'MXN'</span><br>
+      payment_provider <span style="color:#aaa">'stripe'|'conekta'</span><br>
+      payment_intent_id text<br>
+      status <span style="color:#aaa">'pending'|'active'|'paid_out'|'expired'</span><br>
+      purchased_at, expires_at timestamptz
+    </div>
+  </div>
+
+  <!-- provider_positions -->
+  <div style="background:#0d1117;border:1px solid #ffaaaa;border-radius:8px;padding:14px;font-size:12px">
+    <div style="color:#ffaaaa;font-weight:bold;font-size:13px;margin-bottom:8px;font-family:monospace">provider_positions</div>
+    <div style="color:#ccc;line-height:1.9;font-family:monospace">
+      <span style="color:#f8c555">id</span> uuid PK<br>
+      <span style="color:#aaa">user_id</span> uuid → profiles<br>
+      <span style="color:#aaa">contract_id</span> uuid → contracts<br>
+      <span style="color:#aaa">tier_id</span> uuid → coverage_tiers<br>
+      capital_deposited_usd numeric<br>
+      capital_deposited_mxn numeric<br>
+      currency <span style="color:#aaa">'USD'|'MXN'</span><br>
+      payment_provider <span style="color:#aaa">'stripe'|'conekta'</span><br>
+      payment_intent_id text<br>
+      expected_return_usd numeric<br>
+      actual_return_usd numeric<br>
+      status <span style="color:#aaa">'pending'|'active'|'settled'</span><br>
+      deposited_at, settled_at timestamptz
+    </div>
+  </div>
+
+  <!-- oracle_readings -->
+  <div style="background:#0d1117;border:1px solid #da70d6;border-radius:8px;padding:14px;font-size:12px">
+    <div style="color:#da70d6;font-weight:bold;font-size:13px;margin-bottom:8px;font-family:monospace">oracle_readings</div>
+    <div style="color:#ccc;line-height:1.9;font-family:monospace">
+      <span style="color:#f8c555">id</span> uuid PK<br>
+      <span style="color:#aaa">contract_id</span> uuid → contracts<br>
+      source <span style="color:#aaa">'openweathermap'|'tomorrow_io'|'waze'|'manual'</span><br>
+      reading_type text <span style="color:#555">-- 'rain_mm', 'temp_c', etc.</span><br>
+      value jsonb<br>
+      trigger_met boolean<br>
+      read_at timestamptz
+    </div>
+  </div>
+
+  <!-- payouts -->
+  <div style="background:#0d1117;border:1px solid #da70d6;border-radius:8px;padding:14px;font-size:12px">
+    <div style="color:#da70d6;font-weight:bold;font-size:13px;margin-bottom:8px;font-family:monospace">payouts</div>
+    <div style="color:#ccc;line-height:1.9;font-family:monospace">
+      <span style="color:#f8c555">id</span> uuid PK<br>
+      <span style="color:#aaa">contract_id</span> uuid → contracts<br>
+      <span style="color:#aaa">hedger_position_id</span> uuid → hedger_positions<br>
+      amount_usd numeric<br>
+      amount_mxn numeric<br>
+      currency <span style="color:#aaa">'USD'|'MXN'</span><br>
+      payment_provider text<br>
+      transfer_id text<br>
+      status <span style="color:#aaa">'pending'|'processing'|'completed'|'failed'</span><br>
+      created_at, completed_at timestamptz
+    </div>
+  </div>
+
+  <!-- pricing_history -->
+  <div style="background:#0d1117;border:1px solid #da70d6;border-radius:8px;padding:14px;font-size:12px">
+    <div style="color:#da70d6;font-weight:bold;font-size:13px;margin-bottom:8px;font-family:monospace">pricing_history</div>
+    <div style="color:#ccc;line-height:1.9;font-family:monospace">
+      <span style="color:#f8c555">id</span> uuid PK<br>
+      <span style="color:#aaa">contract_id</span> uuid → contracts<br>
+      <span style="color:#aaa">tier_id</span> uuid → coverage_tiers<br>
+      bs_inputs jsonb <span style="color:#555">-- {S, K, T, σ, r}</span><br>
+      bs_output jsonb <span style="color:#555">-- {price, N_d2, delta}</span><br>
+      premium_usd_before numeric<br>
+      premium_usd_after numeric<br>
+      calculated_at timestamptz
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:20px">
+  <h3>Black-Scholes Mapping for Parametric Insurance</h3>
+  <div style="background:#0d1117;border:1px solid #333;border-radius:8px;padding:16px;font-family:monospace;font-size:12px;color:#ccc;line-height:2">
+    <span style="color:#f8c555">S</span> = Current probability of event (0–1), derived from oracle data + historical frequency<br>
+    <span style="color:#f8c555">K</span> = 1.0 (normalized strike — event either happens or not)<br>
+    <span style="color:#f8c555">T</span> = Days until trigger_deadline / 365<br>
+    <span style="color:#f8c555">σ</span> = Historical volatility of event probability (rolling 90-day std dev of daily frequency)<br>
+    <span style="color:#f8c555">r</span> = Risk-free rate (SOFR, ~5%)<br>
+    <span style="color:#6c9bff">Model</span> = Binary cash-or-nothing call: <strong>Premium = e<sup>−rT</sup> × N(d₂) × Payout</strong><br>
+    <span style="color:#6c9bff">Fee</span> = Insu takes 5–10% spread on top of fair premium
+  </div>
+</div>
+
+<p style="color:#888;font-size:13px;margin-top:16px">Does this schema look right? Any tables, fields, or relationships to add/change?</p>

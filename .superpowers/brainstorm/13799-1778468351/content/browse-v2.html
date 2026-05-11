@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insu — Everyday Risk, Instantly Covered</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c18;
+    --bg-card: #0e1420;
+    --bg-card-hover: #121929;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.15);
+    --text: #e8edf5;
+    --text-muted: #5a6580;
+    --text-dim: #8491a8;
+    --accent: #f5a623;
+    --accent-dim: rgba(245,166,35,0.12);
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.1);
+    --urban: #94a3b8;
+    --urban-bg: rgba(148,163,184,0.08);
+    --nature: #34d399;
+    --nature-bg: rgba(52,211,153,0.08);
+    --exp: #fb923c;
+    --exp-bg: rgba(251,146,60,0.08);
+    --events: #a78bfa;
+    --events-bg: rgba(167,139,250,0.08);
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-body: 'Outfit', sans-serif;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* Ambient glow */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: 30%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(245,166,35,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(8,12,24,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+
+  .logo-mark {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .logo-mark svg { display: block; }
+
+  .logo-wordmark {
+    font-family: var(--font-display);
+    font-size: 26px;
+    letter-spacing: 4px;
+    color: var(--text);
+    line-height: 1;
+    padding-top: 3px;
+  }
+
+  .logo-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 4px;
+  }
+
+  .logo-tagline {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    text-transform: uppercase;
+    line-height: 1.3;
+  }
+
+  .search-wrap {
+    flex: 1;
+    max-width: 440px;
+  }
+
+  .search-bar {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 14px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .search-bar:focus-within {
+    border-color: rgba(245,166,35,0.3);
+    background: rgba(245,166,35,0.03);
+  }
+
+  .search-bar input {
+    border: none;
+    background: transparent;
+    outline: none;
+    flex: 1;
+    font-size: 13.5px;
+    color: var(--text);
+    font-family: var(--font-body);
+  }
+
+  .search-bar input::placeholder { color: var(--text-muted); }
+
+  .kbd {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: var(--text-muted);
+  }
+
+  .hdr-spacer { flex: 1; }
+
+  .hdr-link {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, background 0.15s;
+    text-decoration: none;
+  }
+
+  .hdr-link:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+
+  .btn-login {
+    font-size: 13px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 16px;
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.15s;
+  }
+
+  .btn-login:hover { color: var(--text); border-color: var(--border-hover); }
+
+  .btn-signup {
+    font-size: 13px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    color: #0a0f1e;
+    background: var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 7px 18px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-signup:hover { background: #f7b84a; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(245,166,35,0.3); }
+
+  /* ─── CATEGORY TABS ─── */
+  .tabs {
+    background: rgba(8,12,24,0.7);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 0 20px;
+    height: 46px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); }
+
+  .tab.urban { color: var(--urban); border-bottom-color: var(--urban); }
+  .tab.nature { color: var(--nature); border-bottom-color: var(--nature); }
+  .tab.experiences { color: var(--exp); border-bottom-color: var(--exp); }
+  .tab.events { color: var(--events); border-bottom-color: var(--events); }
+
+  .tab-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .tab.urban .tab-dot { background: var(--urban); }
+  .tab.nature .tab-dot { background: var(--nature); }
+  .tab.experiences .tab-dot { background: var(--exp); }
+  .tab.events .tab-dot { background: var(--events); }
+
+  .tab-count {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    opacity: 0.6;
+  }
+
+  .tabs-right { margin-left: auto; display: flex; }
+
+  .tab-util { color: var(--text-muted); font-size: 11px; }
+
+  /* ─── CONTENT ─── */
+  .content {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 28px 32px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── STATS TICKER ─── */
+  .stats-bar {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 24px;
+    display: flex;
+    gap: 0;
+    margin-bottom: 28px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .stats-bar::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+  }
+
+  .stat {
+    flex: 1;
+    text-align: center;
+    padding: 0 20px;
+    border-right: 1px solid var(--border);
+  }
+
+  .stat:last-child { border-right: none; }
+
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .stat-value.green { color: var(--green); }
+  .stat-value.accent { color: var(--accent); }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 4px;
+    font-weight: 600;
+  }
+
+  /* ─── SECTION HEADER ─── */
+  .section-hdr {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 16px;
+    margin-top: 36px;
+  }
+
+  .section-hdr:first-of-type { margin-top: 0; }
+
+  .section-name {
+    font-family: var(--font-display);
+    font-size: 28px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .section-name.urban { color: var(--urban); }
+  .section-name.nature { color: var(--nature); }
+  .section-name.experiences { color: var(--exp); }
+  .section-name.events { color: var(--events); }
+
+  .section-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ─── CARD GRID ─── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  /* ─── CONTRACT CARD ─── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
+    animation: fadeUp 0.4s both;
+  }
+
+  .card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+  }
+
+  /* Category glow on hover */
+  .card.urban:hover { box-shadow: 0 8px 32px rgba(148,163,184,0.08), 0 0 0 1px rgba(148,163,184,0.15); }
+  .card.nature:hover { box-shadow: 0 8px 32px rgba(52,211,153,0.08), 0 0 0 1px rgba(52,211,153,0.2); }
+  .card.experiences:hover { box-shadow: 0 8px 32px rgba(251,146,60,0.08), 0 0 0 1px rgba(251,146,60,0.2); }
+  .card.events:hover { box-shadow: 0 8px 32px rgba(167,139,250,0.08), 0 0 0 1px rgba(167,139,250,0.2); }
+
+  /* Top accent stripe */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  .card.urban::before { background: var(--urban); }
+  .card.nature::before { background: var(--nature); }
+  .card.experiences::before { background: var(--exp); }
+  .card.events::before { background: var(--events); }
+
+  /* Corner glow */
+  .card::after {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .card.urban::after { background: radial-gradient(circle, rgba(148,163,184,0.15), transparent); }
+  .card.nature::after { background: radial-gradient(circle, rgba(52,211,153,0.15), transparent); }
+  .card.experiences::after { background: radial-gradient(circle, rgba(251,146,60,0.15), transparent); }
+  .card.events::after { background: radial-gradient(circle, rgba(167,139,250,0.15), transparent); }
+  .card:hover::after { opacity: 1; }
+
+  .card-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+
+  .card.urban .card-icon { background: var(--urban-bg); }
+  .card.nature .card-icon { background: var(--nature-bg); }
+  .card.experiences .card-icon { background: var(--exp-bg); }
+  .card.events .card-icon { background: var(--events-bg); }
+
+  .card-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.45;
+    margin-bottom: 14px;
+    min-height: 40px;
+  }
+
+  /* Price table */
+  .price-table { margin-bottom: 14px; }
+
+  .price-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .price-row:last-child { border-bottom: none; }
+
+  .price-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .price-label.date {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .price-val {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  .price-val .sep { color: var(--text-muted); font-weight: 400; margin: 0 3px; }
+  .price-val .payout { color: var(--green); }
+
+  /* Card footer */
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+
+  .volume {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .vol-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .btn-buy {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--bg);
+    background: var(--text);
+    border: none;
+    border-radius: 7px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-buy:hover {
+    background: var(--accent);
+    transform: scale(1.04);
+  }
+
+  /* Badge */
+  .badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 4px;
+    padding: 3px 7px;
+  }
+
+  .badge.trending { background: rgba(245,166,35,0.15); color: var(--accent); border: 1px solid rgba(245,166,35,0.25); }
+  .badge.new { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+  .badge.live { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.25); animation: blink 1.5s step-start infinite; }
+
+  /* Add card */
+  .card-add {
+    background: transparent;
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    min-height: 190px;
+    transition: all 0.2s;
+    animation: fadeUp 0.4s both;
+    gap: 10px;
+  }
+
+  .card-add:hover {
+    border-color: rgba(245,166,35,0.3);
+    background: rgba(245,166,35,0.03);
+  }
+
+  .add-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px dashed rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+
+  .card-add:hover .add-icon {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .add-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: 0.03em;
+    transition: color 0.2s;
+  }
+
+  .card-add:hover .add-text { color: var(--accent); }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Stagger card animations */
+  .card:nth-child(1), .card-add:nth-child(1) { animation-delay: 0.05s; }
+  .card:nth-child(2), .card-add:nth-child(2) { animation-delay: 0.10s; }
+  .card:nth-child(3), .card-add:nth-child(3) { animation-delay: 0.15s; }
+  .card:nth-child(4), .card-add:nth-child(4) { animation-delay: 0.20s; }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <a class="logo" href="#">
+    <div class="logo-mark">
+      <svg width="28" height="22" viewBox="0 0 28 22" fill="none">
+        <polygon points="0,22 9,4 18,22" fill="#e8edf5"/>
+        <polygon points="10,22 19,4 28,22" fill="#f5a623"/>
+      </svg>
+    </div>
+    <span class="logo-wordmark">INSU</span>
+    <div class="logo-sep"></div>
+    <div class="logo-tagline">Everyday Risk,<br>Instantly Covered</div>
+  </a>
+  <div class="search-wrap">
+    <div class="search-bar">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--text-muted);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" placeholder="Search contracts, events, locations…" />
+      <span class="kbd">/</span>
+    </div>
+  </div>
+  <div class="hdr-spacer"></div>
+  <a class="hdr-link" href="#">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    How it works
+  </a>
+  <button class="btn-login">Log In</button>
+  <button class="btn-signup">Sign Up</button>
+</header>
+
+<!-- CATEGORY TABS -->
+<nav class="tabs">
+  <div class="tab urban">
+    <span class="tab-dot"></span>
+    Urban
+    <span class="tab-count">48</span>
+  </div>
+  <div class="tab nature">
+    <span class="tab-dot"></span>
+    Nature
+    <span class="tab-count">31</span>
+  </div>
+  <div class="tab experiences">
+    <span class="tab-dot"></span>
+    Experiences
+    <span class="tab-count">27</span>
+  </div>
+  <div class="tab events">
+    <span class="tab-dot"></span>
+    Events
+    <span class="tab-count">36</span>
+  </div>
+  <div class="tabs-right">
+    <div class="tab tab-util">Trending</div>
+    <div class="tab tab-util">Ending Soon</div>
+    <div class="tab tab-util">New</div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="content">
+
+  <!-- Stats bar -->
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-value accent">$24.3M</div>
+      <div class="stat-label">Total Volume</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">142</div>
+      <div class="stat-label">Active Contracts</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">8,204</div>
+      <div class="stat-label">Protections Sold</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">4.2 min</div>
+      <div class="stat-label">Avg Payout Time</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value green">100%</div>
+      <div class="stat-label">Auto-Settled</div>
+    </div>
+  </div>
+
+  <!-- ── URBAN ── -->
+  <div class="section-hdr">
+    <span class="section-name urban">Urban</span>
+    <span class="section-desc">City disruptions · Infrastructure · Mobility</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card urban">
+      <div class="badge trending">Trending</div>
+      <div class="card-icon">⚡</div>
+      <div class="card-title">Power outage in CDMX of more than 2 hours?</div>
+      <div class="price-table">
+        <div class="price-row">
+          <span class="price-label date">Jan 31, 2026</span>
+          <span class="price-val">$100 <span class="sep">/</span> <span class="payout">$500</span></span>
+        </div>
+        <div class="price-row">
+          <span class="price-label date">Mar 31, 2026</span>
+          <span class="price-val">$600 <span class="sep">/</span> <span class="payout">$1,700</span></span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="volume"><span class="vol-dot"></span>$9m Vol.</span>
+        <button class="btn-buy">Buy now</button>
+      </div>
+    </div>
+
+    <div class="card urban">
+      <div class="badge live">Live</div>
+      <div class="card-icon">🚗</div>
+      <div class="card-title">Unusually heavy traffic as reported by Waze?</div>
+      <div class="price-table">
+        <div class="price-row">
+          <span class="price-label date">Today</span>
+          <span class="price-val">$50 <span class="sep">/</span> <span class="payout">$200</span></span>
+        </div>
+        <div class="price-row">
+          <span class="price-label date">Jun 30, 2026</span>
+          <span class="price-val">$800 <span class="sep">/</span> <span class="payout">$2,200</span></span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="volume"><span class="vol-dot"></span>$9m Vol.</span>
+        <button class="btn-buy">Buy now</button>
+      </div>
+    </div>
+
+    <div class="card urban">
+      <div class="card-icon">🚇</div>
+      <div class="card-title">Strike on CDMX metro system?</div>
+      <div class="price-table">
+        <div class="price-row">
+          <span class="price-label date">Today</span>
+          <span class="price-val">$70 <span class="sep">/</span> <span class="payout">$280</span></span>
+        </div>
+        <div class="price-row">
+          <span class="price-label date">This week</span>
+          <span class="price-val">$400 <span class="sep">/</span> <span class="payout">$2,700</span></span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="volume"><span class="vol-dot"></span>$314k Vol.</span>
+        <button class="btn-buy">Buy now</button>
+      </div>
+    </div>
+
+    <div class="card urban">
+      <div class="badge new">New</div>
+      <div class="card-icon">🌫️</div>
+      <div class="card-title">Environmental contingency in CDMX?</div>
+      <div class="price-table">
+        <div class="price-row">
+          <span class="price-label date">Today</span>
+          <span class="price-val">$70 <span class="sep">/</span> <span class="payout">$280</span></span>
+        </div>
+        <div class="price-row">
+          <span class="price-label date">Jan 31, 2026</span>
+          <span class="price-val">$400 <span class="sep">/</span> <span class="payout">$2,700</span></span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="volume"><span class="vol-dot"></span>$261k Vol.</span>
+        <button class="btn-buy">Buy now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── NATURE ── -->
+  <div class="section-hdr">
+    <span class="section-name nature">Nature</span>
+    <span class="section-desc">Weather · Earthquakes · Temperature extremes</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card nature">
+      <div class="card-icon">🌋</div>
+      <div class="card-title">How many 7.0+ earthquakes by June 30?</div>
+      <div class="price-table">
+        <div class="price-row">
+          <span class="price-label">Outcome: 1</span>
+          <span class="price-val">$1,000 <span class="sep">/</span> <span class="payout">$4,000</span></span>
+        </div>
+        <div class="price-row">
+          <span class="price-label">Outcome: 2</span>
+          <span class="price-val">$400 <span class="sep">/</span> <span class="payout">$8,000</span></span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="volume"><span class="vol-dot"></span>$583k Vol.</span>
+        <button class="btn-buy">Buy now</button>
+      </div>
+    </div>
+
+    <div class="card nature">
+      <div class="badge trending">Trending</div>
+      <div class="card-icon">🌡️</div>
+      <div class="card-title">Max temp above 35°C in CDMX for 3 consecutive days?</div>
+      <div class="price-table">
+        <div class="price-row">
+          <span class="price-label date">Mar 31, 2026</span>
+          <span class="price-val">$250 <span class="sep">/</span> <span class="payout">$600</span></span>
+        </div>
+        <div class="price-row">
+          <span class="price-label date">Jun 30, 2026</span>
+          <span class="price-val">$900 <span class="sep">/</span> <span class="payout">$1,900</span></span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="volume"><span class="vol-dot"></span>$2m Vol.</span>
+        <button class="btn-buy">Buy now</button>
+      </div>
+    </div>
+
+    <div class="card nature">
+      <div class="card-icon">🏔️</div>
+      <div class="card-title">Temperature below 5°C on Nevado de Toluca hike?</div>
+      <div class="price-table">
+        <div class="price-row">
+          <span class="price-label">Premium coverage</span>
+          <span class="price-val">$600 <span class="sep">/</span> <span class="payout">$2,400</span></span>
+        </div>
+        <div class="price-row">
+          <span class="price-label">Basic coverage</span>
+          <span class="price-val">$200 <span class="sep">/</span> <span class="payout">$1,400</span></span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="volume"><span class="vol-dot"></span>$9m Vol.</span>
+        <button class="btn-buy">Buy now</button>
+      </div>
+    </div>
+
+    <div class="card-add">
+      <div class="add-icon">+</div>
+      <div class="add-text">Submit your<br>own program</div>
+    </div>
+  </div>
+
+  <!-- ── EXPERIENCES ── -->
+  <div class="section-hdr">
+    <span class="section-name experiences">Experiences</span>
+    <span class="section-desc">Travel · Outdoor activities · Vacations</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card experiences">
+      <div class="card-icon">❄️</div>
+      <div class="card-title">Less than 20 cm of snow in Whistler?</div>
+      <div class="price-table">
+        <div class="price-row">
+          <span class="price-label">Premium coverage</span>
+          <span class="price-val">$4,000 <span class="sep">/</span> <span class="payout">$16,000</span></span>
+        </div>
+        <div class="price-row">
+          <span class="price-label">Basic coverage</span>
+          <span class="price-val">$1,800 <span class="sep">/</span> <span class="payout">$7,000</span></span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="volume"><span class="vol-dot"></span>$98k Vol.</span>
+        <button class="btn-buy">Buy now</button>
+      </div>
+    </div>
+
+    <div class="card experiences">
+      <div class="badge trending">Trending</div>
+      <div class="card-icon">🌧️</div>
+      <div class="card-title">More than 10mm of rain in Acapulco for 3 days?</div>
+      <div class="price-table">
+        <div class="price-row">
+          <span class="price-label">Premium coverage</span>
+          <span class="price-val">$800 <span class="sep">/</span> <span class="payout">$3,200</span></span>
+        </div>
+        <div class="price-row">
+          <span class="price-label">Basic coverage</span>
+          <span class="price-val">$300 <span class="sep">/</span> <span class="payout">$1,800</span></span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="volume"><span class="vol-dot"></span>$2m Vol.</span>
+        <button class="btn-buy">Buy now</button>
+      </div>
+    </div>
+
+    <div class="card-add">
+      <div class="add-icon">+</div>
+      <div class="add-text">Submit your<br>own program</div>
+    </div>
+  </div>
+
+  <!-- ── EVENTS ── -->
+  <div class="section-hdr">
+    <span class="section-name events">Events</span>
+    <span class="section-desc">Concerts · Conferences · Public gatherings</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card events">
+      <div class="card-icon">🎤</div>
+      <div class="card-title">Bad Bunny concert cancelled?</div>
+      <div class="price-table">
+        <div class="price-row">
+          <span class="price-label">Premium coverage</span>
+          <span class="price-val">$1,000 <span class="sep">/</span> <span class="payout">$4,000</span></span>
+        </div>
+        <div class="price-row">
+          <span class="price-label">Basic coverage</span>
+          <span class="price-val">$200 <span class="sep">/</span> <span class="payout">$1,400</span></span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="volume"><span class="vol-dot"></span>$9m Vol.</span>
+        <button class="btn-buy">Buy now</button>
+      </div>
+    </div>
+
+    <div class="card events">
+      <div class="card-icon">🎙️</div>
+      <div class="card-title">Mario Alonso Puig conference cancelled?</div>
+      <div class="price-table">
+        <div class="price-row">
+          <span class="price-label">Premium coverage</span>
+          <span class="price-val">$250 <span class="sep">/</span> <span class="payout">$800</span></span>
+        </div>
+        <div class="price-row">
+          <span class="price-label">Basic coverage</span>
+          <span class="price-val">$100 <span class="sep">/</span> <span class="payout">$400</span></span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="volume"><span class="vol-dot"></span>$960k Vol.</span>
+        <button class="btn-buy">Buy now</button>
+      </div>
+    </div>
+
+    <div class="card-add">
+      <div class="add-icon">+</div>
+      <div class="add-text">Submit your<br>own program</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+document.querySelectorAll('.btn-buy').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const orig = btn.textContent;
+    btn.textContent = '✓ Added';
+    btn.style.background = 'var(--green)';
+    btn.style.color = '#fff';
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.style.background = '';
+      btn.style.color = '';
+    }, 1400);
+  });
+});
+</script>
+</body>
+</html>

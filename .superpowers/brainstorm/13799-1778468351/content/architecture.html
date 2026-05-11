@@ -1,0 +1,93 @@
+<h2>Insu — System Architecture</h2>
+<p class="subtitle">Sub-project 1: Foundation + Marketplace Browse</p>
+
+<div class="section">
+  <h3>Stack</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
+    <div style="background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:16px">
+      <div class="label" style="color:#6c9bff;margin-bottom:8px">Frontend</div>
+      <div style="color:#eee;font-size:14px;line-height:1.8">
+        Next.js 14 (App Router)<br>
+        TypeScript<br>
+        Tailwind CSS<br>
+        shadcn/ui components
+      </div>
+    </div>
+    <div style="background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:16px">
+      <div class="label" style="color:#6c9bff;margin-bottom:8px">Backend</div>
+      <div style="color:#eee;font-size:14px;line-height:1.8">
+        Supabase (PostgreSQL)<br>
+        Supabase Auth<br>
+        Supabase Realtime<br>
+        Supabase Edge Functions (Deno)
+      </div>
+    </div>
+    <div style="background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:16px">
+      <div class="label" style="color:#6c9bff;margin-bottom:8px">Payments</div>
+      <div style="color:#eee;font-size:14px;line-height:1.8">
+        Stripe (USD / international)<br>
+        Conekta (MXN / Mexico)<br>
+        Webhooks → Edge Functions
+      </div>
+    </div>
+    <div style="background:#1a1a2e;border:1px solid #333;border-radius:08px;padding:16px">
+      <div class="label" style="color:#6c9bff;margin-bottom:8px">Pricing & Oracles</div>
+      <div style="color:#eee;font-size:14px;line-height:1.8">
+        Black-Scholes in Edge Functions<br>
+        OpenWeatherMap / Tomorrow.io<br>
+        Waze API (traffic/urban)<br>
+        Manual admin override
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Data Flow</h3>
+  <div style="background:#0d1117;border:1px solid #333;border-radius:8px;padding:20px;margin-top:12px;font-family:monospace;font-size:13px;color:#ccc;line-height:2">
+    <span style="color:#6c9bff">Browser</span>
+    → Next.js App Router (SSR pages + Server Actions)
+    → Supabase DB (read markets, positions, pools)<br>
+    <span style="color:#6c9bff">Buy flow</span>
+    → Server Action → Stripe/Conekta checkout → Webhook → Edge Function → insert position + update pool<br>
+    <span style="color:#6c9bff">Pricing</span>
+    → Edge Function (cron, every 15min) → fetch oracle data → Black-Scholes → update contract price<br>
+    <span style="color:#6c9bff">Payout</span>
+    → Edge Function (cron, every 5min) → check oracle trigger → auto-settle → Stripe/Conekta transfer<br>
+    <span style="color:#6c9bff">Realtime</span>
+    → Supabase Realtime → browser (live price/volume updates on browse page)
+  </div>
+</div>
+
+<div class="section">
+  <h3>Pages (Sub-project 1 scope)</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px">
+    <div style="background:#1a2e1a;border:1px solid #2d5a2d;border-radius:6px;padding:12px;font-size:13px;color:#90ee90">
+      <strong style="display:block;margin-bottom:4px">/ (Browse)</strong>
+      Categories + contract cards grid, search, filters, live volume
+    </div>
+    <div style="background:#2e1a1a;border:1px solid #5a2d2d;border-radius:6px;padding:12px;font-size:13px;color:#ffaaaa">
+      <strong style="display:block;margin-bottom:4px">/markets/[slug]</strong>
+      Contract detail, price chart, buy/provide buttons
+    </div>
+    <div style="background:#2e1a1a;border:1px solid #5a2d2d;border-radius:6px;padding:12px;font-size:13px;color:#ffaaaa">
+      <strong style="display:block;margin-bottom:4px">/buy/[slug]</strong>
+      Hedger purchase flow (coverage tier, amount, payment)
+    </div>
+    <div style="background:#2e1a1a;border:1px solid #5a2d2d;border-radius:6px;padding:12px;font-size:13px;color:#ffaaaa">
+      <strong style="display:block;margin-bottom:4px">/provide/[slug]</strong>
+      Risk provider capital deposit flow
+    </div>
+    <div style="background:#2e1a1a;border:1px solid #5a2d2d;border-radius:6px;padding:12px;font-size:13px;color:#ffaaaa">
+      <strong style="display:block;margin-bottom:4px">/dashboard</strong>
+      Portfolio: active protections, positions, payout history
+    </div>
+    <div style="background:#2e1a1a;border:1px solid #5a2d2d;border-radius:6px;padding:12px;font-size:13px;color:#ffaaaa">
+      <strong style="display:block;margin-bottom:4px">/admin</strong>
+      Create contracts, manage triggers, manual override
+    </div>
+  </div>
+  <p style="color:#666;font-size:12px;margin-top:8px">Green = Sub-project 1 core. Red = later sub-projects, but designed now so DB schema supports them from day 1.</p>
+</div>
+
+<p style="color:#888;font-size:13px;margin-top:16px">Does this architecture look right? Any changes before we move to the database schema?</p>
