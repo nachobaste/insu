@@ -26,6 +26,7 @@ export default function LoginForm() {
       return
     }
 
+    setLoading(false)
     router.push('/')
     router.refresh()
   }
