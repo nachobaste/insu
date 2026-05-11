@@ -4,6 +4,8 @@ import { cookies } from 'next/headers'
 import type { Database } from './database.types'
 
 export function createClient() {
+  // Called only when env vars are confirmed present (checked at call sites).
+  // The browser client (client.ts) returns null when unconfigured for client-side safety.
   const cookieStore = cookies()
 
   return createServerClient<Database>(

@@ -70,12 +70,29 @@ const FALLBACK_CATEGORIES: Category[] = [
 ]
 
 export default async function BrowsePage() {
-  // When Supabase env vars are not configured (e.g. during e2e smoke tests),
-  // render the page shell with fallback data instead of crashing.
+  const isConfigured = !!(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )
+
+  if (!isConfigured) {
+    // Dev/test mode without Supabase credentials — render empty shell
+    return (
+      <>
+        <Header />
+        <BrowseClient
+          categories={FALLBACK_CATEGORIES}
+          initialContracts={[]}
+          stats={{ totalVolumeUsd: 0, activeContracts: 0, protectionsSold: 0, avgPayoutMinutes: 4.2 }}
+        />
+      </>
+    )
+  }
+
   const [categories, contracts, stats] = await Promise.all([
-    getCategories().catch(() => FALLBACK_CATEGORIES),
-    getContracts().catch(() => [] as ContractWithTiers[]),
-    getPlatformStats().catch(() => ({ totalVolumeUsd: 0, activeContracts: 0, protectionsSold: 0, avgPayoutMinutes: 4.2 })),
+    getCategories(),
+    getContracts(),
+    getPlatformStats(),
   ])
 
   return (
