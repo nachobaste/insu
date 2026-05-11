@@ -1,35 +1,20 @@
-import type { Metadata } from "next";
-import localFont from "next/font/local";
-import "./globals.css";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+import type { Metadata } from 'next'
+import './globals.css'
 
 export const metadata: Metadata = {
-  title: "Insu – Parametric Insurance Marketplace",
-  description: "Protection contracts marketplace",
-};
+  title: 'Insu — Everyday Risk, Instantly Covered',
+  description:
+    'Parametric event-protection marketplace. Buy protection against real-life disruptions. Automatic payouts when triggers occur.',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
+      <body className="min-h-screen antialiased">{children}</body>
     </html>
-  );
+  )
 }
