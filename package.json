@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest",
+    "test:run": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
