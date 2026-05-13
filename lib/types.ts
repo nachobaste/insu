@@ -65,3 +65,14 @@ export interface ContractWithTiers extends Contract {
   coverage_tiers: CoverageTier[]
   category: Category
 }
+
+export interface PricingHistoryRow {
+  id: string
+  tier_id: string
+  premium_usd_after: number
+  calculated_at: string
+}
+
+export interface ContractDetailData extends ContractWithTiers {
+  pricing_history: PricingHistoryRow[]
+}

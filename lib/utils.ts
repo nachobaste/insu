@@ -31,3 +31,13 @@ export function categoryColorClass(slug: string): string {
   }
   return map[slug] ?? ''
 }
+
+export function categoryTextClass(slug: string): string {
+  const map: Record<string, string> = {
+    urban:       'text-category-urban',
+    nature:      'text-category-nature',
+    experiences: 'text-category-experiences',
+    events:      'text-category-events',
+  }
+  return map[slug] ?? 'text-insu-muted'
+}
