@@ -37,6 +37,7 @@ export interface Database {
           stripe_customer_id?: string | null
           conekta_customer_id?: string | null
         }
+        Relationships: []
       }
       categories: {
         Row: {
@@ -62,6 +63,7 @@ export interface Database {
           icon_url?: string | null
           display_order?: number
         }
+        Relationships: []
       }
       contracts: {
         Row: {
@@ -121,6 +123,7 @@ export interface Database {
           settled_outcome?: boolean | null
           settled_at?: string | null
         }
+        Relationships: []
       }
       coverage_tiers: {
         Row: {
@@ -163,6 +166,7 @@ export interface Database {
           last_priced_at?: string | null
           pricing_inputs?: Json | null
         }
+        Relationships: []
       }
       hedger_positions: {
         Row: {
@@ -201,6 +205,7 @@ export interface Database {
           status?: string
           payment_intent_id?: string | null
         }
+        Relationships: []
       }
       provider_positions: {
         Row: {
@@ -245,6 +250,7 @@ export interface Database {
           actual_return_mxn?: number | null
           settled_at?: string | null
         }
+        Relationships: []
       }
       oracle_readings: {
         Row: {
@@ -268,6 +274,7 @@ export interface Database {
         Update: {
           trigger_met?: boolean
         }
+        Relationships: []
       }
       payouts: {
         Row: {
@@ -301,6 +308,7 @@ export interface Database {
           status?: string
           completed_at?: string | null
         }
+        Relationships: []
       }
       pricing_history: {
         Row: {
@@ -329,6 +337,7 @@ export interface Database {
           premium_usd_before?: number
           premium_usd_after?: number
         }
+        Relationships: []
       }
     }
     Views: Record<string, never>

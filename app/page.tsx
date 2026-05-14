@@ -11,7 +11,7 @@ async function getCategories(): Promise<Category[]> {
     .order('display_order')
 
   if (error) throw new Error(`Failed to load categories: ${error.message}`)
-  return data ?? []
+  return (data ?? []) as Category[]
 }
 
 async function getContracts(): Promise<ContractWithTiers[]> {
