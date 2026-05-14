@@ -120,13 +120,20 @@ async function payoutPosition(
     return
   }
 
-  const txn = await stripe.customers.createBalanceTransaction(customerId, {
-    amount: -Math.round(position.payout_amount_usd * 100),
-    currency: 'usd',
-  })
+  let txnId: string
+  try {
+    const txn = await stripe.customers.createBalanceTransaction(customerId, {
+      amount: -Math.round(position.payout_amount_usd * 100),
+      currency: 'usd',
+    })
+    txnId = txn.id
+  } catch (err) {
+    console.error(`Stripe balance transaction failed for position ${position.id}:`, err)
+    return
+  }
 
   await db.from('payouts')
-    .update({ status: 'completed', transfer_id: txn.id, completed_at: new Date().toISOString() })
+    .update({ status: 'completed', transfer_id: txnId, completed_at: new Date().toISOString() })
     .eq('id', (payout as { id: string }).id)
 
   await db.from('hedger_positions').update({ status: 'paid_out' }).eq('id', position.id)

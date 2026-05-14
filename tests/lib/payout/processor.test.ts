@@ -85,6 +85,7 @@ function makeDb(opts: {
   const contractUpdateEq = vi.fn().mockResolvedValue({ error: null })
   const hedgerUpdateEq = vi.fn().mockResolvedValue({ error: null })
   const providerUpdateEq = vi.fn().mockResolvedValue({ error: null })
+  const providerUpdate = vi.fn().mockReturnValue({ eq: providerUpdateEq })
   const profileUpdateEq = vi.fn().mockResolvedValue({ error: null })
   const payoutsUpdateEq = vi.fn().mockResolvedValue({ error: null })
 
@@ -114,7 +115,7 @@ function makeDb(opts: {
       if (table === 'provider_positions') {
         return {
           ...makeChainable({ data: providerPositions, error: null }),
-          update: vi.fn().mockReturnValue({ eq: providerUpdateEq }),
+          update: providerUpdate,
         }
       }
       if (table === 'profiles') {
@@ -133,6 +134,7 @@ function makeDb(opts: {
     }),
     _contractUpdateEq: contractUpdateEq,
     _hedgerUpdateEq: hedgerUpdateEq,
+    _providerUpdate: providerUpdate,
     _providerUpdateEq: providerUpdateEq,
     _profileUpdateEq: profileUpdateEq,
     _payoutsInsert: payoutsInsert,
@@ -211,10 +213,15 @@ describe('processPayouts', () => {
     expect(db._profileUpdateEq).toHaveBeenCalledWith('id', 'user-1')
   })
 
-  it('settles provider positions', async () => {
+  it('settles provider positions with correct loss share', async () => {
     const db = makeDb()
     await processPayouts(db as never, makeStripe() as never)
+    // totalHedgerPayout=500, totalProviderCapital=10000
+    // lossShare=(10000/10000)*500=500, actualReturn=10000-500=9500
     expect(db._providerUpdateEq).toHaveBeenCalledWith('id', 'pp-1')
+    expect(db._providerUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ actual_return_usd: 9500, status: 'settled' }),
+    )
   })
 
   it('returns the number of hedger positions paid out', async () => {
