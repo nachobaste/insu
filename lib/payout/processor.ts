@@ -115,7 +115,10 @@ async function payoutPosition(
     .select('id')
     .single()
 
-  if (!payout) return
+  if (!payout) {
+    console.error(`Failed to create payout record for position ${position.id}`)
+    return
+  }
 
   const txn = await stripe.customers.createBalanceTransaction(customerId, {
     amount: -Math.round(position.payout_amount_usd * 100),
