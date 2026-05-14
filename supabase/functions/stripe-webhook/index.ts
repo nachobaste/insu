@@ -1,9 +1,7 @@
-import Stripe from 'https://esm.sh/stripe@15?target=deno'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import Stripe from 'npm:stripe@15'
+import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
-  // @ts-ignore — Deno-compatible http client
-  httpClient: Stripe.createFetchHttpClient(),
   apiVersion: '2024-06-20',
 })
 
