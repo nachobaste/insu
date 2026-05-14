@@ -3,6 +3,14 @@
     {
       "path": "/api/reprice",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/oracle-poll",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/payout-process",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
