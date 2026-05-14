@@ -76,3 +76,63 @@ export interface PricingHistoryRow {
 export interface ContractDetailData extends ContractWithTiers {
   pricing_history: PricingHistoryRow[]
 }
+
+export interface HedgerPosition {
+  id: string
+  user_id: string
+  contract_id: string
+  tier_id: string
+  premium_paid_usd: number
+  payout_amount_usd: number
+  premium_paid_mxn: number
+  payout_amount_mxn: number
+  currency: string
+  payment_provider: string
+  payment_intent_id: string | null
+  status: string
+  purchased_at: string
+  expires_at: string
+}
+
+export interface ProviderPosition {
+  id: string
+  user_id: string
+  contract_id: string
+  tier_id: string
+  capital_deposited_usd: number
+  capital_deposited_mxn: number
+  currency: string
+  payment_provider: string
+  payment_intent_id: string | null
+  expected_return_usd: number
+  actual_return_usd: number | null
+  expected_return_mxn: number
+  actual_return_mxn: number | null
+  status: string
+  deposited_at: string
+  settled_at: string | null
+}
+
+export interface OracleReading {
+  id: string
+  contract_id: string
+  source: 'openweathermap' | 'tomorrow_io' | 'waze' | 'manual'
+  reading_type: string
+  value: Record<string, unknown>
+  trigger_met: boolean
+  read_at: string
+}
+
+export interface Payout {
+  id: string
+  contract_id: string
+  hedger_position_id: string
+  amount_usd: number
+  amount_mxn: number
+  currency: string
+  payment_provider: string
+  transfer_id: string | null
+  status: string
+  created_at: string
+  completed_at: string | null
+}
