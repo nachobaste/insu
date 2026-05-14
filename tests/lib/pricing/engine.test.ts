@@ -76,13 +76,13 @@ describe('priceTier', () => {
     expect(at15).toBeLessThan(at2)
   })
 
-  it('matches known example: 500 × 0.10 × 1.30 × 1.33 × 1.15 ≈ 99.5', () => {
+  it('matches known example: 500 × 0.10 × 1.30 × 1.33 × 1.15 ≈ 99.67', () => {
     // 60% utilization → utilizationFactor = 1 + 0.5×0.6 = 1.30
-    // 10 days remaining → timeFactor = 1 + 0.5×(1−10/30) = 1.333
+    // 10 days remaining → timeFactor = 1 + 0.5×(1−10/30) = 1.3333
     const tier = makeTier({ current_capacity_usd: 60000 })
     const contract = makeContract(10)
     const { premiumUsd } = priceTier(tier, contract)
-    expect(premiumUsd).toBeCloseTo(99.5, 0)
+    expect(premiumUsd).toBeCloseTo(99.67, 1)
   })
 
   it('returns structured inputs', () => {
@@ -94,5 +94,13 @@ describe('priceTier', () => {
     })
     expect(inputs.daysRemaining).toBeGreaterThan(9)
     expect(inputs.daysRemaining).toBeLessThan(11)
+  })
+
+  it('handles zero-capacity guard without division by zero', () => {
+    const tier = makeTier({ max_capacity_usd: 0, current_capacity_usd: 0 })
+    const contract = makeContract(10)
+    const { premiumUsd, inputs } = priceTier(tier, contract)
+    expect(inputs.utilization).toBe(0)
+    expect(premiumUsd).toBeGreaterThan(0)
   })
 })
