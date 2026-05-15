@@ -1,0 +1,88 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn(),
+}))
+
+import { getDashboardData } from '@/lib/actions/dashboard'
+import { createClient } from '@/lib/supabase/server'
+
+function makeChainable(value: unknown) {
+  const b: Record<string, unknown> = {}
+  for (const m of ['select', 'eq', 'in', 'order']) {
+    b[m] = vi.fn().mockReturnValue(b)
+  }
+  b.then = (res: (v: unknown) => unknown) => Promise.resolve(value).then(res)
+  return b
+}
+
+function makeSupabase(opts: {
+  hedgerData?: unknown[]
+  hedgerError?: Error
+  providerData?: unknown[]
+  providerError?: Error
+  payoutsData?: unknown[]
+  payoutsError?: Error
+} = {}) {
+  return {
+    from: vi.fn((table: string) => {
+      if (table === 'hedger_positions')
+        return makeChainable({ data: opts.hedgerData ?? [], error: opts.hedgerError ?? null })
+      if (table === 'provider_positions')
+        return makeChainable({ data: opts.providerData ?? [], error: opts.providerError ?? null })
+      if (table === 'payouts')
+        return makeChainable({ data: opts.payoutsData ?? [], error: opts.payoutsError ?? null })
+      return makeChainable({ data: [], error: null })
+    }),
+  }
+}
+
+describe('getDashboardData', () => {
+  beforeEach(() => vi.resetModules())
+
+  it('returns all three arrays when queries succeed', async () => {
+    vi.mocked(createClient).mockReturnValue(makeSupabase({
+      hedgerData: [{ id: 'hp-1', status: 'active' }],
+      providerData: [{ id: 'pp-1', status: 'active' }],
+      payoutsData: [{ id: 'pay-1', status: 'completed' }],
+    }) as never)
+
+    const result = await getDashboardData('user-1')
+    expect(result.hedgerPositions).toHaveLength(1)
+    expect(result.providerPositions).toHaveLength(1)
+    expect(result.payouts).toHaveLength(1)
+  })
+
+  it('returns empty arrays when user has no data', async () => {
+    vi.mocked(createClient).mockReturnValue(makeSupabase() as never)
+
+    const result = await getDashboardData('user-1')
+    expect(result.hedgerPositions).toEqual([])
+    expect(result.providerPositions).toEqual([])
+    expect(result.payouts).toEqual([])
+  })
+
+  it('throws when hedger positions query fails', async () => {
+    vi.mocked(createClient).mockReturnValue(makeSupabase({
+      hedgerError: new Error('DB error'),
+    }) as never)
+
+    await expect(getDashboardData('user-1')).rejects.toThrow('DB error')
+  })
+
+  it('throws when provider positions query fails', async () => {
+    vi.mocked(createClient).mockReturnValue(makeSupabase({
+      providerError: new Error('DB error'),
+    }) as never)
+
+    await expect(getDashboardData('user-1')).rejects.toThrow('DB error')
+  })
+
+  it('throws when payouts query fails', async () => {
+    vi.mocked(createClient).mockReturnValue(makeSupabase({
+      payoutsError: new Error('DB error'),
+    }) as never)
+
+    await expect(getDashboardData('user-1')).rejects.toThrow('DB error')
+  })
+})
