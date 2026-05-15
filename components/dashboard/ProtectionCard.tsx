@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import type { HedgerPositionWithContract } from '@/lib/types'
 
 export function ProtectionCard({ position }: { position: HedgerPositionWithContract }) {
@@ -30,7 +30,7 @@ export function ProtectionCard({ position }: { position: HedgerPositionWithContr
   return (
     <Link href={`/markets/${contract.slug}`} className="block">
       <div className={cn(
-        'rounded-xl border bg-bg-card p-4 transition-colors hover:bg-bg-card-hover',
+        'rounded-card border bg-bg-card p-4 transition-colors hover:bg-bg-card-hover',
         isPaidOut ? 'border-insu-green/20' : 'border-white/[0.07]',
         isExpired && 'opacity-50',
       )}>
@@ -54,17 +54,17 @@ export function ProtectionCard({ position }: { position: HedgerPositionWithContr
         <div className="mb-3 grid grid-cols-3 gap-2">
           <div className="text-center">
             <p className="font-body text-[8px] uppercase tracking-wide text-insu-muted">Paid</p>
-            <p className="mt-0.5 font-mono text-sm text-insu-text">${premium_paid_usd}</p>
+            <p className="mt-0.5 font-mono text-sm text-insu-text">{formatCurrency(premium_paid_usd)}</p>
           </div>
           <div className="text-center">
             <p className="font-body text-[8px] uppercase tracking-wide text-insu-muted">
               {isPaidOut ? 'Received' : 'Payout'}
             </p>
-            <p className="mt-0.5 font-mono text-sm text-insu-green">${payout_amount_usd}</p>
+            <p className="mt-0.5 font-mono text-sm text-insu-green">{formatCurrency(payout_amount_usd)}</p>
           </div>
           <div className="text-center">
             <p className="font-body text-[8px] uppercase tracking-wide text-insu-muted">
-              {isPaidOut ? 'Settled' : 'Expires'}
+              Expires
             </p>
             <p className="mt-0.5 font-body text-sm text-insu-text">{dateStr}</p>
           </div>
