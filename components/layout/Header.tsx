@@ -1,7 +1,17 @@
 import Link from 'next/link'
 import { Search } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
 
-export default function Header() {
+export default async function Header() {
+  let userId: string | null = null
+  try {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    userId = user?.id ?? null
+  } catch {
+    // Supabase not configured — render unauthenticated header
+  }
+
   return (
     <header className="sticky top-0 z-50 flex h-[60px] items-center gap-5 border-b border-white/[0.07] bg-bg/85 px-8 backdrop-blur-xl">
       {/* Logo */}
@@ -42,19 +52,29 @@ export default function Header() {
         How it works
       </Link>
 
-      <Link
-        href="/auth/login"
-        className="rounded-lg border border-white/[0.07] px-4 py-1.5 text-[13px] font-semibold text-insu-dim transition-colors hover:border-white/15 hover:text-insu-text"
-      >
-        Log In
-      </Link>
-
-      <Link
-        href="/auth/signup"
-        className="rounded-lg bg-insu-accent px-4 py-1.5 text-[13px] font-bold text-bg transition-all hover:-translate-y-px hover:bg-[#f7b84a] hover:shadow-[0_4px_16px_rgba(245,166,35,0.3)]"
-      >
-        Sign Up
-      </Link>
+      {userId ? (
+        <Link
+          href="/dashboard"
+          className="rounded-lg border border-white/[0.07] px-4 py-1.5 text-[13px] font-semibold text-insu-dim transition-colors hover:border-white/15 hover:text-insu-text"
+        >
+          Portfolio
+        </Link>
+      ) : (
+        <>
+          <Link
+            href="/auth/login"
+            className="rounded-lg border border-white/[0.07] px-4 py-1.5 text-[13px] font-semibold text-insu-dim transition-colors hover:border-white/15 hover:text-insu-text"
+          >
+            Log In
+          </Link>
+          <Link
+            href="/auth/signup"
+            className="rounded-lg bg-insu-accent px-4 py-1.5 text-[13px] font-bold text-bg transition-all hover:-translate-y-px hover:bg-[#f7b84a] hover:shadow-[0_4px_16px_rgba(245,166,35,0.3)]"
+          >
+            Sign Up
+          </Link>
+        </>
+      )}
     </header>
   )
 }
