@@ -11,7 +11,6 @@ export function PositionCard({ position }: { position: ProviderPositionWithContr
 
   const isSettled = status === 'settled'
   const isLossShare =
-    isSettled &&
     actual_return_usd !== null &&
     actual_return_usd < capital_deposited_usd
 
@@ -78,7 +77,7 @@ export function PositionCard({ position }: { position: ProviderPositionWithContr
           </div>
           <div className="text-center">
             <p className="font-body text-[8px] uppercase tracking-wide text-insu-muted">
-              {isSettled ? 'Return' : `Yield +${yieldPct}%`}
+              {isSettled ? 'Yield' : `Yield +${yieldPct}%`}
             </p>
             <p className={cn('mt-0.5 font-mono text-sm', returnColor)}>{returnValue}</p>
           </div>
