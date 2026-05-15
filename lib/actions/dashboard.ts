@@ -27,6 +27,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
       .select('*, contract:contracts(id, slug, title, trigger_type, trigger_deadline), tier:coverage_tiers(name)')
       .eq('user_id', userId)
       .in('status', ['active', 'settled']),
+    // !inner join excludes payouts with no hedger_position; .eq filters to this user's positions only
     supabase
       .from('payouts')
       .select('*, contract:contracts(id, slug, title), hedger_position:hedger_positions!inner(user_id)')

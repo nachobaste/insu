@@ -38,7 +38,7 @@ function makeSupabase(opts: {
 }
 
 describe('getDashboardData', () => {
-  beforeEach(() => vi.resetModules())
+  beforeEach(() => vi.clearAllMocks())
 
   it('returns all three arrays when queries succeed', async () => {
     vi.mocked(createClient).mockReturnValue(makeSupabase({
@@ -49,8 +49,11 @@ describe('getDashboardData', () => {
 
     const result = await getDashboardData('user-1')
     expect(result.hedgerPositions).toHaveLength(1)
+    expect(result.hedgerPositions[0]).toMatchObject({ id: 'hp-1', status: 'active' })
     expect(result.providerPositions).toHaveLength(1)
+    expect(result.providerPositions[0]).toMatchObject({ id: 'pp-1', status: 'active' })
     expect(result.payouts).toHaveLength(1)
+    expect(result.payouts[0]).toMatchObject({ id: 'pay-1', status: 'completed' })
   })
 
   it('returns empty arrays when user has no data', async () => {
