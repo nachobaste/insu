@@ -136,3 +136,17 @@ export interface Payout {
   created_at: string
   completed_at: string | null
 }
+
+export interface HedgerPositionWithContract extends HedgerPosition {
+  contract: Pick<Contract, 'id' | 'slug' | 'title' | 'trigger_type'>
+  tier: Pick<CoverageTier, 'name'>
+}
+
+export interface ProviderPositionWithContract extends ProviderPosition {
+  contract: Pick<Contract, 'id' | 'slug' | 'title' | 'trigger_type' | 'trigger_deadline'>
+  tier: Pick<CoverageTier, 'name'>
+}
+
+export interface PayoutWithContract extends Payout {
+  contract: Pick<Contract, 'id' | 'slug' | 'title'>
+}
