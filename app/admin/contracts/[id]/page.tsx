@@ -1,0 +1,25 @@
+import { notFound } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { ContractForm } from '@/components/admin/contracts/ContractForm'
+import type { Category, ContractWithTiers } from '@/lib/types'
+
+export default async function EditContractPage({ params }: { params: { id: string } }) {
+  const supabase = createClient()
+
+  const categoriesResult = await supabase.from('categories').select('*').order('display_order')
+  const contractResult = await supabase
+    .from('contracts')
+    .select('*, category:categories(*), coverage_tiers(*)')
+    .eq('id', params.id)
+    .single()
+
+  const contract = contractResult.data
+  if (!contract) notFound()
+
+  return (
+    <ContractForm
+      categories={(categoriesResult.data ?? []) as Category[]}
+      contract={contract as ContractWithTiers}
+    />
+  )
+}
