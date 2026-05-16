@@ -150,3 +150,30 @@ export interface ProviderPositionWithContract extends ProviderPosition {
 export interface PayoutWithContract extends Payout {
   contract: Pick<Contract, 'id' | 'slug' | 'title'>
 }
+
+export interface AdminAuditLog {
+  id: string
+  admin_id: string
+  action: string
+  contract_id: string | null
+  payout_id: string | null
+  reason: string | null
+  metadata: Record<string, unknown> | null
+  created_at: string
+}
+
+export interface UpsertContractInput {
+  id?: string
+  title: string
+  description: string | null
+  category_id: string
+  status: ContractStatus
+  trigger_type: TriggerType
+  trigger_condition: Record<string, unknown>
+  trigger_deadline: string
+  location: ContractLocation
+  icon_url: string | null
+  is_featured: boolean
+  basic_tier: { premium_usd: number; payout_usd: number; max_capacity_usd: number }
+  premium_tier: { premium_usd: number; payout_usd: number; max_capacity_usd: number }
+}
