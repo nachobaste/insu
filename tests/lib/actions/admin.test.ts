@@ -101,9 +101,15 @@ describe('upsertContract', () => {
   })
 
   it('throws if calling user is not admin', async () => {
-    const mockSb = makeSupabase({ role: 'hedger' }) as never
-    vi.mocked(createClient).mockReturnValue(mockSb)
-    vi.mocked(createServiceClient).mockReturnValue(mockSb)
+    const userClientMock = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }),
+      },
+      from: vi.fn(),
+    }
+    const serviceClientMock = makeSupabase({ role: 'hedger' })
+    vi.mocked(createClient).mockReturnValue(userClientMock as never)
+    vi.mocked(createServiceClient).mockReturnValue(serviceClientMock as never)
     await expect(upsertContract(baseInput)).rejects.toThrow('Forbidden')
   })
 

@@ -68,12 +68,13 @@ export async function upsertContract(input: UpsertContractInput): Promise<string
     return input.id
   }
 
-  const { data: contract } = await supabase
+  const { data: contract, error: contractError } = await supabase
     .from('contracts')
     .insert({ ...contractFields, created_by: userId })
     .select('id')
     .single()
 
+  if (contractError) throw new Error(`Failed to create contract: ${contractError.message}`)
   const contractId = (contract as { id: string }).id
 
   await supabase.from('coverage_tiers').insert([
