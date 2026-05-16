@@ -34,8 +34,8 @@ export async function processPayouts(
 
   if (!triggeredReadings || triggeredReadings.length === 0) return 0
 
-  const contractIds = [...new Set((triggeredReadings as Array<{ contract_id: string }>)
-    .map(r => r.contract_id))]
+  const contractIds = Array.from(new Set((triggeredReadings as Array<{ contract_id: string }>)
+    .map(r => r.contract_id)))
 
   const { data: contracts } = await db
     .from('contracts')

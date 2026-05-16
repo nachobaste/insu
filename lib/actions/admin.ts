@@ -49,7 +49,8 @@ export async function upsertContract(input: UpsertContractInput): Promise<string
   }
 
   if (input.id) {
-    await supabase.from('contracts').update(contractFields).eq('id', input.id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await supabase.from('contracts').update(contractFields as any).eq('id', input.id)
 
     const { data: tiers } = await supabase
       .from('coverage_tiers')
@@ -68,9 +69,12 @@ export async function upsertContract(input: UpsertContractInput): Promise<string
     return input.id
   }
 
-  const { data: contract, error: contractError } = await supabase
-    .from('contracts')
-    .insert({ ...contractFields, created_by: userId })
+  const slug = input.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    + '-' + Date.now().toString(36)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: contract, error: contractError } = await (supabase.from('contracts') as any)
+    .insert({ ...contractFields, slug, created_by: userId })
     .select('id')
     .single()
 
@@ -102,7 +106,8 @@ export async function overrideContractTrigger({
     settled_at: new Date().toISOString(),
   }).eq('id', contractId)
 
-  await supabase.from('admin_audit_log').insert({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from('admin_audit_log') as any).insert({
     admin_id: userId,
     action: 'trigger_override',
     contract_id: contractId,
