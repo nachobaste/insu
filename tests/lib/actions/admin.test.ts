@@ -1,11 +1,11 @@
 // tests/lib/actions/admin.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
+vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn(), createServiceClient: vi.fn() }))
 vi.mock('stripe', () => ({ default: vi.fn() }))
 
 import { upsertContract, overrideContractTrigger, retryPayout } from '@/lib/actions/admin'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import Stripe from 'stripe'
 
 function makeChainable(result: unknown) {
@@ -62,24 +62,28 @@ describe('upsertContract', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('inserts contract and two tiers on create, returns new id', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({
+    const mockSb = makeSupabase({
       tables: {
         contracts: { data: { id: 'contract-new' }, error: null },
         coverage_tiers: { data: null, error: null },
       },
-    }) as never)
+    }) as never
+    vi.mocked(createClient).mockReturnValue(mockSb)
+    vi.mocked(createServiceClient).mockReturnValue(mockSb)
 
     const id = await upsertContract(baseInput)
     expect(id).toBe('contract-new')
   })
 
   it('updates contract and tiers on edit, returns existing id', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({
+    const mockSb = makeSupabase({
       tables: {
         contracts: { data: null, error: null },
         coverage_tiers: { data: [{ id: 'tier-basic', name: 'basic' }, { id: 'tier-prem', name: 'premium' }], error: null },
       },
-    }) as never)
+    }) as never
+    vi.mocked(createClient).mockReturnValue(mockSb)
+    vi.mocked(createServiceClient).mockReturnValue(mockSb)
 
     const id = await upsertContract({ ...baseInput, id: 'contract-existing' })
     expect(id).toBe('contract-existing')
@@ -97,7 +101,14 @@ describe('upsertContract', () => {
   })
 
   it('throws if calling user is not admin', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ role: 'hedger' }) as never)
+    const mockSb = makeSupabase({ role: 'hedger' }) as never
+    vi.mocked(createClient).mockReturnValue(mockSb)
+    vi.mocked(createServiceClient).mockReturnValue(mockSb)
     await expect(upsertContract(baseInput)).rejects.toThrow('Forbidden')
+  })
+
+  it('throws if premium tier payout does not exceed premium tier premium', async () => {
+    const bad = { ...baseInput, premium_tier: { premium_usd: 2000, payout_usd: 500, max_capacity_usd: 100000 } }
+    await expect(upsertContract(bad)).rejects.toThrow('Payout must exceed premium')
   })
 })

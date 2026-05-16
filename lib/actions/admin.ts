@@ -1,7 +1,7 @@
 'use server'
 
 import Stripe from 'stripe'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { UpsertContractInput } from '@/lib/types'
 
 function getStripe() {
@@ -9,9 +9,10 @@ function getStripe() {
 }
 
 async function assertAdmin() {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const userClient = createClient()
+  const { data: { user } } = await userClient.auth.getUser()
   if (!user) throw new Error('Unauthorized')
+  const supabase = createServiceClient()
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
