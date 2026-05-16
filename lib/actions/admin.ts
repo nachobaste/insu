@@ -164,6 +164,46 @@ export async function overrideContractTrigger({
   }
 }
 
-export async function retryPayout(_payoutId: string): Promise<void> {
-  throw new Error('Not implemented')
+export async function retryPayout(payoutId: string): Promise<void> {
+  const { supabase } = await assertAdmin()
+
+  const { data: payout, error } = await supabase
+    .from('payouts')
+    .select('*, hedger_positions(user_id, id)')
+    .eq('id', payoutId)
+    .single()
+
+  if (error || !payout) throw new Error('Payout not found')
+
+  const p = payout as {
+    id: string; amount_usd: number; currency: string
+    hedger_positions: { user_id: string; id: string }
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('stripe_customer_id')
+    .eq('id', p.hedger_positions.user_id)
+    .single()
+
+  const stripe = getStripe()
+  let customerId = (profile as { stripe_customer_id: string | null } | null)?.stripe_customer_id
+  if (!customerId) {
+    const customer = await stripe.customers.create({ metadata: { user_id: p.hedger_positions.user_id } })
+    customerId = customer.id
+    await supabase.from('profiles').update({ stripe_customer_id: customerId }).eq('id', p.hedger_positions.user_id)
+  }
+
+  const txn = await stripe.customers.createBalanceTransaction(customerId, {
+    amount: -Math.round(p.amount_usd * 100),
+    currency: 'usd',
+  })
+
+  await supabase.from('payouts').update({
+    status: 'completed',
+    transfer_id: txn.id,
+    completed_at: new Date().toISOString(),
+  }).eq('id', payoutId)
+
+  await supabase.from('hedger_positions').update({ status: 'paid_out' }).eq('id', p.hedger_positions.id)
 }

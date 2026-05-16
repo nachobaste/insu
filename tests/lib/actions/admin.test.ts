@@ -205,3 +205,65 @@ describe('overrideContractTrigger', () => {
     ).rejects.toThrow('Forbidden')
   })
 })
+
+describe('retryPayout', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('issues Stripe credit and marks payout completed', async () => {
+    const userClientMock = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null }),
+        from: vi.fn(),
+      },
+    }
+    const mockPayout = {
+      id: 'pay-1',
+      hedger_position_id: 'hp-1',
+      amount_usd: 500,
+      currency: 'USD',
+      status: 'processing',
+      hedger_positions: { user_id: 'user-1', id: 'hp-1' },
+    }
+    const mockSupabase = makeSupabase({
+      stripeCustId: 'cus_abc',
+      tables: {
+        payouts: { data: mockPayout, error: null },
+      },
+    })
+    vi.mocked(createClient).mockReturnValue(userClientMock as never)
+    vi.mocked(createServiceClient).mockReturnValue(mockSupabase as never)
+
+    const mockStripeInstance = {
+      customers: {
+        create: vi.fn().mockResolvedValue({ id: 'cus_new' }),
+        createBalanceTransaction: vi.fn().mockResolvedValue({ id: 'txn_retry' }),
+      },
+    }
+    vi.mocked(Stripe).mockImplementation(function () { return mockStripeInstance } as never)
+
+    await retryPayout('pay-1')
+
+    expect(mockStripeInstance.customers.createBalanceTransaction).toHaveBeenCalledWith(
+      'cus_abc',
+      { amount: -50000, currency: 'usd' },
+    )
+  })
+
+  it('throws if payout not found', async () => {
+    const userClientMock = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null }),
+        from: vi.fn(),
+      },
+    }
+    const mockSupabase = makeSupabase({
+      tables: {
+        payouts: { data: null, error: { message: 'No rows found' } },
+      },
+    })
+    vi.mocked(createClient).mockReturnValue(userClientMock as never)
+    vi.mocked(createServiceClient).mockReturnValue(mockSupabase as never)
+
+    await expect(retryPayout('nonexistent')).rejects.toThrow('Payout not found')
+  })
+})
