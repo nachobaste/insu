@@ -93,12 +93,18 @@ describe('upsertContract', () => {
   })
 
   it('throws if deadline is in the past', async () => {
+    const mockSb = makeSupabase() as never
+    vi.mocked(createClient).mockReturnValue(mockSb)
+    vi.mocked(createServiceClient).mockReturnValue(mockSb)
     const past = new Date(Date.now() - 86400000).toISOString()
     await expect(upsertContract({ ...baseInput, trigger_deadline: past }))
       .rejects.toThrow('Deadline must be in the future')
   })
 
   it('throws if basic payout does not exceed basic premium', async () => {
+    const mockSb = makeSupabase() as never
+    vi.mocked(createClient).mockReturnValue(mockSb)
+    vi.mocked(createServiceClient).mockReturnValue(mockSb)
     const bad = { ...baseInput, basic_tier: { premium_usd: 500, payout_usd: 100, max_capacity_usd: 50000 } }
     await expect(upsertContract(bad)).rejects.toThrow('Payout must exceed premium')
   })
@@ -117,6 +123,9 @@ describe('upsertContract', () => {
   })
 
   it('throws if premium tier payout does not exceed premium tier premium', async () => {
+    const mockSb = makeSupabase() as never
+    vi.mocked(createClient).mockReturnValue(mockSb)
+    vi.mocked(createServiceClient).mockReturnValue(mockSb)
     const bad = { ...baseInput, premium_tier: { premium_usd: 2000, payout_usd: 500, max_capacity_usd: 100000 } }
     await expect(upsertContract(bad)).rejects.toThrow('Payout must exceed premium')
   })

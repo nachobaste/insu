@@ -23,6 +23,8 @@ async function assertAdmin() {
 }
 
 export async function upsertContract(input: UpsertContractInput): Promise<string> {
+  const { supabase, userId } = await assertAdmin()
+
   if (new Date(input.trigger_deadline) <= new Date()) {
     throw new Error('Deadline must be in the future')
   }
@@ -32,8 +34,6 @@ export async function upsertContract(input: UpsertContractInput): Promise<string
   if (input.premium_tier.payout_usd <= input.premium_tier.premium_usd) {
     throw new Error('Payout must exceed premium')
   }
-
-  const { supabase, userId } = await assertAdmin()
 
   const contractFields = {
     title: input.title,
@@ -115,7 +115,14 @@ export async function overrideContractTrigger({
     metadata: { outcome },
   })
 
-  if (!outcome) return
+  if (!outcome) {
+    await supabase
+      .from('hedger_positions')
+      .update({ status: 'settled_no_payout' })
+      .eq('contract_id', contractId)
+      .eq('status', 'active')
+    return
+  }
 
   const { data: positions } = await supabase
     .from('hedger_positions')
@@ -181,9 +188,11 @@ export async function retryPayout(payoutId: string): Promise<void> {
   if (error || !payout) throw new Error('Payout not found')
 
   const p = payout as {
-    id: string; amount_usd: number; currency: string
+    id: string; amount_usd: number; currency: string; status: string
     hedger_positions: { user_id: string; id: string }
   }
+
+  if (p.status === 'completed') throw new Error('Payout already completed')
 
   const { data: profile } = await supabase
     .from('profiles')
