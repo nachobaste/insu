@@ -85,8 +85,83 @@ export async function upsertContract(input: UpsertContractInput): Promise<string
   return contractId
 }
 
-export async function overrideContractTrigger(_args: { contractId: string; outcome: boolean; reason: string }): Promise<void> {
-  throw new Error('Not implemented')
+export async function overrideContractTrigger({
+  contractId,
+  outcome,
+  reason,
+}: {
+  contractId: string
+  outcome: boolean
+  reason: string
+}): Promise<void> {
+  const { supabase, userId } = await assertAdmin()
+
+  await supabase.from('contracts').update({
+    settled_outcome: outcome,
+    status: 'settled',
+    settled_at: new Date().toISOString(),
+  }).eq('id', contractId)
+
+  await supabase.from('admin_audit_log').insert({
+    admin_id: userId,
+    action: 'trigger_override',
+    contract_id: contractId,
+    reason,
+    metadata: { outcome },
+  })
+
+  if (!outcome) return
+
+  const { data: positions } = await supabase
+    .from('hedger_positions')
+    .select('*')
+    .eq('contract_id', contractId)
+    .eq('status', 'active')
+
+  if (!positions || (positions as unknown[]).length === 0) return
+
+  const stripe = getStripe()
+
+  for (const position of positions as Array<{
+    id: string; user_id: string; payout_amount_usd: number
+    payout_amount_mxn: number; currency: string
+  }>) {
+    const { data: newPayout } = await supabase.from('payouts').insert({
+      contract_id: contractId,
+      hedger_position_id: position.id,
+      amount_usd: position.payout_amount_usd,
+      amount_mxn: position.payout_amount_mxn,
+      currency: position.currency,
+      payment_provider: 'stripe',
+      status: 'processing',
+    }).select('id').single()
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('stripe_customer_id')
+      .eq('id', position.user_id)
+      .single()
+
+    let customerId = (profile as { stripe_customer_id: string | null } | null)?.stripe_customer_id
+    if (!customerId) {
+      const customer = await stripe.customers.create({ metadata: { user_id: position.user_id } })
+      customerId = customer.id
+      await supabase.from('profiles').update({ stripe_customer_id: customerId }).eq('id', position.user_id)
+    }
+
+    const txn = await stripe.customers.createBalanceTransaction(customerId, {
+      amount: -Math.round(position.payout_amount_usd * 100),
+      currency: 'usd',
+    })
+
+    await supabase.from('payouts').update({
+      status: 'completed',
+      transfer_id: txn.id,
+      completed_at: new Date().toISOString(),
+    }).eq('id', (newPayout as { id: string }).id)
+
+    await supabase.from('hedger_positions').update({ status: 'paid_out' }).eq('id', position.id)
+  }
 }
 
 export async function retryPayout(_payoutId: string): Promise<void> {

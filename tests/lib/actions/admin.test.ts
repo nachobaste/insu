@@ -2,7 +2,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn(), createServiceClient: vi.fn() }))
-vi.mock('stripe', () => ({ default: vi.fn() }))
+vi.mock('stripe', () => {
+  const MockStripe = vi.fn(function (this: unknown) { return this })
+  return { default: MockStripe }
+})
 
 import { upsertContract, overrideContractTrigger, retryPayout } from '@/lib/actions/admin'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
@@ -116,5 +119,89 @@ describe('upsertContract', () => {
   it('throws if premium tier payout does not exceed premium tier premium', async () => {
     const bad = { ...baseInput, premium_tier: { premium_usd: 2000, payout_usd: 500, max_capacity_usd: 100000 } }
     await expect(upsertContract(bad)).rejects.toThrow('Payout must exceed premium')
+  })
+})
+
+describe('overrideContractTrigger', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('settles contract and inserts audit log — no trigger (outcome=false)', async () => {
+    const userClientMock = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null }),
+      },
+      from: vi.fn(),
+    }
+    const mockSupabase = makeSupabase({
+      tables: {
+        contracts: { data: null, error: null },
+        admin_audit_log: { data: null, error: null },
+        hedger_positions: { data: [], error: null },
+      },
+    })
+    vi.mocked(createClient).mockReturnValue(userClientMock as never)
+    vi.mocked(createServiceClient).mockReturnValue(mockSupabase as never)
+
+    await overrideContractTrigger({ contractId: 'c-1', outcome: false, reason: 'test' })
+
+    const fromCalls = mockSupabase.from.mock.calls.map((c: unknown[]) => c[0])
+    expect(fromCalls).toContain('contracts')
+    expect(fromCalls).toContain('admin_audit_log')
+    // Stripe should NOT be instantiated when outcome = false
+    expect(vi.mocked(Stripe)).not.toHaveBeenCalled()
+  })
+
+  it('settles contract, issues Stripe credits for each hedger — outcome=true', async () => {
+    const userClientMock = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null }),
+      },
+      from: vi.fn(),
+    }
+    const mockSupabase = makeSupabase({
+      stripeCustId: 'cus_existing',
+      tables: {
+        contracts: { data: null, error: null },
+        admin_audit_log: { data: null, error: null },
+        hedger_positions: {
+          data: [
+            { id: 'hp-1', user_id: 'user-1', payout_amount_usd: 500, payout_amount_mxn: 8500, currency: 'USD', status: 'active' },
+          ],
+          error: null,
+        },
+        payouts: { data: { id: 'pay-1' }, error: null },
+      },
+    })
+    vi.mocked(createClient).mockReturnValue(userClientMock as never)
+    vi.mocked(createServiceClient).mockReturnValue(mockSupabase as never)
+
+    const mockStripeInstance = {
+      customers: {
+        create: vi.fn().mockResolvedValue({ id: 'cus_new' }),
+        createBalanceTransaction: vi.fn().mockResolvedValue({ id: 'txn_1' }),
+      },
+    }
+    vi.mocked(Stripe).mockImplementation(function () { return mockStripeInstance as never })
+
+    await overrideContractTrigger({ contractId: 'c-1', outcome: true, reason: 'oracle outage' })
+
+    expect(mockStripeInstance.customers.createBalanceTransaction).toHaveBeenCalledWith(
+      'cus_existing',
+      { amount: -50000, currency: 'usd' },
+    )
+  })
+
+  it('throws Forbidden if caller is not admin', async () => {
+    const userClientMock = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }),
+      },
+      from: vi.fn(),
+    }
+    vi.mocked(createClient).mockReturnValue(userClientMock as never)
+    vi.mocked(createServiceClient).mockReturnValue(makeSupabase({ role: 'hedger' }) as never)
+    await expect(
+      overrideContractTrigger({ contractId: 'c-1', outcome: false, reason: 'test' })
+    ).rejects.toThrow('Forbidden')
   })
 })
