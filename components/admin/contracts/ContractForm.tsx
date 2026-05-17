@@ -121,11 +121,33 @@ export function ContractForm({ categories, contract }: Props) {
   const labelCls = 'mb-1 block text-[11px] uppercase tracking-wider text-insu-muted'
   const selectCls = inputCls + ' cursor-pointer'
 
+  const isUserSubmission = contract?.status === 'pending'
+    && !!(contract?.trigger_condition as Record<string, unknown>)?._user_submission
+
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
       <h1 className="font-display text-2xl tracking-wide text-insu-text">
-        {contract ? 'Edit Contract' : 'New Contract'}
+        {contract ? (isUserSubmission ? 'Review Submission' : 'Edit Contract') : 'New Contract'}
       </h1>
+
+      {isUserSubmission && (
+        <div className="rounded-md border border-insu-accent/30 bg-insu-accent/[0.06] px-4 py-3 text-sm">
+          <p className="mb-1 font-semibold text-insu-accent">User submission</p>
+          <p className="text-insu-dim">
+            This contract was submitted by a user. Review the pitch below, fill in the trigger condition and coverage tiers, then set status to <strong className="text-insu-text">active</strong> to publish it.
+          </p>
+          {!!(contract?.trigger_condition as Record<string, unknown>)?.description && (
+            <p className="mt-2 rounded bg-black/20 px-3 py-2 font-mono text-[12px] text-insu-muted">
+              Pitch: &quot;{String((contract.trigger_condition as Record<string, unknown>).description)}&quot;
+            </p>
+          )}
+          {!!(contract?.trigger_condition as Record<string, unknown>)?.proposed_payout && (
+            <p className="mt-1 font-mono text-[12px] text-insu-muted">
+              Proposed payout: ${String((contract.trigger_condition as Record<string, unknown>).proposed_payout)}
+            </p>
+          )}
+        </div>
+      )}
 
       {error && (
         <p className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>

@@ -10,10 +10,20 @@ const STATUS_STYLES: Record<string, string> = {
 }
 
 export function ContractList({ contracts }: { contracts: ContractWithTiers[] }) {
+  const pending = contracts.filter((c) => c.status === 'pending')
+  const rest = contracts.filter((c) => c.status !== 'pending')
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-display text-2xl tracking-wide text-insu-text">Contracts</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="font-display text-2xl tracking-wide text-insu-text">Contracts</h1>
+          {pending.length > 0 && (
+            <span className="rounded-full bg-insu-accent/15 px-2.5 py-0.5 text-[12px] font-semibold text-insu-accent">
+              {pending.length} pending review
+            </span>
+          )}
+        </div>
         <Link
           href="/admin/contracts/new"
           className="rounded-md bg-insu-accent px-4 py-2 text-sm font-bold text-bg hover:bg-[#f7b84a]"
@@ -22,7 +32,38 @@ export function ContractList({ contracts }: { contracts: ContractWithTiers[] }) 
         </Link>
       </div>
 
-      <div className="rounded-lg border border-white/[0.07] overflow-hidden">
+      {/* Pending submissions section */}
+      {pending.length > 0 && (
+        <div className="mb-6 rounded-lg border border-insu-accent/20 bg-insu-accent/[0.03] p-4">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-insu-accent">
+            User submissions — awaiting review
+          </p>
+          <div className="space-y-2">
+            {pending.map((c) => (
+              <div
+                key={c.id}
+                className="flex items-center justify-between rounded-md border border-white/[0.06] bg-bg-card px-4 py-3"
+              >
+                <div>
+                  <p className="text-[14px] font-medium text-insu-text">{c.title}</p>
+                  <p className="mt-0.5 text-[11px] text-insu-muted">
+                    {c.category?.name} · {c.trigger_type} · submitted {new Date(c.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <Link
+                  href={`/admin/contracts/${c.id}`}
+                  className="rounded-md bg-insu-accent px-3 py-1.5 text-[12px] font-bold text-bg hover:bg-[#f7b84a]"
+                >
+                  Review →
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* All contracts table */}
+      <div className="overflow-hidden rounded-lg border border-white/[0.07]">
         <div className="grid grid-cols-[1fr_100px_80px_90px_60px] gap-3 border-b border-white/[0.07] bg-white/[0.02] px-4 py-2.5 text-[11px] uppercase tracking-wider text-insu-muted">
           <span>Title</span><span>Category</span><span>Type</span><span>Status</span><span>Action</span>
         </div>
@@ -31,7 +72,7 @@ export function ContractList({ contracts }: { contracts: ContractWithTiers[] }) 
           <p className="px-4 py-8 text-center text-sm text-insu-muted">No contracts yet.</p>
         )}
 
-        {contracts.map((c) => (
+        {[...pending, ...rest].map((c) => (
           <div
             key={c.id}
             className={cn(
@@ -54,7 +95,7 @@ export function ContractList({ contracts }: { contracts: ContractWithTiers[] }) 
               href={`/admin/contracts/${c.id}`}
               className="self-center text-[13px] text-blue-400 hover:text-blue-300"
             >
-              Edit
+              {c.status === 'pending' ? 'Review' : 'Edit'}
             </Link>
           </div>
         ))}
