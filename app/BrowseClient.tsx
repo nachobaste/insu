@@ -4,7 +4,9 @@ import { useState } from 'react'
 import CategoryTabs from '@/components/layout/CategoryTabs'
 import StatsBar from '@/components/contracts/StatsBar'
 import ContractSection from '@/components/contracts/ContractSection'
+import TrendingSection from '@/components/contracts/TrendingSection'
 import { useRealtimeContracts } from '@/hooks/useRealtimeContracts'
+import { scoreTrending } from '@/lib/trending'
 import type { Category, ContractWithTiers } from '@/lib/types'
 
 interface Props {
@@ -21,6 +23,7 @@ interface Props {
 export default function BrowseClient({ categories, initialContracts, stats }: Props) {
   const [activeSlug, setActiveSlug] = useState<string>('all')
   const contracts = useRealtimeContracts(initialContracts)
+  const trendingContracts = scoreTrending(contracts)
 
   const visibleCategories =
     activeSlug === 'all'
@@ -37,6 +40,10 @@ export default function BrowseClient({ categories, initialContracts, stats }: Pr
 
       <main className="mx-auto max-w-[1320px] px-8 py-7">
         <StatsBar stats={stats} />
+
+        {trendingContracts.length >= 2 && (
+          <TrendingSection contracts={trendingContracts} currency="USD" />
+        )}
 
         {visibleCategories.map((cat) => {
           const catContracts = contracts.filter(
