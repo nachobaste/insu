@@ -4,11 +4,11 @@ import { useRouter } from 'next/navigation'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { ContractWithTiers, Currency } from '@/lib/types'
 
-const CATEGORY_STYLES: Record<string, { border: string; icon: string; text: string; pill: string }> = {
-  urban:       { border: 'border-category-urban',       icon: 'bg-category-urban/10',       text: 'text-category-urban',       pill: 'bg-category-urban/10 text-category-urban' },
-  nature:      { border: 'border-category-nature',      icon: 'bg-category-nature/10',      text: 'text-category-nature',      pill: 'bg-category-nature/10 text-category-nature' },
-  experiences: { border: 'border-category-experiences', icon: 'bg-category-experiences/10', text: 'text-category-experiences', pill: 'bg-category-experiences/10 text-category-experiences' },
-  events:      { border: 'border-category-events',      icon: 'bg-category-events/10',      text: 'text-category-events',      pill: 'bg-category-events/10 text-category-events' },
+const CATEGORY_STYLES: Record<string, { topBar: string; icon: string; text: string; pill: string }> = {
+  urban:       { topBar: 'before:bg-category-urban',       icon: 'bg-category-urban/10',       text: 'text-category-urban',       pill: 'bg-category-urban/10 text-category-urban' },
+  nature:      { topBar: 'before:bg-category-nature',      icon: 'bg-category-nature/10',      text: 'text-category-nature',      pill: 'bg-category-nature/10 text-category-nature' },
+  experiences: { topBar: 'before:bg-category-experiences', icon: 'bg-category-experiences/10', text: 'text-category-experiences', pill: 'bg-category-experiences/10 text-category-experiences' },
+  events:      { topBar: 'before:bg-category-events',      icon: 'bg-category-events/10',      text: 'text-category-events',      pill: 'bg-category-events/10 text-category-events' },
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -54,7 +54,7 @@ export default function TrendingSection({ contracts, currency }: Props) {
                 'relative cursor-pointer overflow-hidden rounded-card border border-white/[0.07] bg-bg-card p-[14px]',
                 'transition-all duration-200 hover:-translate-y-0.5 hover:bg-bg-card-hover',
                 'before:absolute before:inset-x-0 before:top-0 before:h-[2px]',
-                styles.border,
+                styles.topBar,
               )}
             >
               <div

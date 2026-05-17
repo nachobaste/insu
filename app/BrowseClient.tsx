@@ -45,6 +45,12 @@ export default function BrowseClient({ categories, initialContracts, stats }: Pr
           <TrendingSection contracts={trendingContracts} currency="USD" />
         )}
 
+        {trendingContracts.length >= 2 && (
+          <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.08em] text-insu-muted">
+            All contracts
+          </p>
+        )}
+
         {visibleCategories.map((cat) => {
           const catContracts = contracts.filter(
             (c) => c.category?.slug === cat.slug
