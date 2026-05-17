@@ -63,6 +63,62 @@ const SIDES = [
   },
 ]
 
+const SHOWCASE = [
+  {
+    photo: 'https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?auto=format&fit=crop&w=900&q=80',
+    alt: 'Heavy rain flooding a city street',
+    category: 'Nature',
+    categoryColor: '#34d399',
+    contract: 'Guadalajara Flash Flood',
+    trigger: 'Rain > 40 mm in 24 h',
+    premium: '$39',
+    payout: '$800',
+  },
+  {
+    photo: 'https://images.unsplash.com/photo-1470093851219-69951fcbb533?auto=format&fit=crop&w=900&q=80',
+    alt: 'City highway traffic jam at dawn',
+    category: 'Urban',
+    categoryColor: '#94a3b8',
+    contract: 'CDMX Morning Traffic Delay',
+    trigger: 'Traffic index > 85 (7–10 AM)',
+    premium: '$29',
+    payout: '$500',
+  },
+  {
+    photo: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=900&q=80',
+    alt: 'Marathon runners on a city street',
+    category: 'Experiences',
+    categoryColor: '#fb923c',
+    contract: 'CDMX Marathon Rain Cover',
+    trigger: 'Rain > 20 mm race morning',
+    premium: '$24',
+    payout: '$450',
+  },
+  {
+    photo: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=80',
+    alt: 'Colorful outdoor street food market',
+    category: 'Experiences',
+    categoryColor: '#fb923c',
+    contract: 'Oaxaca Street Food Festival',
+    trigger: 'Rain > 25 mm on event day',
+    premium: '$18',
+    payout: '$350',
+  },
+]
+
+const SCREENSHOTS = [
+  {
+    src: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
+    alt: 'Dashboard analytics overview',
+    label: 'Live marketplace — browse and filter active contracts',
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
+    alt: 'Financial charts and data',
+    label: 'Oracle monitor — real-time data feeds and trigger status',
+  },
+]
+
 const STATS = [
   { value: '$103K+', label: 'Total volume protected' },
   { value: '< 10 min', label: 'Average payout time' },
@@ -120,6 +176,90 @@ export default function HowItWorksPage() {
               <div className="mt-0.5 text-[12px] font-medium uppercase tracking-wider text-insu-muted">{s.label}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── SHOWCASE ─────────────────────────────────────────────── */}
+      <section className="border-b border-white/[0.06] px-8 py-20">
+        <div className="mx-auto max-w-[1100px]">
+          <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-insu-muted">
+            Real events
+          </p>
+          <h2 className="mb-12 font-display text-[clamp(36px,5vw,64px)] leading-tight tracking-[1px] text-insu-text">
+            Risks people face
+            <br />
+            <span className="text-insu-accent">every day.</span>
+          </h2>
+
+          {/* Event photo grid */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {SHOWCASE.map((item) => (
+              <div
+                key={item.contract}
+                className="group relative overflow-hidden rounded-[14px] border border-white/[0.07]"
+                style={{ aspectRatio: '3/4' }}
+              >
+                {/* Photo */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.photo}
+                  alt={item.alt}
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/60 to-transparent" />
+
+                {/* Content */}
+                <div className="absolute inset-x-0 bottom-0 p-5">
+                  <span
+                    className="mb-2 inline-block font-mono text-[9px] font-bold uppercase tracking-[0.18em]"
+                    style={{ color: item.categoryColor }}
+                  >
+                    {item.category}
+                  </span>
+                  <p className="mb-3 text-[13px] font-semibold leading-snug text-insu-text">
+                    {item.contract}
+                  </p>
+                  <p className="mb-3 font-mono text-[10px] text-insu-muted">{item.trigger}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-md bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-insu-dim">
+                      {item.premium} premium
+                    </span>
+                    <span className="text-insu-muted">→</span>
+                    <span className="rounded-md bg-insu-accent/10 px-2.5 py-1 text-[11px] font-semibold text-insu-accent">
+                      {item.payout} payout
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* App screenshot strip */}
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            {SCREENSHOTS.map((s) => (
+              <div key={s.label} className="overflow-hidden rounded-[14px] border border-white/[0.07]">
+                {/* Browser chrome */}
+                <div className="flex items-center gap-1.5 border-b border-white/[0.07] bg-bg-card px-4 py-2.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
+                  <span className="ml-2 flex-1 rounded bg-white/[0.05] px-3 py-0.5 font-mono text-[10px] text-insu-muted">
+                    insu-theta.vercel.app
+                  </span>
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={s.src}
+                  alt={s.alt}
+                  className="aspect-video w-full object-cover"
+                />
+                <div className="border-t border-white/[0.07] bg-bg-card px-4 py-3">
+                  <p className="text-[12px] text-insu-muted">{s.label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
