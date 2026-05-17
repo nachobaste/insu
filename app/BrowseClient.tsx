@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import CategoryTabs from '@/components/layout/CategoryTabs'
 import StatsBar from '@/components/contracts/StatsBar'
 import ContractSection from '@/components/contracts/ContractSection'
@@ -23,7 +23,7 @@ interface Props {
 export default function BrowseClient({ categories, initialContracts, stats }: Props) {
   const [activeSlug, setActiveSlug] = useState<string>('all')
   const contracts = useRealtimeContracts(initialContracts)
-  const trendingContracts = scoreTrending(contracts)
+  const trendingContracts = useMemo(() => scoreTrending(contracts), [contracts])
 
   const visibleCategories =
     activeSlug === 'all'
