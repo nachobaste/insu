@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { ContractForm } from '@/components/admin/contracts/ContractForm'
 import type { Category, ContractWithTiers } from '@/lib/types'
 
 export default async function EditContractPage({ params }: { params: { id: string } }) {
-  const supabase = createClient()
+  const supabase = createServiceClient()
 
   const categoriesResult = await supabase.from('categories').select('*').order('display_order')
   const contractResult = await supabase
