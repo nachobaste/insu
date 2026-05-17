@@ -51,7 +51,7 @@ export default function TrendingSection({ contracts, currency }: Props) {
               key={contract.id}
               onClick={() => router.push(`/markets/${contract.slug}`)}
               className={cn(
-                'relative cursor-pointer overflow-hidden rounded-card border bg-bg-card p-[14px]',
+                'relative cursor-pointer overflow-hidden rounded-card border border-white/[0.07] bg-bg-card p-[14px]',
                 'transition-all duration-200 hover:-translate-y-0.5 hover:bg-bg-card-hover',
                 'before:absolute before:inset-x-0 before:top-0 before:h-[2px]',
                 styles.border,

@@ -73,4 +73,9 @@ describe('TrendingSection', () => {
     const { container } = render(<TrendingSection contracts={[]} currency="USD" />)
     expect(container.firstChild).toBeNull()
   })
+
+  it('renders the cheapest tier premium as the "from" price in MXN', () => {
+    render(<TrendingSection contracts={[makeContract({})]} currency="MXN" />)
+    expect(screen.getByText('MX$1,700')).toBeInTheDocument()
+  })
 })
