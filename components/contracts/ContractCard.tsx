@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { cn, formatCurrency, formatVolume } from '@/lib/utils'
 import type { ContractWithTiers, Currency, CoverageLevel } from '@/lib/types'
 
@@ -72,7 +73,7 @@ export default function ContractCard({ contract, currency, badge }: Props) {
         )}
       >
         {contract.icon_url ? (
-          <img src={contract.icon_url} alt="" className="h-5 w-5" />
+          <Image src={contract.icon_url} alt="" width={20} height={20} />
         ) : (
           <span aria-hidden="true">◆</span>
         )}

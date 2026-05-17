@@ -2,19 +2,9 @@
 
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
+import { validateCapacity } from '@/lib/utils/capacity'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? 'sk_test_placeholder')
-
-export function validateCapacity(
-  maxCapacity: number,
-  currentCapacity: number,
-  requestedAmount: number,
-): string | null {
-  const remaining = maxCapacity - currentCapacity
-  if (remaining <= 0) return 'This tier is at capacity'
-  if (requestedAmount > remaining) return `Maximum available: $${remaining.toLocaleString()}`
-  return null
-}
 
 export async function createHedgerPaymentIntent(
   tierId: string,

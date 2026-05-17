@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateCapacity } from '@/lib/actions/purchase'
+import { validateCapacity } from '@/lib/utils/capacity'
 
 describe('validateCapacity', () => {
   it('returns null when capacity is available', () => {

@@ -43,6 +43,7 @@ export async function fetchTomorrowReading(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function fetchWazeReading(_lat: number, _lng: number): FetchedReading {
   // Waze has no public API. Returns stub — urban contracts use admin manual override.
   return {
