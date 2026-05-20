@@ -32,6 +32,13 @@ export function categoryColorClass(slug: string): string {
   return map[slug] ?? ''
 }
 
+export function countryFlag(code: string | undefined | null): string {
+  if (!code || code.length < 2) return ''
+  return Array.from(code.toUpperCase().slice(0, 2))
+    .map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65))
+    .join('')
+}
+
 export function categoryTextClass(slug: string): string {
   const map: Record<string, string> = {
     urban:       'text-category-urban',

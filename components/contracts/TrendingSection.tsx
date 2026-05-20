@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { cn, formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency, countryFlag } from '@/lib/utils'
 import type { ContractWithTiers, Currency } from '@/lib/types'
 
 const CATEGORY_STYLES: Record<string, { topBar: string; icon: string; text: string; pill: string }> = {
@@ -66,8 +66,12 @@ export default function TrendingSection({ contracts, currency }: Props) {
                 <span aria-hidden="true">{CATEGORY_ICONS[slug] ?? '◆'}</span>
               </div>
 
-              <p className="mb-2.5 text-[11px] font-semibold leading-[1.4] text-insu-text">
+              <p className="mb-1 text-[11px] font-semibold leading-[1.4] text-insu-text">
                 {contract.title}
+              </p>
+              <p className="mb-2 flex items-center gap-0.5 text-[10px] text-insu-muted">
+                <span aria-hidden="true">{countryFlag(contract.location?.country ?? 'MX')}</span>
+                <span>{contract.location?.city ?? ''}</span>
               </p>
 
               <div className="flex items-center justify-between">

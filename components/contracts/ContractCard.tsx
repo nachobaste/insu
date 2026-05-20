@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { cn, formatCurrency, formatVolume } from '@/lib/utils'
+import { cn, formatCurrency, formatVolume, countryFlag } from '@/lib/utils'
 import type { ContractWithTiers, Currency, CoverageLevel } from '@/lib/types'
 
 const CARD_STYLES: Record<string, string> = {
@@ -84,8 +84,14 @@ export default function ContractCard({ contract, currency, badge }: Props) {
       </div>
 
       {/* Title */}
-      <p className="mb-3.5 min-h-[40px] text-[13.5px] font-semibold leading-[1.45] text-insu-text">
+      <p className="mb-1.5 text-[13.5px] font-semibold leading-[1.45] text-insu-text">
         {contract.title}
+      </p>
+
+      {/* Location */}
+      <p className="mb-3 flex items-center gap-1 text-[11px] text-insu-muted">
+        <span aria-hidden="true">{countryFlag(contract.location?.country ?? 'MX')}</span>
+        <span>{contract.location?.city ?? ''}</span>
       </p>
 
       {/* Price rows */}
