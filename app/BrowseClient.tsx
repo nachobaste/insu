@@ -35,9 +35,9 @@ export default function BrowseClient({ categories, initialContracts, stats }: Pr
     return contracts.filter((c) =>
       c.title.toLowerCase().includes(normalizedQuery) ||
       (c.description ?? '').toLowerCase().includes(normalizedQuery) ||
-      c.location.city.toLowerCase().includes(normalizedQuery) ||
-      c.location.country.toLowerCase().includes(normalizedQuery) ||
-      c.category.name.toLowerCase().includes(normalizedQuery)
+      (c.location?.city ?? '').toLowerCase().includes(normalizedQuery) ||
+      (c.location?.country ?? '').toLowerCase().includes(normalizedQuery) ||
+      (c.category?.name ?? '').toLowerCase().includes(normalizedQuery)
     )
   }, [contracts, normalizedQuery, isSearching])
 
