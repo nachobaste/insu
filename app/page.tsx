@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/Header'
 import BrowseClient from './BrowseClient'
+import { SearchProvider } from '@/lib/search-context'
 import type { ContractWithTiers, Category } from '@/lib/types'
 
 async function getCategories(): Promise<Category[]> {
@@ -78,14 +79,14 @@ export default async function BrowsePage() {
   if (!isConfigured) {
     // Dev/test mode without Supabase credentials — render empty shell
     return (
-      <>
+      <SearchProvider>
         <Header />
         <BrowseClient
           categories={FALLBACK_CATEGORIES}
           initialContracts={[]}
           stats={{ totalVolumeUsd: 0, activeContracts: 0, protectionsSold: 0, avgPayoutMinutes: 4.2 }}
         />
-      </>
+      </SearchProvider>
     )
   }
 
@@ -96,13 +97,13 @@ export default async function BrowsePage() {
   ])
 
   return (
-    <>
+    <SearchProvider>
       <Header />
       <BrowseClient
         categories={categories}
         initialContracts={contracts}
         stats={stats}
       />
-    </>
+    </SearchProvider>
   )
 }

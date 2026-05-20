@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import { Search } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import SearchInput from './SearchInput'
 
 export default async function Header() {
   let userId: string | null = null
@@ -33,13 +33,7 @@ export default async function Header() {
 
       {/* Search */}
       <div className="flex max-w-[440px] flex-1 items-center gap-2.5 rounded-lg border border-white/[0.07] bg-white/[0.04] px-3.5 py-2.5 transition-colors focus-within:border-insu-accent/30 focus-within:bg-insu-accent/[0.03]">
-        <Search size={13} className="flex-shrink-0 text-insu-muted" />
-        <input
-          type="text"
-          aria-label="Search contracts"
-          placeholder="Search contracts, events, locations…"
-          className="flex-1 bg-transparent font-body text-[13.5px] text-insu-text outline-none placeholder:text-insu-muted"
-        />
+        <SearchInput />
       </div>
 
       <div className="flex-1" />
