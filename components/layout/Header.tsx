@@ -16,11 +16,11 @@ export default async function Header() {
     <header className="sticky top-0 z-50 flex h-[60px] items-center gap-5 border-b border-white/[0.07] bg-bg/85 px-8 backdrop-blur-xl">
       {/* Logo */}
       <Link href="/" className="flex flex-shrink-0 items-center gap-2.5">
-        <svg width="44" height="26" viewBox="0 0 44 26" fill="none" aria-hidden>
-          {/* House/building shape — left */}
-          <polygon points="0,26 0,13 11,1 22,13 22,26" fill="#e8edf5" />
-          {/* Parallelogram — right */}
-          <polygon points="26,26 33,1 44,1 44,26" fill="#f5a623" />
+        <svg width="50" height="28" viewBox="0 0 50 28" fill="none" aria-hidden>
+          {/* Triangle — left */}
+          <polygon points="0,28 12,1 24,28" fill="#e8edf5" />
+          {/* Right trapezoid — diagonal left edge, vertical right edge */}
+          <polygon points="27,28 33,1 50,1 50,28" fill="#f5a623" />
         </svg>
         <span className="font-display text-[26px] tracking-[4px] text-insu-text">
           INSU
