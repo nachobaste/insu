@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { cn, formatCurrency, categoryTextClass } from '@/lib/utils'
+import { cn, formatCurrency, categoryTextClass, countryFlag } from '@/lib/utils'
 import type { ContractDetailData } from '@/lib/types'
 import ContractMeta from './ContractMeta'
 import PriceChart from './PriceChart'
@@ -40,6 +40,12 @@ export default function ContractDetailClient({ contract, userId }: Props) {
             <h1 className="mt-1 text-[24px] font-semibold leading-snug text-insu-text">
               {contract.title}
             </h1>
+            {contract.location?.city && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-[12px] text-insu-muted">
+                <span aria-hidden="true">{countryFlag(contract.location?.country ?? 'MX')}</span>
+                <span>{contract.location.city}</span>
+              </p>
+            )}
             {contract.description && (
               <p className="mt-2 text-[14px] text-insu-muted">{contract.description}</p>
             )}
