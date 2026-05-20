@@ -73,7 +73,11 @@ export default function ContractCard({ contract, currency, badge }: Props) {
         )}
       >
         {contract.icon_url ? (
-          <Image src={contract.icon_url} alt="" width={20} height={20} />
+          contract.icon_url.startsWith('http') || contract.icon_url.startsWith('/') ? (
+            <Image src={contract.icon_url} alt="" width={20} height={20} />
+          ) : (
+            <span aria-hidden="true" className="text-base leading-none">{contract.icon_url}</span>
+          )
         ) : (
           <span aria-hidden="true">◆</span>
         )}
