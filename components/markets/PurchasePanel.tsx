@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import type { ContractWithTiers } from '@/lib/types'
+import { computePeriodFactor } from '@/lib/pricing/engine'
 import TierSelector from './TierSelector'
 import AuthGate from './AuthGate'
 import StripePaymentForm from './StripePaymentForm'
@@ -10,6 +11,12 @@ import { createHedgerPaymentIntent, createProviderPaymentIntent } from '@/lib/ac
 
 type PanelMode = 'buy' | 'provide'
 type Step = 'select' | 'payment' | 'done'
+
+const PERIOD_OPTIONS = [
+  { days: 1,  label: '1 day' },
+  { days: 7,  label: '7 days' },
+  { days: 30, label: '30 days' },
+] as const
 
 interface Props {
   contract: ContractWithTiers
@@ -23,16 +30,31 @@ export default function PurchasePanel({ contract, userId, open, initialMode, onC
   const [mode, setMode] = useState<PanelMode>(initialMode)
   const [step, setStep] = useState<Step>('select')
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null)
+  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(null)
   const [depositAmount, setDepositAmount] = useState('')
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const isRecurring = (['weather', 'urban'] as const).includes(
+    contract.trigger_type as 'weather' | 'urban',
+  )
+
+  const periodFactor =
+    isRecurring && selectedPeriodDays
+      ? computePeriodFactor(selectedPeriodDays, contract)
+      : 1.0
+
+  const basicTier = [...contract.coverage_tiers].sort((a, b) =>
+    a.name === 'basic' ? -1 : b.name === 'basic' ? 1 : 0,
+  )[0]
 
   const selectedTier = contract.coverage_tiers.find((t) => t.id === selectedTierId)
 
   function switchMode(next: PanelMode) {
     setMode(next)
     setSelectedTierId(null)
+    setSelectedPeriodDays(null)
     setStep('select')
     setClientSecret(null)
     setError(null)
@@ -41,6 +63,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, onC
   function handleClose() {
     setStep('select')
     setSelectedTierId(null)
+    setSelectedPeriodDays(null)
     setClientSecret(null)
     setError(null)
     onClose()
@@ -53,7 +76,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, onC
 
     const result =
       mode === 'buy'
-        ? await createHedgerPaymentIntent(selectedTierId)
+        ? await createHedgerPaymentIntent(selectedTierId, selectedPeriodDays ?? undefined)
         : await createProviderPaymentIntent(selectedTierId, parseFloat(depositAmount) || 0)
 
     setLoading(false)
@@ -146,6 +169,41 @@ export default function PurchasePanel({ contract, userId, open, initialMode, onC
 
               {step === 'select' ? (
                 <>
+                  {/* Period selector — recurring buy only */}
+                  {isRecurring && mode === 'buy' && (
+                    <div className="mb-5">
+                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-insu-muted">
+                        Coverage period
+                      </p>
+                      <div className="flex gap-2">
+                        {PERIOD_OPTIONS.map(({ days, label }) => {
+                          const pf = computePeriodFactor(days, contract)
+                          const fromPrice = formatCurrency(
+                            Math.round(basicTier.premium_usd * pf * 100) / 100,
+                            'USD',
+                          )
+                          return (
+                            <button
+                              key={days}
+                              onClick={() => setSelectedPeriodDays(days)}
+                              className={cn(
+                                'flex flex-1 flex-col items-center rounded-lg border py-2.5 text-[11px] font-semibold transition-all',
+                                selectedPeriodDays === days
+                                  ? 'border-insu-accent/50 bg-insu-accent/5 text-insu-accent'
+                                  : 'border-white/[0.07] bg-bg-card text-insu-muted hover:border-white/15',
+                              )}
+                            >
+                              {label}
+                              <span className="mt-0.5 font-mono text-[9px] font-normal opacity-70">
+                                from {fromPrice}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-insu-muted">
                     Select tier
                   </p>
@@ -154,6 +212,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, onC
                     selectedTierId={selectedTierId}
                     onSelect={setSelectedTierId}
                     mode={mode}
+                    periodFactor={mode === 'buy' ? periodFactor : undefined}
                   />
 
                   {mode === 'provide' && selectedTierId && (
@@ -187,6 +246,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, onC
                     disabled={
                       !selectedTierId ||
                       loading ||
+                      (isRecurring && mode === 'buy' && selectedPeriodDays === null) ||
                       (mode === 'provide' && (!depositAmount || parseFloat(depositAmount) < 10))
                     }
                     className="mt-5 w-full rounded-lg bg-insu-accent py-3 text-[14px] font-bold text-bg transition-all hover:bg-[#f7b84a] disabled:opacity-40"
@@ -197,7 +257,9 @@ export default function PurchasePanel({ contract, userId, open, initialMode, onC
               ) : clientSecret && selectedTier ? (
                 <StripePaymentForm
                   clientSecret={clientSecret}
-                  amountUsd={mode === 'buy' ? selectedTier.premium_usd : parseFloat(depositAmount)}
+                  amountUsd={mode === 'buy'
+                    ? Math.round(selectedTier.premium_usd * periodFactor * 100) / 100
+                    : parseFloat(depositAmount)}
                   onSuccess={() => setStep('done')}
                   onError={(msg) => { setError(msg); setStep('select') }}
                 />

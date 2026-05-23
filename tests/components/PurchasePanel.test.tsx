@@ -45,6 +45,15 @@ const mockContract: ContractWithTiers = {
   ],
 }
 
+// Recurring contract (weather) — same shape but different trigger_type and slug
+const recurringContract: ContractWithTiers = {
+  ...mockContract,
+  id: 'wx-456',
+  slug: 'heat-wave-cdmx',
+  title: 'Heat wave in CDMX?',
+  trigger_type: 'weather',
+}
+
 describe('PurchasePanel', () => {
   it('shows AuthGate when userId is null', () => {
     render(<PurchasePanel contract={mockContract} userId={null} open initialMode="buy" onClose={vi.fn()} />)
@@ -72,5 +81,46 @@ describe('PurchasePanel', () => {
   it('panel is translated off-screen when open is false', () => {
     render(<PurchasePanel contract={mockContract} userId="user-1" open={false} initialMode="buy" onClose={vi.fn()} />)
     expect(screen.getByRole('dialog').className).toContain('translate-x-full')
+  })
+
+  // Period selector — recurring contract
+  it('shows period pills for weather contract in buy mode', () => {
+    render(<PurchasePanel contract={recurringContract} userId="user-1" open initialMode="buy" onClose={vi.fn()} />)
+    expect(screen.getByText('1 day')).toBeInTheDocument()
+    expect(screen.getByText('7 days')).toBeInTheDocument()
+    expect(screen.getByText('30 days')).toBeInTheDocument()
+  })
+
+  it('does not show period pills for manual contract', () => {
+    render(<PurchasePanel contract={mockContract} userId="user-1" open initialMode="buy" onClose={vi.fn()} />)
+    expect(screen.queryByText('7 days')).not.toBeInTheDocument()
+  })
+
+  it('does not show period pills in provide mode for recurring contract', async () => {
+    render(<PurchasePanel contract={recurringContract} userId="user-1" open initialMode="buy" onClose={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /provide capital/i }))
+    expect(screen.queryByText('7 days')).not.toBeInTheDocument()
+  })
+
+  it('period pills reset when switching back to buy mode', async () => {
+    render(<PurchasePanel contract={recurringContract} userId="user-1" open initialMode="buy" onClose={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /7 days/i }))
+    await userEvent.click(screen.getByRole('button', { name: /provide capital/i }))
+    await userEvent.click(screen.getByRole('button', { name: /buy protection/i }))
+    // After switching back, no period is selected — Continue is disabled
+    const continueBtn = screen.getByRole('button', { name: /continue to payment/i })
+    expect(continueBtn).toBeDisabled()
+  })
+
+  it('Continue button is disabled until period is selected for recurring contract', () => {
+    render(<PurchasePanel contract={recurringContract} userId="user-1" open initialMode="buy" onClose={vi.fn()} />)
+    expect(screen.getByRole('button', { name: /continue to payment/i })).toBeDisabled()
+  })
+
+  it('Continue button enables after period and tier are both selected', async () => {
+    render(<PurchasePanel contract={recurringContract} userId="user-1" open initialMode="buy" onClose={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /7 days/i }))
+    await userEvent.click(screen.getByRole('button', { name: /basic/i }))
+    expect(screen.getByRole('button', { name: /continue to payment/i })).not.toBeDisabled()
   })
 })
