@@ -60,6 +60,11 @@ describe('computeOracleMultiplier', () => {
     expect(computeOracleMultiplier(reading({ temp_c: 1000 }), cond('temp_c', 10, 'gte'))).toBe(3.0)
   })
 
+  it('lte: actual=0 produces Infinity internally which clamps to MAX=3.0', () => {
+    // threshold/0 = Infinity → clamped to MAX_MULTIPLIER
+    expect(computeOracleMultiplier(reading({ rain_mm: 0 }), cond('rain_mm', 10, 'lte'))).toBe(3.0)
+  })
+
   it('returns 1.0 when metric is missing from reading', () => {
     expect(computeOracleMultiplier(reading({ other: 99 }), cond('temp_c', 35, 'gte'))).toBe(1.0)
   })
