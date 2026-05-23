@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { priceTier } from './engine'
+import { computeOracleMultiplier } from '@/lib/oracle/multiplier'
+import type { TriggerCondition } from '@/lib/oracle/trigger'
 import type { CoverageTier, Contract } from '@/lib/types'
 
 interface DbClient {
@@ -14,9 +16,27 @@ function getClient(): DbClient {
   )
 }
 
-async function applyReprice(db: DbClient, tier: CoverageTier, contract: Contract): Promise<void> {
+async function fetchLatestReading(
+  db: DbClient,
+  contractId: string,
+): Promise<{ value: Record<string, unknown> } | null> {
+  const { data } = await db
+    .from('oracle_readings')
+    .select('value')
+    .eq('contract_id', contractId)
+    .order('read_at', { ascending: false })
+    .limit(1)
+  return data?.[0] ?? null
+}
+
+async function applyReprice(
+  db: DbClient,
+  tier: CoverageTier,
+  contract: Contract,
+  oracleMultiplier: number,
+): Promise<void> {
   const oldPremium = tier.premium_usd
-  const { premiumUsd, inputs } = priceTier(tier, contract)
+  const { premiumUsd, inputs } = priceTier(tier, contract, oracleMultiplier)
 
   await db.from('coverage_tiers')
     .update({
@@ -47,8 +67,12 @@ export async function repriceAll(db: DbClient = getClient()): Promise<number> {
 
   let count = 0
   for (const contract of contracts) {
+    const reading = await fetchLatestReading(db, contract.id)
+    const condition = contract.trigger_condition as unknown as TriggerCondition
+    const oracleMultiplier = reading ? computeOracleMultiplier(reading, condition) : 1.0
+
     for (const tier of (contract.coverage_tiers ?? []) as CoverageTier[]) {
-      await applyReprice(db, tier, contract as unknown as Contract)
+      await applyReprice(db, tier, contract as unknown as Contract, oracleMultiplier)
       count++
     }
   }
@@ -72,5 +96,9 @@ export async function repriceTier(tierId: string, db: DbClient = getClient()): P
 
   if (!contract || contract.status !== 'active') return
 
-  await applyReprice(db, tier as unknown as CoverageTier, contract as unknown as Contract)
+  const reading = await fetchLatestReading(db, contract.id)
+  const condition = contract.trigger_condition as unknown as TriggerCondition
+  const oracleMultiplier = reading ? computeOracleMultiplier(reading, condition) : 1.0
+
+  await applyReprice(db, tier as unknown as CoverageTier, contract as unknown as Contract, oracleMultiplier)
 }

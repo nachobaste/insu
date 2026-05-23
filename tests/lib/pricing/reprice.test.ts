@@ -25,8 +25,8 @@ const mockContract = {
   description: null,
   category_id: 'cat-1',
   status: 'active',
-  trigger_type: 'manual',
-  trigger_condition: {},
+  trigger_type: 'weather',
+  trigger_condition: { metric: 'temp_c', threshold: 25, operator: 'gte' },
   trigger_deadline: futureDeadline,
   location: { lat: 0, lng: 0, city: 'Test', country: 'MX' },
   icon_url: null,
@@ -40,15 +40,19 @@ const mockContract = {
   coverage_tiers: [mockTier],
 }
 
-// Builds a mock DB client with injectable response data
+// reading with temp_c = 50, threshold = 25 → proximity = 2.0 → multiplier = 2.0
+const mockReading = { value: { temp_c: 50 } }
+
 function makeDb(opts: {
   contracts?: typeof mockContract[]
   tier?: typeof mockTier | null
   contract?: typeof mockContract | null
+  reading?: { value: Record<string, unknown> } | null
 } = {}) {
   const contracts = opts.contracts ?? [mockContract]
   const tier = opts.tier !== undefined ? opts.tier : mockTier
   const contract = opts.contract !== undefined ? opts.contract : mockContract
+  const reading = opts.reading !== undefined ? opts.reading : null
 
   const updateEq = vi.fn().mockResolvedValue({ error: null })
   const update = vi.fn().mockReturnValue({ eq: updateEq })
@@ -57,8 +61,6 @@ function makeDb(opts: {
   const db = {
     from: vi.fn((table: string) => {
       if (table === 'contracts') {
-        // Used in repriceAll: .select().eq() awaited as array
-        // Used in repriceTier: .select().eq().single() awaited as single
         const single = vi.fn().mockResolvedValue({ data: contract, error: null })
         const eq = vi.fn().mockReturnValue(
           Object.assign(Promise.resolve({ data: contracts, error: null }), { single }),
@@ -72,6 +74,15 @@ function makeDb(opts: {
       }
       if (table === 'pricing_history') {
         return { insert }
+      }
+      if (table === 'oracle_readings') {
+        const limit = vi.fn().mockResolvedValue({
+          data: reading ? [{ value: reading.value }] : [],
+          error: null,
+        })
+        const order = vi.fn().mockReturnValue({ limit })
+        const eq = vi.fn().mockReturnValue({ order })
+        return { select: vi.fn().mockReturnValue({ eq }) }
       }
       return {}
     }),
@@ -119,6 +130,30 @@ describe('repriceAll', () => {
     expect(db._update).not.toHaveBeenCalled()
     expect(db._insert).not.toHaveBeenCalled()
   })
+
+  it('applies oracle multiplier — premium doubles at 2× proximity', async () => {
+    const dbWith = makeDb({ reading: mockReading })    // multiplier = 2.0
+    const dbWithout = makeDb()                          // multiplier = 1.0 (no reading)
+    await repriceAll(dbWith)
+    await repriceAll(dbWithout)
+    const premiumWith = dbWith._update.mock.calls[0][0].premium_usd
+    const premiumWithout = dbWithout._update.mock.calls[0][0].premium_usd
+    expect(premiumWith).toBeCloseTo(premiumWithout * 2, 1)
+  })
+
+  it('stores oracleMultiplier in pricing_inputs when reading is present', async () => {
+    const db = makeDb({ reading: mockReading })  // multiplier = 2.0
+    await repriceAll(db)
+    const pricingInputs = db._update.mock.calls[0][0].pricing_inputs
+    expect(pricingInputs.oracleMultiplier).toBeCloseTo(2.0, 5)
+  })
+
+  it('stores oracleMultiplier=1 in pricing_inputs when no reading exists', async () => {
+    const db = makeDb()  // no reading
+    await repriceAll(db)
+    const pricingInputs = db._update.mock.calls[0][0].pricing_inputs
+    expect(pricingInputs.oracleMultiplier).toBe(1)
+  })
 })
 
 describe('repriceTier', () => {
@@ -147,5 +182,15 @@ describe('repriceTier', () => {
     await repriceTier('tier-1', db)
     expect(db._update).not.toHaveBeenCalled()
     expect(db._insert).not.toHaveBeenCalled()
+  })
+
+  it('applies oracle multiplier via repriceTier — premium doubles at 2× proximity', async () => {
+    const dbWith = makeDb({ reading: mockReading })    // multiplier = 2.0
+    const dbWithout = makeDb()                          // multiplier = 1.0
+    await repriceTier('tier-1', dbWith)
+    await repriceTier('tier-1', dbWithout)
+    const premiumWith = dbWith._update.mock.calls[0][0].premium_usd
+    const premiumWithout = dbWithout._update.mock.calls[0][0].premium_usd
+    expect(premiumWith).toBeCloseTo(premiumWithout * 2, 1)
   })
 })
