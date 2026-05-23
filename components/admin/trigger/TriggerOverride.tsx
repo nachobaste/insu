@@ -16,10 +16,11 @@ interface ContractSummary {
 interface Props {
   contracts: Contract[]
   summaries: ContractSummary[]
+  initialContractId?: string
 }
 
-export function TriggerOverride({ contracts, summaries }: Props) {
-  const [contractId, setContractId] = useState('')
+export function TriggerOverride({ contracts, summaries, initialContractId }: Props) {
+  const [contractId, setContractId] = useState(initialContractId ?? '')
   const [outcome, setOutcome] = useState<boolean | null>(null)
   const [reason, setReason] = useState('')
   const [isPending, startTransition] = useTransition()

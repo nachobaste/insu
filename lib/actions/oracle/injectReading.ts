@@ -63,7 +63,8 @@ export async function injectReading(
       contract_id: contractId,
       source,
       reading_type: 'manual',
-      value: parsedValue,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      value: parsedValue as any,
       trigger_met,
     })
     .select('id')

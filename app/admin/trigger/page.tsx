@@ -2,7 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { TriggerOverride } from '@/components/admin/trigger/TriggerOverride'
 import type { Contract, HedgerPosition } from '@/lib/types'
 
-export default async function AdminTriggerPage() {
+export default async function AdminTriggerPage({
+  searchParams,
+}: {
+  searchParams: { contract?: string }
+}) {
   const supabase = createClient()
 
   const { data: contracts } = await supabase
@@ -12,6 +16,10 @@ export default async function AdminTriggerPage() {
     .order('trigger_deadline')
 
   const activeContracts = (contracts ?? []) as unknown as Contract[]
+
+  const initialContractId = searchParams.contract
+    ? (activeContracts.find((c) => c.slug === searchParams.contract)?.id ?? '')
+    : ''
 
   const summaries = await Promise.all(
     activeContracts.map(async (contract) => {
@@ -44,5 +52,5 @@ export default async function AdminTriggerPage() {
     }),
   )
 
-  return <TriggerOverride contracts={activeContracts} summaries={summaries} />
+  return <TriggerOverride contracts={activeContracts} summaries={summaries} initialContractId={initialContractId} />
 }

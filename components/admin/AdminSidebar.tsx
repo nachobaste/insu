@@ -6,9 +6,10 @@ import { cn } from '@/lib/utils'
 
 const NAV = [
   { href: '/admin/contracts', label: 'Contracts', icon: '📋' },
-  { href: '/admin/trigger', label: 'Trigger', icon: '⚡' },
-  { href: '/admin/oracle', label: 'Oracle', icon: '🌐' },
-  { href: '/admin/payouts', label: 'Payouts', icon: '💸' },
+  { href: '/admin/trigger',   label: 'Trigger',   icon: '⚡' },
+  { href: '/admin/oracle',    label: 'Oracle',    icon: '🌐' },
+  { href: '/admin/scenario',  label: 'Scenario',  icon: '🧪' },
+  { href: '/admin/payouts',   label: 'Payouts',   icon: '💸' },
 ] as const
 
 export function AdminSidebar() {
