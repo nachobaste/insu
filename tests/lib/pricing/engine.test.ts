@@ -91,6 +91,7 @@ describe('priceTier', () => {
       utilization: 0.5,
       utilizationFactor: 1.25,
       loadingFactor: 1.15,
+      oracleMultiplier: 1,
     })
     expect(inputs.daysRemaining).toBeGreaterThan(9)
     expect(inputs.daysRemaining).toBeLessThan(11)

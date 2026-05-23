@@ -34,10 +34,14 @@ export function priceTier(
   const timeFactor = 1 + 0.5 * Math.max(0, 1 - daysRemaining / 30)
   const loadingFactor = LOADING_FACTOR
 
-  const premiumUsd = tier.payout_usd * tier.base_probability * oracleMultiplier * utilizationFactor * timeFactor * loadingFactor
+  const safeMultiplier = Number.isFinite(oracleMultiplier) && oracleMultiplier > 0
+    ? oracleMultiplier
+    : 1.0
+
+  const premiumUsd = tier.payout_usd * tier.base_probability * safeMultiplier * utilizationFactor * timeFactor * loadingFactor
 
   return {
     premiumUsd: Math.round(premiumUsd * 100) / 100,
-    inputs: { utilization, daysRemaining, utilizationFactor, timeFactor, loadingFactor, oracleMultiplier },
+    inputs: { utilization, daysRemaining, utilizationFactor, timeFactor, loadingFactor, oracleMultiplier: safeMultiplier },
   }
 }
