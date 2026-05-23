@@ -4,10 +4,19 @@ import SearchInput from './SearchInput'
 
 export default async function Header() {
   let userId: string | null = null
+  let isAdmin = false
   try {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     userId = user?.id ?? null
+    if (userId) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single()
+      isAdmin = (profile as { role: string } | null)?.role === 'admin'
+    }
   } catch {
     // Supabase not configured — render unauthenticated header
   }
@@ -49,12 +58,22 @@ export default async function Header() {
       </Link>
 
       {userId ? (
-        <Link
-          href="/dashboard"
-          className="rounded-lg border border-white/[0.07] px-4 py-1.5 text-[13px] font-semibold text-insu-dim transition-colors hover:border-white/15 hover:text-insu-text"
-        >
-          Portfolio
-        </Link>
+        <>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="rounded-lg border border-insu-accent/30 px-4 py-1.5 text-[13px] font-semibold text-insu-accent transition-colors hover:border-insu-accent/60 hover:bg-insu-accent/5"
+            >
+              Admin
+            </Link>
+          )}
+          <Link
+            href="/dashboard"
+            className="rounded-lg border border-white/[0.07] px-4 py-1.5 text-[13px] font-semibold text-insu-dim transition-colors hover:border-white/15 hover:text-insu-text"
+          >
+            Portfolio
+          </Link>
+        </>
       ) : (
         <>
           <Link
