@@ -29,13 +29,21 @@ export async function processPayouts(
 ): Promise<number> {
   const { data: triggeredReadings } = await db
     .from('oracle_readings')
-    .select('contract_id')
+    .select('contract_id, read_at')
     .eq('trigger_met', true)
 
   if (!triggeredReadings || triggeredReadings.length === 0) return 0
 
-  const contractIds = Array.from(new Set((triggeredReadings as Array<{ contract_id: string }>)
-    .map(r => r.contract_id)))
+  // Build map of contractId → earliest trigger timestamp
+  const triggerMap = new Map<string, string>()
+  for (const r of triggeredReadings as Array<{ contract_id: string; read_at: string }>) {
+    const existing = triggerMap.get(r.contract_id)
+    if (!existing || r.read_at < existing) {
+      triggerMap.set(r.contract_id, r.read_at)
+    }
+  }
+
+  const contractIds = Array.from(triggerMap.keys())
 
   const { data: contracts } = await db
     .from('contracts')
@@ -48,7 +56,8 @@ export async function processPayouts(
 
   let total = 0
   for (const contract of contracts as Contract[]) {
-    total += await settleContract(db, stripe, contract)
+    const triggerReadAt = triggerMap.get(contract.id) ?? new Date().toISOString()
+    total += await settleContract(db, stripe, contract, triggerReadAt)
   }
   return total
 }
@@ -57,6 +66,7 @@ async function settleContract(
   db: DbClient,
   stripe: StripeClient,
   contract: Contract,
+  triggerReadAt: string,
 ): Promise<number> {
   await db.from('contracts')
     .update({ settled_outcome: true, status: 'settled', settled_at: new Date().toISOString() })
@@ -70,14 +80,19 @@ async function settleContract(
 
   if (!positions) return 0
 
+  // Skip positions whose coverage window closed before the trigger fired
+  const eligiblePositions = (positions as HedgerPosition[]).filter((pos) =>
+    !pos.coverage_period_days ||
+    new Date(pos.expires_at) >= new Date(triggerReadAt),
+  )
+
   let paid = 0
-  for (const position of positions as HedgerPosition[]) {
+  for (const position of eligiblePositions) {
     await payoutPosition(db, stripe, contract.id, position)
     paid++
   }
 
-  const totalHedgerPayout = (positions as HedgerPosition[])
-    .reduce((sum, p) => sum + p.payout_amount_usd, 0)
+  const totalHedgerPayout = eligiblePositions.reduce((sum, p) => sum + p.payout_amount_usd, 0)
   await settleProviderPositions(db, contract.id, totalHedgerPayout)
 
   return paid

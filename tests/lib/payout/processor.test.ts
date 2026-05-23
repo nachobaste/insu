@@ -40,6 +40,22 @@ const mockHedgerPosition: HedgerPosition = {
   expires_at: new Date(Date.now() + 86400000).toISOString(),
 }
 
+// Position whose coverage expired an hour ago
+const expiredPosition: HedgerPosition = {
+  ...mockHedgerPosition,
+  id: 'pos-expired',
+  coverage_period_days: 7,
+  expires_at: new Date(Date.now() - 3600_000).toISOString(), // 1 hour ago
+}
+
+// Position whose coverage is still active
+const activePosition: HedgerPosition = {
+  ...mockHedgerPosition,
+  id: 'pos-active',
+  coverage_period_days: 7,
+  expires_at: new Date(Date.now() + 86_400_000).toISOString(), // 1 day from now
+}
+
 const mockProviderPosition: ProviderPosition = {
   id: 'pp-1',
   user_id: 'provider-1',
@@ -70,13 +86,13 @@ function makeChainable(value: unknown) {
 }
 
 function makeDb(opts: {
-  triggeredReadings?: Array<{ contract_id: string }>
+  triggeredReadings?: Array<{ contract_id: string; read_at?: string }>
   contracts?: Contract[]
   hedgerPositions?: HedgerPosition[]
   providerPositions?: ProviderPosition[]
   profileStripeId?: string | null
 } = {}) {
-  const triggeredReadings = opts.triggeredReadings ?? [{ contract_id: 'c1' }]
+  const triggeredReadings = opts.triggeredReadings ?? [{ contract_id: 'c1', read_at: new Date().toISOString() }]
   const contracts = opts.contracts ?? [mockContract]
   const hedgerPositions = opts.hedgerPositions ?? [mockHedgerPosition]
   const providerPositions = opts.providerPositions ?? [mockProviderPosition]
@@ -232,5 +248,42 @@ describe('processPayouts', () => {
     const db = makeDb({ hedgerPositions: twoPositions as HedgerPosition[] })
     const count = await processPayouts(db as never, makeStripe() as never)
     expect(count).toBe(2)
+  })
+
+  it('skips position whose coverage_period expired before trigger fired', async () => {
+    const db = makeDb({
+      triggeredReadings: [{ contract_id: 'c1', read_at: new Date().toISOString() }],
+      hedgerPositions: [expiredPosition],
+    })
+    const stripe = makeStripe()
+    const count = await processPayouts(db as never, stripe as never)
+    expect(count).toBe(0)
+    expect(stripe.customers.createBalanceTransaction).not.toHaveBeenCalled()
+  })
+
+  it('pays position whose coverage is still active when trigger fires', async () => {
+    const db = makeDb({
+      triggeredReadings: [{ contract_id: 'c1', read_at: new Date().toISOString() }],
+      hedgerPositions: [activePosition],
+    })
+    const stripe = makeStripe()
+    const count = await processPayouts(db as never, stripe as never)
+    expect(count).toBe(1)
+    expect(stripe.customers.createBalanceTransaction).toHaveBeenCalled()
+  })
+
+  it('always pays position with null coverage_period_days (full-duration)', async () => {
+    const fullDurationPosition: HedgerPosition = {
+      ...mockHedgerPosition,
+      id: 'pos-full',
+      coverage_period_days: undefined,
+      expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+    }
+    const db = makeDb({
+      triggeredReadings: [{ contract_id: 'c1', read_at: new Date().toISOString() }],
+      hedgerPositions: [fullDurationPosition],
+    })
+    const count = await processPayouts(db as never, makeStripe() as never)
+    expect(count).toBe(1)
   })
 })
