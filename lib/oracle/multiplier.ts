@@ -10,7 +10,7 @@ export function computeOracleMultiplier(
   if (condition.threshold === 0) return 1.0
 
   const actual = reading.value[condition.metric]
-  if (typeof actual !== 'number') return 1.0
+  if (typeof actual !== 'number' || !isFinite(actual)) return 1.0
 
   const proximity =
     condition.operator === 'gte' || condition.operator === 'gt'

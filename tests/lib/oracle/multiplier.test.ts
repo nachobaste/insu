@@ -44,6 +44,12 @@ describe('computeOracleMultiplier', () => {
     expect(computeOracleMultiplier(reading({ jam: 5 }), cond('jam', 5, 'lt'))).toBeCloseTo(1.0, 5)
   })
 
+  it('lte: returns < 1 when actual > threshold (conditions favorable)', () => {
+    // threshold=5, actual=10 → proximity = 5/10 = 0.5
+    const result = computeOracleMultiplier(reading({ jam: 10 }), cond('jam', 5, 'lte'))
+    expect(result).toBeCloseTo(0.5, 5)
+  })
+
   it('clamps at MIN=0.3 for very favorable conditions', () => {
     // gte: actual=1, threshold=100 → proximity=0.01 → clamped to 0.3
     expect(computeOracleMultiplier(reading({ temp_c: 1 }), cond('temp_c', 100, 'gte'))).toBe(0.3)
