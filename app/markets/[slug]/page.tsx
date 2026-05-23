@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/Header'
 import ContractDetailClient from '@/components/markets/ContractDetailClient'
-import type { ContractDetailData } from '@/lib/types'
+import type { ContractDetailData, LatestOracleReading } from '@/lib/types'
 
 export default async function MarketPage({ params }: { params: { slug: string } }) {
   const isConfigured = !!(
@@ -34,10 +34,20 @@ export default async function MarketPage({ params }: { params: { slug: string } 
   const contract = (contractResult as any).data as ContractDetailData
   const userId = userResult.data.user?.id ?? null
 
+  const { data: latestReadingRaw } = await supabase
+    .from('oracle_readings')
+    .select('value, read_at, source, trigger_met')
+    .eq('contract_id', contract.id)
+    .order('read_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const latestReading = latestReadingRaw as LatestOracleReading | null
+
   return (
     <>
       <Header />
-      <ContractDetailClient contract={contract} userId={userId} />
+      <ContractDetailClient contract={contract} userId={userId} latestReading={latestReading} />
     </>
   )
 }

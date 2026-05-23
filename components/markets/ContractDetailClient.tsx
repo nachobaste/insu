@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import { cn, formatCurrency, categoryTextClass, countryFlag } from '@/lib/utils'
-import type { ContractDetailData } from '@/lib/types'
+import type { ContractDetailData, LatestOracleReading } from '@/lib/types'
+import type { TriggerCondition } from '@/lib/oracle/trigger'
 import ContractMeta from './ContractMeta'
+import OracleConditions from './OracleConditions'
 import PriceChart from './PriceChart'
 import PurchasePanel from './PurchasePanel'
 
@@ -12,9 +14,10 @@ type PanelMode = 'buy' | 'provide'
 interface Props {
   contract: ContractDetailData
   userId: string | null
+  latestReading: LatestOracleReading | null
 }
 
-export default function ContractDetailClient({ contract, userId }: Props) {
+export default function ContractDetailClient({ contract, userId, latestReading }: Props) {
   const [panelOpen, setPanelOpen] = useState(false)
   const [panelMode, setPanelMode] = useState<PanelMode>('buy')
 
@@ -22,6 +25,9 @@ export default function ContractDetailClient({ contract, userId }: Props) {
   const sortedTiers = [...contract.coverage_tiers].sort((a, b) =>
     a.name === 'basic' ? -1 : b.name === 'basic' ? 1 : 0,
   )
+
+  const rawMultiplier = contract.coverage_tiers[0]?.pricing_inputs?.oracleMultiplier
+  const oracleMultiplier = typeof rawMultiplier === 'number' ? rawMultiplier : 1.0
 
   function openPanel(mode: PanelMode) {
     setPanelMode(mode)
@@ -52,6 +58,14 @@ export default function ContractDetailClient({ contract, userId }: Props) {
           </div>
 
           <PriceChart history={contract.pricing_history} tiers={contract.coverage_tiers} />
+
+          {latestReading && (
+            <OracleConditions
+              reading={latestReading}
+              triggerCondition={contract.trigger_condition as unknown as TriggerCondition}
+              oracleMultiplier={oracleMultiplier}
+            />
+          )}
 
           <ContractMeta contract={contract} />
         </div>
