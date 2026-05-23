@@ -92,6 +92,7 @@ export interface HedgerPosition {
   status: string
   purchased_at: string
   expires_at: string
+  coverage_period_days?: number | null
 }
 
 export interface ProviderPosition {
