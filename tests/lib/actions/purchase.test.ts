@@ -103,14 +103,13 @@ describe('createHedgerPaymentIntent', () => {
     )
   })
 
-  it('charges period-scaled premium for 7-day period', async () => {
+  it('charges period-scaled premium for 7-day period, floored at 50 cents', async () => {
     const { createHedgerPaymentIntent } = await import('@/lib/actions/purchase')
     // Contract is 365 days; periodFactor = 7/365 ≈ 0.01918; 12 * 0.01918 ≈ 0.23; cents = 23
+    // Stripe minimum is $0.50 (50 cents), so amount is clamped to 50
     await createHedgerPaymentIntent('tier-basic', 7)
     const call = mockPaymentIntentsCreate.mock.calls[0][0]
-    // Allow ±2 cents for rounding
-    expect(call.amount).toBeGreaterThanOrEqual(21)
-    expect(call.amount).toBeLessThanOrEqual(25)
+    expect(call.amount).toBe(50)
   })
 
   it('stores coverage_period_days on the position', async () => {

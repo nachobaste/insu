@@ -50,17 +50,20 @@ export async function createHedgerPaymentIntent(
     : new Date(contract.trigger_deadline).getTime()
   const expiresAt = new Date(coverageEndMs).toISOString()
 
+  const amountCents = Math.max(50, Math.round(periodPremium * 100))
+
   let paymentIntent: Stripe.PaymentIntent
   try {
     paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(periodPremium * 100),
+      amount: amountCents,
       currency: 'usd',
       automatic_payment_methods: { enabled: true },
       metadata: { position_type: 'hedger', tier_id: tierId, user_id: user.id },
     })
   } catch (err) {
-    console.error('Stripe paymentIntents.create failed:', err)
-    return { error: 'Payment provider error — please try again' }
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('Stripe paymentIntents.create failed:', msg)
+    return { error: `Payment error: ${msg}` }
   }
 
   // coverage_period_days added in migration 20260523000001; cast until Supabase types are regenerated
@@ -119,14 +122,15 @@ export async function createProviderPaymentIntent(
   let paymentIntent: Stripe.PaymentIntent
   try {
     paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amountUsd * 100),
+      amount: Math.max(50, Math.round(amountUsd * 100)),
       currency: 'usd',
       automatic_payment_methods: { enabled: true },
       metadata: { position_type: 'provider', tier_id: tierId, user_id: user.id },
     })
   } catch (err) {
-    console.error('Stripe paymentIntents.create failed:', err)
-    return { error: 'Payment provider error — please try again' }
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('Stripe paymentIntents.create failed:', msg)
+    return { error: `Payment error: ${msg}` }
   }
 
   const { data: position, error: positionError } = await supabase
