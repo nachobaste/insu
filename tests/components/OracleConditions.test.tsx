@@ -94,4 +94,17 @@ describe('OracleConditions', () => {
     render(<OracleConditions reading={makeReading()} triggerCondition={gteCondition} oracleMultiplier={1.0} />)
     expect(screen.getByText('°C')).toBeInTheDocument()
   })
+
+  it('shows trigger-met state when proximity >= 1.0', () => {
+    // actual=35 / threshold=35 → proximity=1.0 → met
+    render(
+      <OracleConditions
+        reading={makeReading({ value: { temp_c: 35 }, trigger_met: false })}
+        triggerCondition={gteCondition}
+        oracleMultiplier={3.0}
+      />,
+    )
+    expect(screen.getByText('⚡ Trigger threshold crossed')).toBeInTheDocument()
+    expect(screen.getByText('Premium at maximum')).toBeInTheDocument()
+  })
 })

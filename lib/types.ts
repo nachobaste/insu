@@ -126,7 +126,7 @@ export interface OracleReading {
 export interface LatestOracleReading {
   value: Record<string, unknown>
   read_at: string
-  source: string
+  source: 'openweathermap' | 'tomorrow_io' | 'waze' | 'manual'
   trigger_met: boolean
 }
 

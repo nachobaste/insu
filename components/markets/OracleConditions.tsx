@@ -63,6 +63,8 @@ export default function OracleConditions({ reading, triggerCondition, oracleMult
   const actual = reading.value[triggerCondition.metric]
   if (typeof actual !== 'number' || !isFinite(actual)) return null
 
+  // For gt/lt, exact-threshold boundary shows 'met' as a display approximation;
+  // trigger_met from the DB is authoritative.
   const proximity =
     triggerCondition.operator === 'gte' || triggerCondition.operator === 'gt'
       ? actual / triggerCondition.threshold
