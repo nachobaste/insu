@@ -123,6 +123,13 @@ export interface OracleReading {
   read_at: string
 }
 
+export interface LatestOracleReading {
+  value: Record<string, unknown>
+  read_at: string
+  source: string
+  trigger_met: boolean
+}
+
 export interface Payout {
   id: string
   contract_id: string
