@@ -23,22 +23,22 @@ interface Props {
   userId: string | null
   open: boolean
   initialMode: PanelMode
+  initialPeriodDays?: number | null
   onClose: () => void
 }
 
-export default function PurchasePanel({ contract, userId, open, initialMode, onClose }: Props) {
+export default function PurchasePanel({ contract, userId, open, initialMode, initialPeriodDays, onClose }: Props) {
   const [mode, setMode] = useState<PanelMode>(initialMode)
   const [step, setStep] = useState<Step>('select')
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null)
-  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(null)
+  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(initialPeriodDays ?? null)
   const [depositAmount, setDepositAmount] = useState('')
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const isRecurring = (['weather', 'urban'] as const).includes(
-    contract.trigger_type as 'weather' | 'urban',
-  )
+  const isRecurring =
+    contract.trigger_type === 'weather' || contract.trigger_type === 'urban'
 
   const periodFactor =
     isRecurring && selectedPeriodDays
@@ -54,7 +54,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, onC
   function switchMode(next: PanelMode) {
     setMode(next)
     setSelectedTierId(null)
-    setSelectedPeriodDays(null)
+    setSelectedPeriodDays(initialPeriodDays ?? null)
     setStep('select')
     setClientSecret(null)
     setError(null)
@@ -63,7 +63,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, onC
   function handleClose() {
     setStep('select')
     setSelectedTierId(null)
-    setSelectedPeriodDays(null)
+    setSelectedPeriodDays(initialPeriodDays ?? null)
     setClientSecret(null)
     setError(null)
     onClose()

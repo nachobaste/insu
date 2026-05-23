@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { cn, formatCurrency, categoryTextClass, countryFlag } from '@/lib/utils'
+import { computePeriodFactor } from '@/lib/pricing/engine'
 import type { ContractDetailData, LatestOracleReading } from '@/lib/types'
 import type { TriggerCondition } from '@/lib/oracle/trigger'
 import ContractMeta from './ContractMeta'
@@ -10,6 +11,12 @@ import PriceChart from './PriceChart'
 import PurchasePanel from './PurchasePanel'
 
 type PanelMode = 'buy' | 'provide'
+
+const PERIOD_OPTIONS = [
+  { days: 1,  label: '1 day' },
+  { days: 7,  label: '7 days' },
+  { days: 30, label: '30 days' },
+] as const
 
 interface Props {
   contract: ContractDetailData
@@ -20,6 +27,10 @@ interface Props {
 export default function ContractDetailClient({ contract, userId, latestReading }: Props) {
   const [panelOpen, setPanelOpen] = useState(false)
   const [panelMode, setPanelMode] = useState<PanelMode>('buy')
+  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(null)
+
+  const isRecurring =
+    contract.trigger_type === 'weather' || contract.trigger_type === 'urban'
 
   const slug = contract.category.slug
   const sortedTiers = [...contract.coverage_tiers].sort((a, b) =>
@@ -33,6 +44,11 @@ export default function ContractDetailClient({ contract, userId, latestReading }
     setPanelMode(mode)
     setPanelOpen(true)
   }
+
+  const periodFactor =
+    isRecurring && selectedPeriodDays
+      ? computePeriodFactor(selectedPeriodDays, contract)
+      : 1.0
 
   return (
     <main className="mx-auto max-w-[1320px] px-8 py-10">
@@ -72,28 +88,57 @@ export default function ContractDetailClient({ contract, userId, latestReading }
 
         {/* Right column — sticky */}
         <div className="sticky top-[80px] space-y-4">
+
+          {/* Period selector — oracle-driven contracts only */}
+          {isRecurring && (
+            <div>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-insu-muted">
+                Coverage period
+              </p>
+              <div className="flex gap-2">
+                {PERIOD_OPTIONS.map(({ days, label }) => (
+                  <button
+                    key={days}
+                    onClick={() => setSelectedPeriodDays(d => d === days ? null : days)}
+                    className={cn(
+                      'flex flex-1 flex-col items-center rounded-lg border py-2.5 text-[11px] font-semibold transition-all',
+                      selectedPeriodDays === days
+                        ? 'border-insu-accent/50 bg-insu-accent/5 text-insu-accent'
+                        : 'border-white/[0.07] bg-bg-card text-insu-muted hover:border-white/15',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <p className="text-[11px] font-semibold uppercase tracking-wider text-insu-muted">
             Select tier
           </p>
 
           <div className="space-y-2">
-            {sortedTiers.map((tier) => (
-              <div
-                key={tier.id}
-                className="rounded-card border border-white/[0.07] bg-bg-card p-4"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[13px] font-semibold capitalize text-insu-text">
-                    {tier.name}
-                  </span>
+            {sortedTiers.map((tier) => {
+              const displayPremium = Math.round(tier.premium_usd * periodFactor * 100) / 100
+              return (
+                <div
+                  key={tier.id}
+                  className="rounded-card border border-white/[0.07] bg-bg-card p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-semibold capitalize text-insu-text">
+                      {tier.name}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-1 font-mono text-[12px]">
+                    <span className="text-insu-text">{formatCurrency(displayPremium, 'USD')}</span>
+                    <span className="text-insu-muted">→</span>
+                    <span className="text-insu-green">{formatCurrency(tier.payout_usd, 'USD')}</span>
+                  </div>
                 </div>
-                <div className="mt-1 flex items-center gap-1 font-mono text-[12px]">
-                  <span className="text-insu-text">{formatCurrency(tier.premium_usd, 'USD')}</span>
-                  <span className="text-insu-muted">→</span>
-                  <span className="text-insu-green">{formatCurrency(tier.payout_usd, 'USD')}</span>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <div className="space-y-2 pt-1">
@@ -118,6 +163,7 @@ export default function ContractDetailClient({ contract, userId, latestReading }
         userId={userId}
         open={panelOpen}
         initialMode={panelMode}
+        initialPeriodDays={selectedPeriodDays}
         onClose={() => setPanelOpen(false)}
       />
     </main>
