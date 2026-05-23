@@ -50,12 +50,18 @@ export async function createHedgerPaymentIntent(
     : new Date(contract.trigger_deadline).getTime()
   const expiresAt = new Date(coverageEndMs).toISOString()
 
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: Math.round(periodPremium * 100),
-    currency: 'usd',
-    automatic_payment_methods: { enabled: true },
-    metadata: { position_type: 'hedger', tier_id: tierId, user_id: user.id },
-  })
+  let paymentIntent: Stripe.PaymentIntent
+  try {
+    paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(periodPremium * 100),
+      currency: 'usd',
+      automatic_payment_methods: { enabled: true },
+      metadata: { position_type: 'hedger', tier_id: tierId, user_id: user.id },
+    })
+  } catch (err) {
+    console.error('Stripe paymentIntents.create failed:', err)
+    return { error: 'Payment provider error — please try again' }
+  }
 
   // coverage_period_days added in migration 20260523000001; cast until Supabase types are regenerated
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -110,12 +116,18 @@ export async function createProviderPaymentIntent(
   const capacityError = validateCapacity(tier.max_capacity_usd, tier.current_capacity_usd, amountUsd)
   if (capacityError) return { error: capacityError }
 
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: Math.round(amountUsd * 100),
-    currency: 'usd',
-    automatic_payment_methods: { enabled: true },
-    metadata: { position_type: 'provider', tier_id: tierId, user_id: user.id },
-  })
+  let paymentIntent: Stripe.PaymentIntent
+  try {
+    paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amountUsd * 100),
+      currency: 'usd',
+      automatic_payment_methods: { enabled: true },
+      metadata: { position_type: 'provider', tier_id: tierId, user_id: user.id },
+    })
+  } catch (err) {
+    console.error('Stripe paymentIntents.create failed:', err)
+    return { error: 'Payment provider error — please try again' }
+  }
 
   const { data: position, error: positionError } = await supabase
     .from('provider_positions')

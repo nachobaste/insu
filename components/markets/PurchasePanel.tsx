@@ -74,18 +74,23 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
     setLoading(true)
     setError(null)
 
-    const result =
-      mode === 'buy'
-        ? await createHedgerPaymentIntent(selectedTierId, selectedPeriodDays ?? undefined)
-        : await createProviderPaymentIntent(selectedTierId, parseFloat(depositAmount) || 0)
+    try {
+      const result =
+        mode === 'buy'
+          ? await createHedgerPaymentIntent(selectedTierId, selectedPeriodDays ?? undefined)
+          : await createProviderPaymentIntent(selectedTierId, parseFloat(depositAmount) || 0)
 
-    setLoading(false)
-    if ('error' in result) {
-      setError(result.error)
-      return
+      if ('error' in result) {
+        setError(result.error)
+        return
+      }
+      setClientSecret(result.clientSecret)
+      setStep('payment')
+    } catch {
+      setError('Something went wrong — please try again')
+    } finally {
+      setLoading(false)
     }
-    setClientSecret(result.clientSecret)
-    setStep('payment')
   }
 
   return (
