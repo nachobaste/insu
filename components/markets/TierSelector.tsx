@@ -8,6 +8,7 @@ interface Props {
   selectedTierId: string | null
   onSelect: (tierId: string) => void
   mode?: 'buy' | 'provide'
+  periodFactor?: number
 }
 
 const TIER_LABELS: Record<CoverageLevel, string> = {
@@ -15,8 +16,9 @@ const TIER_LABELS: Record<CoverageLevel, string> = {
   premium: 'Premium',
 }
 
-export default function TierSelector({ tiers, selectedTierId, onSelect, mode = 'buy' }: Props) {
+export default function TierSelector({ tiers, selectedTierId, onSelect, mode = 'buy', periodFactor }: Props) {
   const sorted = [...tiers].sort((a, b) => (a.name === 'basic' ? -1 : b.name === 'basic' ? 1 : 0))
+  const factor = periodFactor ?? 1.0
 
   return (
     <div className="space-y-2">
@@ -24,6 +26,7 @@ export default function TierSelector({ tiers, selectedTierId, onSelect, mode = '
         const isSelected = tier.id === selectedTierId
         const remaining = tier.max_capacity_usd - tier.current_capacity_usd
         const isFull = remaining <= 0
+        const displayPremium = Math.round(tier.premium_usd * factor * 100) / 100
 
         return (
           <button
@@ -49,7 +52,7 @@ export default function TierSelector({ tiers, selectedTierId, onSelect, mode = '
 
             {mode === 'buy' ? (
               <div className="mt-1 flex items-center gap-1 font-mono text-[12px]">
-                <span className="text-insu-text">{formatCurrency(tier.premium_usd, 'USD')}</span>
+                <span className="text-insu-text">{formatCurrency(displayPremium, 'USD')}</span>
                 <span className="text-insu-muted">premium →</span>
                 <span className="text-insu-green">{formatCurrency(tier.payout_usd, 'USD')}</span>
                 <span className="text-insu-muted">payout</span>
