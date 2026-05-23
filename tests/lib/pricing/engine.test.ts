@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { priceTier } from '@/lib/pricing/engine'
+import { priceTier, computePeriodFactor } from '@/lib/pricing/engine'
 import type { CoverageTier, Contract } from '@/lib/types'
 
 function makeTier(overrides: Partial<CoverageTier> = {}): CoverageTier {
@@ -116,5 +116,41 @@ describe('priceTier', () => {
   it('oracle multiplier is stored in returned inputs', () => {
     const { inputs } = priceTier(makeTier(), makeContract(60), 1.5)
     expect(inputs.oracleMultiplier).toBe(1.5)
+  })
+})
+
+describe('computePeriodFactor', () => {
+  // Contract: created 2026-01-01, deadline 2026-07-01 → 181 days
+  const contract = {
+    created_at: '2026-01-01T00:00:00Z',
+    trigger_deadline: '2026-07-01T00:00:00Z',
+  }
+
+  it('returns correct factor for 7-day period on 181-day contract', () => {
+    const factor = computePeriodFactor(7, contract)
+    expect(factor).toBeCloseTo(7 / 181, 4)
+  })
+
+  it('returns correct factor for 30-day period', () => {
+    const factor = computePeriodFactor(30, contract)
+    expect(factor).toBeCloseTo(30 / 181, 4)
+  })
+
+  it('clamps to 1.0 when period >= contract duration', () => {
+    expect(computePeriodFactor(200, contract)).toBe(1.0)
+    expect(computePeriodFactor(181, contract)).toBe(1.0)
+  })
+
+  it('returns 1.0 when contract duration is zero or negative', () => {
+    const sameDay = { created_at: '2026-01-01T00:00:00Z', trigger_deadline: '2026-01-01T00:00:00Z' }
+    expect(computePeriodFactor(7, sameDay)).toBe(1.0)
+
+    const backwards = { created_at: '2026-07-01T00:00:00Z', trigger_deadline: '2026-01-01T00:00:00Z' }
+    expect(computePeriodFactor(7, backwards)).toBe(1.0)
+  })
+
+  it('returns 1.0 for 1-day period on 1-day contract', () => {
+    const oneDay = { created_at: '2026-01-01T00:00:00Z', trigger_deadline: '2026-01-02T00:00:00Z' }
+    expect(computePeriodFactor(1, oneDay)).toBe(1.0)
   })
 })
