@@ -200,4 +200,11 @@ describe('repriceTier', () => {
     const pricingInputs = db._update.mock.calls[0][0].pricing_inputs
     expect(pricingInputs.oracleMultiplier).toBeCloseTo(2.0, 5)
   })
+
+  it('stores oracleMultiplier=1 in pricing_inputs via repriceTier when no reading exists', async () => {
+    const db = makeDb()  // no reading → multiplier = 1.0
+    await repriceTier('tier-1', db)
+    const pricingInputs = db._update.mock.calls[0][0].pricing_inputs
+    expect(pricingInputs.oracleMultiplier).toBe(1)
+  })
 })

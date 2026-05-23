@@ -29,6 +29,15 @@ async function fetchLatestReading(
   return data?.[0] ?? null
 }
 
+async function resolveOracleMultiplier(
+  db: DbClient,
+  contract: { id: string; trigger_condition: unknown },
+): Promise<number> {
+  const reading = await fetchLatestReading(db, contract.id)
+  const condition = contract.trigger_condition as unknown as TriggerCondition
+  return reading ? computeOracleMultiplier(reading, condition) : 1.0
+}
+
 async function applyReprice(
   db: DbClient,
   tier: CoverageTier,
@@ -67,9 +76,7 @@ export async function repriceAll(db: DbClient = getClient()): Promise<number> {
 
   let count = 0
   for (const contract of contracts) {
-    const reading = await fetchLatestReading(db, contract.id)
-    const condition = contract.trigger_condition as unknown as TriggerCondition
-    const oracleMultiplier = reading ? computeOracleMultiplier(reading, condition) : 1.0
+    const oracleMultiplier = await resolveOracleMultiplier(db, contract)
 
     for (const tier of (contract.coverage_tiers ?? []) as CoverageTier[]) {
       await applyReprice(db, tier, contract as unknown as Contract, oracleMultiplier)
@@ -96,9 +103,7 @@ export async function repriceTier(tierId: string, db: DbClient = getClient()): P
 
   if (!contract || contract.status !== 'active') return
 
-  const reading = await fetchLatestReading(db, contract.id)
-  const condition = contract.trigger_condition as unknown as TriggerCondition
-  const oracleMultiplier = reading ? computeOracleMultiplier(reading, condition) : 1.0
+  const oracleMultiplier = await resolveOracleMultiplier(db, contract)
 
   await applyReprice(db, tier as unknown as CoverageTier, contract as unknown as Contract, oracleMultiplier)
 }
