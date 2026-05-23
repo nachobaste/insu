@@ -8,6 +8,7 @@ export interface PricingInputs {
   utilizationFactor: number
   timeFactor: number
   loadingFactor: number
+  oracleMultiplier: number
 }
 
 export interface PricingResult {
@@ -15,7 +16,11 @@ export interface PricingResult {
   inputs: PricingInputs
 }
 
-export function priceTier(tier: CoverageTier, contract: Contract): PricingResult {
+export function priceTier(
+  tier: CoverageTier,
+  contract: Contract,
+  oracleMultiplier = 1.0,
+): PricingResult {
   const utilization = tier.max_capacity_usd > 0
     ? tier.current_capacity_usd / tier.max_capacity_usd
     : 0
@@ -29,10 +34,10 @@ export function priceTier(tier: CoverageTier, contract: Contract): PricingResult
   const timeFactor = 1 + 0.5 * Math.max(0, 1 - daysRemaining / 30)
   const loadingFactor = LOADING_FACTOR
 
-  const premiumUsd = tier.payout_usd * tier.base_probability * utilizationFactor * timeFactor * loadingFactor
+  const premiumUsd = tier.payout_usd * tier.base_probability * oracleMultiplier * utilizationFactor * timeFactor * loadingFactor
 
   return {
     premiumUsd: Math.round(premiumUsd * 100) / 100,
-    inputs: { utilization, daysRemaining, utilizationFactor, timeFactor, loadingFactor },
+    inputs: { utilization, daysRemaining, utilizationFactor, timeFactor, loadingFactor, oracleMultiplier },
   }
 }

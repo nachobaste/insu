@@ -103,4 +103,17 @@ describe('priceTier', () => {
     expect(inputs.utilization).toBe(0)
     expect(premiumUsd).toBeGreaterThan(0)
   })
+
+  it('oracle multiplier scales premium proportionally', () => {
+    const tier = makeTier()
+    const contract = makeContract(60)
+    const base = priceTier(tier, contract, 1.0).premiumUsd
+    const doubled = priceTier(tier, contract, 2.0).premiumUsd
+    expect(doubled).toBeCloseTo(base * 2, 1)
+  })
+
+  it('oracle multiplier is stored in returned inputs', () => {
+    const { inputs } = priceTier(makeTier(), makeContract(60), 1.5)
+    expect(inputs.oracleMultiplier).toBe(1.5)
+  })
 })
