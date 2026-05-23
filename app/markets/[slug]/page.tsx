@@ -34,13 +34,14 @@ export default async function MarketPage({ params }: { params: { slug: string } 
   const contract = (contractResult as any).data as ContractDetailData
   const userId = userResult.data.user?.id ?? null
 
-  const { data: latestReadingRaw } = await supabase
+  const { data: latestReadingRaw, error: oracleError } = await supabase
     .from('oracle_readings')
     .select('value, read_at, source, trigger_met')
     .eq('contract_id', contract.id)
     .order('read_at', { ascending: false })
     .limit(1)
     .maybeSingle()
+  if (oracleError) console.error('[MarketPage] oracle fetch failed:', oracleError.message)
 
   const latestReading = latestReadingRaw as LatestOracleReading | null
 

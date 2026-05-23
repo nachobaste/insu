@@ -26,7 +26,7 @@ export default function ContractDetailClient({ contract, userId, latestReading }
     a.name === 'basic' ? -1 : b.name === 'basic' ? 1 : 0,
   )
 
-  const rawMultiplier = contract.coverage_tiers[0]?.pricing_inputs?.oracleMultiplier
+  const rawMultiplier = sortedTiers[0]?.pricing_inputs?.oracleMultiplier
   const oracleMultiplier = typeof rawMultiplier === 'number' ? rawMultiplier : 1.0
 
   function openPanel(mode: PanelMode) {

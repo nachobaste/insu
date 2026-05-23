@@ -79,6 +79,7 @@ export default function OracleConditions({ reading, triggerCondition, oracleMult
   const unit = METRIC_UNITS[triggerCondition.metric] ?? ''
   const sourceName = SOURCE_LABELS[reading.source] ?? reading.source
   const operatorLabel = OPERATOR_LABELS[triggerCondition.operator]
+  if (!operatorLabel) return null
 
   return (
     <div className={`rounded-[10px] border bg-bg-card p-[14px_16px] ${cfg.border}`}>
