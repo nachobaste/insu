@@ -13,6 +13,7 @@ const SOURCE_LABELS: Record<string, string> = {
   openweathermap: 'OpenWeatherMap',
   tomorrow_io: 'Tomorrow.io',
   waze: 'Waze',
+  manual: 'Manual',
 }
 
 const OPERATOR_LABELS: Record<TriggerCondition['operator'], string> = {
@@ -49,7 +50,7 @@ const STATE_CONFIG: Record<State, { text: string; bar: string; border: string; d
 }
 
 function formatAge(readAt: string): string {
-  const minsAgo = Math.floor((Date.now() - new Date(readAt).getTime()) / 60000)
+  const minsAgo = Math.max(0, Math.floor((Date.now() - new Date(readAt).getTime()) / 60000))
   return minsAgo < 60 ? `${minsAgo} min ago` : `${Math.floor(minsAgo / 60)} h ago`
 }
 
@@ -72,7 +73,7 @@ export default function OracleConditions({ reading, triggerCondition, oracleMult
 
   const state: State =
     reading.trigger_met || proximity >= 1.0 ? 'met' : proximity >= 0.6 ? 'elevated' : 'low'
-  const displayPct = Math.min(100, Math.round(proximity * 100))
+  const displayPct = Math.max(0, Math.min(100, Math.round(proximity * 100)))
   const impactPct = Math.round((oracleMultiplier - 1) * 100)
   const cfg = STATE_CONFIG[state]
 
