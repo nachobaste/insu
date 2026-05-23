@@ -57,10 +57,10 @@ export async function createHedgerPaymentIntent(
     metadata: { position_type: 'hedger', tier_id: tierId, user_id: user.id },
   })
 
-  // coverage_period_days column added in migration 20260523000001; cast until Supabase types are regenerated
+  // coverage_period_days added in migration 20260523000001; cast until Supabase types are regenerated
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: position, error: positionError } = await (supabase
-    .from('hedger_positions') as any)
+  const hedgerPositions = supabase.from('hedger_positions') as any
+  const { data: position, error: positionError } = await hedgerPositions
     .insert({
       user_id: user.id,
       contract_id: tier.contract_id,
