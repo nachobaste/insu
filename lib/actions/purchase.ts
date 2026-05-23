@@ -3,11 +3,13 @@
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { validateCapacity } from '@/lib/utils/capacity'
+import { computePeriodFactor } from '@/lib/pricing/engine'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? 'sk_test_placeholder')
 
 export async function createHedgerPaymentIntent(
   tierId: string,
+  periodDays?: number,
 ): Promise<{ clientSecret: string } | { error: string }> {
   const supabase = createClient()
 
@@ -31,14 +33,25 @@ export async function createHedgerPaymentIntent(
 
   const { data: contract, error: contractError } = await supabase
     .from('contracts')
-    .select('id, trigger_deadline')
+    .select('id, trigger_deadline, created_at')
     .eq('id', tier.contract_id)
     .single()
 
   if (contractError || !contract) return { error: 'Contract not found' }
 
+  const periodFactor = periodDays ? computePeriodFactor(periodDays, contract) : 1.0
+  const periodPremium = Math.round(Number(tier.premium_usd) * periodFactor * 100) / 100
+
+  const coverageEndMs = periodDays
+    ? Math.min(
+        Date.now() + periodDays * 86_400_000,
+        new Date(contract.trigger_deadline).getTime(),
+      )
+    : new Date(contract.trigger_deadline).getTime()
+  const expiresAt = new Date(coverageEndMs).toISOString()
+
   const paymentIntent = await stripe.paymentIntents.create({
-    amount: Math.round(Number(tier.premium_usd) * 100),
+    amount: Math.round(periodPremium * 100),
     currency: 'usd',
     automatic_payment_methods: { enabled: true },
     metadata: { position_type: 'hedger', tier_id: tierId, user_id: user.id },
@@ -50,7 +63,7 @@ export async function createHedgerPaymentIntent(
       user_id: user.id,
       contract_id: tier.contract_id,
       tier_id: tierId,
-      premium_paid_usd: tier.premium_usd,
+      premium_paid_usd: periodPremium,
       payout_amount_usd: tier.payout_usd,
       premium_paid_mxn: tier.premium_mxn,
       payout_amount_mxn: tier.payout_mxn,
@@ -58,7 +71,8 @@ export async function createHedgerPaymentIntent(
       payment_provider: 'stripe',
       payment_intent_id: paymentIntent.id,
       status: 'pending_payment',
-      expires_at: contract.trigger_deadline,
+      expires_at: expiresAt,
+      coverage_period_days: periodDays ?? null,
     })
     .select('id')
     .single()
