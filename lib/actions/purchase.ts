@@ -1,7 +1,7 @@
 'use server'
 
 import Stripe from 'stripe'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { validateCapacity } from '@/lib/utils/capacity'
 import { computePeriodFactor } from '@/lib/pricing/engine'
 
@@ -186,8 +186,11 @@ export async function activatePositionByPaymentIntent(
   const { position_type, position_id } = pi.metadata ?? {}
   if (!position_id || !position_type) return { error: 'Missing position metadata' }
 
+  // Use service role to bypass RLS for status update
+  const db = createServiceClient()
+
   if (position_type === 'hedger') {
-    const { data: position } = await supabase
+    const { data: position } = await db
       .from('hedger_positions')
       .update({ status: 'active' })
       .eq('id', position_id)
@@ -196,31 +199,31 @@ export async function activatePositionByPaymentIntent(
       .single()
 
     if (position) {
-      const { data: tier } = await supabase
+      const { data: tier } = await db
         .from('coverage_tiers')
         .select('current_capacity_usd')
         .eq('id', position.tier_id)
         .single()
       if (tier) {
-        await supabase
+        await db
           .from('coverage_tiers')
           .update({ current_capacity_usd: tier.current_capacity_usd + position.premium_paid_usd })
           .eq('id', position.tier_id)
       }
-      const { data: contract } = await supabase
+      const { data: contract } = await db
         .from('contracts')
         .select('total_volume_usd')
         .eq('id', position.contract_id)
         .single()
       if (contract) {
-        await supabase
+        await db
           .from('contracts')
           .update({ total_volume_usd: contract.total_volume_usd + position.premium_paid_usd })
           .eq('id', position.contract_id)
       }
     }
   } else {
-    await supabase
+    await db
       .from('provider_positions')
       .update({ status: 'active' })
       .eq('id', position_id)
