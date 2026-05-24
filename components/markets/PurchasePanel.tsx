@@ -154,7 +154,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                 </p>
               )}
               <button
-                onClick={() => { handleClose(); router.push('/dashboard') }}
+                onClick={() => { handleClose(); router.push('/dashboard'); router.refresh() }}
                 className="mt-2 rounded-lg bg-insu-accent px-6 py-2.5 text-[14px] font-bold text-bg"
               >
                 Done

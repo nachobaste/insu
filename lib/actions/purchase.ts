@@ -1,6 +1,7 @@
 'use server'
 
 import Stripe from 'stripe'
+import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { validateCapacity } from '@/lib/utils/capacity'
 import { computePeriodFactor } from '@/lib/pricing/engine'
@@ -192,13 +193,18 @@ export async function activatePositionByPaymentIntent(
   const db = createServiceClient()
 
   if (position_type === 'hedger') {
-    const { data: position } = await db
+    const { data: position, error: updateError } = await db
       .from('hedger_positions')
       .update({ status: 'active' })
       .eq('id', position_id)
       .eq('user_id', user.id)
       .select('tier_id, premium_paid_usd, contract_id')
       .single()
+
+    if (updateError || !position) {
+      console.error('hedger_positions update failed:', updateError, 'position_id:', position_id, 'user_id:', user.id)
+      return { error: `Failed to activate position: ${updateError?.message ?? 'no row matched'}` }
+    }
 
     if (position) {
       const { data: tier } = await db
@@ -232,5 +238,6 @@ export async function activatePositionByPaymentIntent(
       .eq('user_id', user.id)
   }
 
+  revalidatePath('/dashboard')
   return { ok: true }
 }
