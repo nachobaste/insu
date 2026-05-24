@@ -162,3 +162,70 @@ export async function createProviderPaymentIntent(
 
   return { clientSecret: paymentIntent.client_secret! }
 }
+
+export async function activatePositionByPaymentIntent(
+  clientSecret: string,
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  // clientSecret format: pi_xxx_secret_yyy — extract the PI id
+  const paymentIntentId = clientSecret.split('_secret_')[0]
+  if (!paymentIntentId) return { error: 'Invalid client secret' }
+
+  // Verify payment succeeded with Stripe before activating
+  let pi: Stripe.PaymentIntent
+  try {
+    pi = await stripe.paymentIntents.retrieve(paymentIntentId)
+  } catch {
+    return { error: 'Could not verify payment' }
+  }
+  if (pi.status !== 'succeeded') return { error: `Payment not confirmed (status: ${pi.status})` }
+
+  const { position_type, position_id } = pi.metadata ?? {}
+  if (!position_id || !position_type) return { error: 'Missing position metadata' }
+
+  if (position_type === 'hedger') {
+    const { data: position } = await supabase
+      .from('hedger_positions')
+      .update({ status: 'active' })
+      .eq('id', position_id)
+      .eq('user_id', user.id)
+      .select('tier_id, premium_paid_usd, contract_id')
+      .single()
+
+    if (position) {
+      const { data: tier } = await supabase
+        .from('coverage_tiers')
+        .select('current_capacity_usd')
+        .eq('id', position.tier_id)
+        .single()
+      if (tier) {
+        await supabase
+          .from('coverage_tiers')
+          .update({ current_capacity_usd: tier.current_capacity_usd + position.premium_paid_usd })
+          .eq('id', position.tier_id)
+      }
+      const { data: contract } = await supabase
+        .from('contracts')
+        .select('total_volume_usd')
+        .eq('id', position.contract_id)
+        .single()
+      if (contract) {
+        await supabase
+          .from('contracts')
+          .update({ total_volume_usd: contract.total_volume_usd + position.premium_paid_usd })
+          .eq('id', position.contract_id)
+      }
+    }
+  } else {
+    await supabase
+      .from('provider_positions')
+      .update({ status: 'active' })
+      .eq('id', position_id)
+      .eq('user_id', user.id)
+  }
+
+  return { ok: true }
+}

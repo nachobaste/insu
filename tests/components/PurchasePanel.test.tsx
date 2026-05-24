@@ -10,9 +10,14 @@ vi.mock('next/link', () => ({
   ),
 }))
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}))
+
 vi.mock('@/lib/actions/purchase', () => ({
   createHedgerPaymentIntent: vi.fn().mockResolvedValue({ clientSecret: 'pi_test_secret' }),
   createProviderPaymentIntent: vi.fn().mockResolvedValue({ clientSecret: 'pi_test_secret' }),
+  activatePositionByPaymentIntent: vi.fn().mockResolvedValue({ ok: true }),
 }))
 
 vi.mock('@/components/markets/StripePaymentForm', () => ({

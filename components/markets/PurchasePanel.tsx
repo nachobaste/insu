@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { ContractWithTiers } from '@/lib/types'
 import { computePeriodFactor } from '@/lib/pricing/engine'
 import TierSelector from './TierSelector'
 import AuthGate from './AuthGate'
 import StripePaymentForm from './StripePaymentForm'
-import { createHedgerPaymentIntent, createProviderPaymentIntent } from '@/lib/actions/purchase'
+import { createHedgerPaymentIntent, createProviderPaymentIntent, activatePositionByPaymentIntent } from '@/lib/actions/purchase'
 
 type PanelMode = 'buy' | 'provide'
 type Step = 'select' | 'payment' | 'done'
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export default function PurchasePanel({ contract, userId, open, initialMode, initialPeriodDays, onClose }: Props) {
+  const router = useRouter()
   const [mode, setMode] = useState<PanelMode>(initialMode)
   const [step, setStep] = useState<Step>('select')
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null)
@@ -152,7 +154,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                 </p>
               )}
               <button
-                onClick={handleClose}
+                onClick={() => { handleClose(); router.push('/dashboard') }}
                 className="mt-2 rounded-lg bg-insu-accent px-6 py-2.5 text-[14px] font-bold text-bg"
               >
                 Done
@@ -269,7 +271,10 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                   amountUsd={mode === 'buy'
                     ? Math.round(selectedTier.premium_usd * periodFactor * 100) / 100
                     : parseFloat(depositAmount)}
-                  onSuccess={() => setStep('done')}
+                  onSuccess={async () => {
+                    await activatePositionByPaymentIntent(clientSecret)
+                    setStep('done')
+                  }}
                   onError={(msg) => { setError(msg); setStep('select') }}
                 />
               ) : null}
