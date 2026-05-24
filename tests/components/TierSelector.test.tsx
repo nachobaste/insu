@@ -39,7 +39,7 @@ describe('TierSelector', () => {
   it('renders both tier names', () => {
     render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={vi.fn()} />)
     expect(screen.getByText('Basic')).toBeInTheDocument()
-    expect(screen.getByText('Premium')).toBeInTheDocument()
+    expect(screen.getByText('Pro')).toBeInTheDocument()
   })
 
   it('shows selected indicator on selected tier', () => {

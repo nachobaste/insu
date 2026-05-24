@@ -13,7 +13,7 @@ interface Props {
 
 const TIER_LABELS: Record<CoverageLevel, string> = {
   basic:   'Basic',
-  premium: 'Premium',
+  premium: 'Pro',
 }
 
 export default function TierSelector({ tiers, selectedTierId, onSelect, mode = 'buy', periodFactor }: Props) {
