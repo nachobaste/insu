@@ -55,11 +55,11 @@ function makeDb(opts: {
 describe('pollContracts', () => {
   it('writes one oracle_readings row per contract', async () => {
     const db = makeDb()
-    const mockFetcher = vi.fn().mockResolvedValue({
+    const mockFetcher = vi.fn().mockResolvedValue([{
       source: 'openweathermap',
       reading_type: 'weather',
       value: { rain_mm: 5, temp_c: 20 },
-    })
+    }])
     const count = await pollContracts(db as never, mockFetcher)
     expect(count).toBe(1)
     expect(db._insert).toHaveBeenCalledTimes(1)
@@ -72,18 +72,30 @@ describe('pollContracts', () => {
 
   it('sets trigger_met = true when condition is met', async () => {
     const db = makeDb()
-    const mockFetcher = vi.fn().mockResolvedValue({
+    const mockFetcher = vi.fn().mockResolvedValue([{
       source: 'openweathermap',
       reading_type: 'weather',
       value: { rain_mm: 15, temp_c: 20 }, // 15 >= 10
-    })
+    }])
     await pollContracts(db as never, mockFetcher)
     expect(db._insert.mock.calls[0][0].trigger_met).toBe(true)
   })
 
-  it('skips contracts when fetcher returns null', async () => {
+  it('writes multiple rows when fetcher returns multiple readings', async () => {
     const db = makeDb()
-    const count = await pollContracts(db as never, vi.fn().mockResolvedValue(null))
+    const mockFetcher = vi.fn().mockResolvedValue([
+      { source: 'openweathermap', reading_type: 'weather', value: { rain_mm: 5, temp_c: 20 } },
+      { source: 'tomorrow.io',    reading_type: 'weather', value: { rain_mm: 6, temp_c: 21 } },
+    ])
+    const count = await pollContracts(db as never, mockFetcher)
+    expect(count).toBe(1)
+    expect(db._insert).toHaveBeenCalledTimes(2)
+    expect(db._insert.mock.calls[1][0]).toMatchObject({ source: 'tomorrow.io' })
+  })
+
+  it('skips contracts when fetcher returns empty array', async () => {
+    const db = makeDb()
+    const count = await pollContracts(db as never, vi.fn().mockResolvedValue([]))
     expect(count).toBe(0)
     expect(db._insert).not.toHaveBeenCalled()
   })
@@ -101,11 +113,11 @@ describe('pollContracts', () => {
     const db = makeDb({ contracts: twoContracts as Contract[] })
     const mockFetcher = vi.fn()
       .mockRejectedValueOnce(new Error('API timeout'))
-      .mockResolvedValueOnce({
+      .mockResolvedValueOnce([{
         source: 'openweathermap',
         reading_type: 'weather',
         value: { rain_mm: 5, temp_c: 20 },
-      })
+      }])
     const count = await pollContracts(db as never, mockFetcher)
     expect(count).toBe(1)
     expect(db._insert).toHaveBeenCalledTimes(1)
