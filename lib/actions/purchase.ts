@@ -88,7 +88,10 @@ export async function createHedgerPaymentIntent(
     .select('id')
     .single()
 
-  if (positionError || !position) return { error: 'Failed to create position' }
+  if (positionError || !position) {
+    console.error('hedger_positions insert failed:', positionError)
+    return { error: `Failed to create position: ${positionError?.message ?? 'unknown'}` }
+  }
 
   await stripe.paymentIntents.update(paymentIntent.id, {
     metadata: { position_type: 'hedger', position_id: position.id, tier_id: tierId, user_id: user.id },
