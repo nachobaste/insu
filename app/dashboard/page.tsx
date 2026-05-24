@@ -22,7 +22,7 @@ export default async function DashboardPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  const data = await getDashboardData(user.id)
+  const data = await getDashboardData()
   const initialTab: Tab = VALID_TABS.includes(searchParams.tab as Tab)
     ? (searchParams.tab as Tab)
     : 'protections'

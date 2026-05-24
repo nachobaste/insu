@@ -33,7 +33,13 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refreshes the session — do not remove.
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { pathname } = request.nextUrl
+  const isProtected = pathname.startsWith('/dashboard') || pathname.startsWith('/admin')
+  if (isProtected && !user) {
+    return NextResponse.redirect(new URL('/auth/login', request.url))
+  }
 
   return supabaseResponse
 }

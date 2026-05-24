@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { evaluateTrigger, type TriggerCondition } from '@/lib/oracle/trigger'
 
 export interface InjectResult {
@@ -26,9 +26,19 @@ export async function injectReading(
     return { ok: false, error: 'Invalid JSON — check your reading value' }
   }
 
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const userClient = createClient()
+  const { data: { user } } = await userClient.auth.getUser()
   if (!user) return { ok: false, error: 'Unauthorized' }
+
+  const supabase = createServiceClient()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  if ((profile as { role: string } | null)?.role !== 'admin') {
+    return { ok: false, error: 'Forbidden' }
+  }
 
   const { data: contract, error: contractError } = await supabase
     .from('contracts')

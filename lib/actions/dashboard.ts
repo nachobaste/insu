@@ -13,8 +13,12 @@ export interface DashboardData {
   payouts: PayoutWithContract[]
 }
 
-export async function getDashboardData(userId: string): Promise<DashboardData> {
+export async function getDashboardData(): Promise<DashboardData> {
   const supabase = createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+  const userId = user.id
 
   const [hedgerResult, providerResult, payoutsResult] = await Promise.all([
     supabase

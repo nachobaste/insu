@@ -207,28 +207,14 @@ export async function activatePositionByPaymentIntent(
     }
 
     if (position) {
-      const { data: tier } = await db
-        .from('coverage_tiers')
-        .select('current_capacity_usd')
-        .eq('id', position.tier_id)
-        .single()
-      if (tier) {
-        await db
-          .from('coverage_tiers')
-          .update({ current_capacity_usd: tier.current_capacity_usd + position.premium_paid_usd })
-          .eq('id', position.tier_id)
-      }
-      const { data: contract } = await db
-        .from('contracts')
-        .select('total_volume_usd')
-        .eq('id', position.contract_id)
-        .single()
-      if (contract) {
-        await db
-          .from('contracts')
-          .update({ total_volume_usd: contract.total_volume_usd + position.premium_paid_usd })
-          .eq('id', position.contract_id)
-      }
+      await db.rpc('increment_tier_capacity', {
+        p_tier_id: position.tier_id,
+        p_amount: position.premium_paid_usd,
+      })
+      await db.rpc('increment_contract_volume', {
+        p_contract_id: position.contract_id,
+        p_amount: position.premium_paid_usd,
+      })
     }
   } else {
     await db

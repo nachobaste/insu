@@ -188,11 +188,13 @@ export async function retryPayout(payoutId: string): Promise<void> {
   if (error || !payout) throw new Error('Payout not found')
 
   const p = payout as {
-    id: string; amount_usd: number; currency: string; status: string
+    id: string; amount_usd: number; currency: string; status: string; transfer_id: string | null
     hedger_positions: { user_id: string; id: string }
   }
 
   if (p.status === 'completed') throw new Error('Payout already completed')
+  if (p.status === 'processing') throw new Error('Payout is already processing — check Stripe dashboard before retrying')
+  if (p.transfer_id) throw new Error('Transfer already issued — check Stripe dashboard before retrying')
 
   const { data: profile } = await supabase
     .from('profiles')
