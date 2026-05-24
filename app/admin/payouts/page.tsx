@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { PayoutQueue } from '@/components/admin/payouts/PayoutQueue'
 
 export default async function AdminPayoutsPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data } = await supabase
     .from('payouts')

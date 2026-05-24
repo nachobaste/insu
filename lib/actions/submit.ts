@@ -15,7 +15,7 @@ export interface SubmitProgramInput {
 }
 
 export async function submitProgram(input: SubmitProgramInput): Promise<{ id: string }> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('You must be signed in to submit a program')
 

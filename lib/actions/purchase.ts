@@ -12,7 +12,7 @@ export async function createHedgerPaymentIntent(
   tierId: string,
   periodDays?: number,
 ): Promise<{ clientSecret: string } | { error: string }> {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'You must be signed in to purchase protection' }
@@ -107,7 +107,7 @@ export async function createProviderPaymentIntent(
 ): Promise<{ clientSecret: string } | { error: string }> {
   if (!amountUsd || amountUsd < 10) return { error: 'Minimum deposit is $10' }
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'You must be signed in to provide capital' }
@@ -167,7 +167,7 @@ export async function createProviderPaymentIntent(
 export async function activatePositionByPaymentIntent(
   clientSecret: string,
 ): Promise<{ ok: true } | { error: string }> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
@@ -207,11 +207,13 @@ export async function activatePositionByPaymentIntent(
     }
 
     if (position) {
-      await db.rpc('increment_tier_capacity', {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (db.rpc as any)('increment_tier_capacity', {
         p_tier_id: position.tier_id,
         p_amount: position.premium_paid_usd,
       })
-      await db.rpc('increment_contract_volume', {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (db.rpc as any)('increment_contract_volume', {
         p_contract_id: position.contract_id,
         p_amount: position.premium_paid_usd,
       })

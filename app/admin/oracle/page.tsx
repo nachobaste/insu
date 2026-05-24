@@ -3,7 +3,7 @@ import { OracleMonitor } from '@/components/admin/oracle/OracleMonitor'
 import type { Contract, OracleReading } from '@/lib/types'
 
 export default async function AdminOraclePage() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: contracts } = await supabase
     .from('contracts')

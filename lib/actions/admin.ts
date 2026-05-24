@@ -9,7 +9,7 @@ function getStripe() {
 }
 
 async function assertAdmin() {
-  const userClient = createClient()
+  const userClient = await createClient()
   const { data: { user } } = await userClient.auth.getUser()
   if (!user) throw new Error('Unauthorized')
   const supabase = createServiceClient()

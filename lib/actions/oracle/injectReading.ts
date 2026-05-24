@@ -26,7 +26,7 @@ export async function injectReading(
     return { ok: false, error: 'Invalid JSON — check your reading value' }
   }
 
-  const userClient = createClient()
+  const userClient = await createClient()
   const { data: { user } } = await userClient.auth.getUser()
   if (!user) return { ok: false, error: 'Unauthorized' }
 

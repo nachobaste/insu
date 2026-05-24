@@ -5,9 +5,10 @@ import type { Contract, HedgerPosition } from '@/lib/types'
 export default async function AdminTriggerPage({
   searchParams,
 }: {
-  searchParams: { contract?: string }
+  searchParams: Promise<{ contract?: string }>
 }) {
-  const supabase = createClient()
+  const { contract: contractSlug } = await searchParams
+  const supabase = await createClient()
 
   const { data: contracts } = await supabase
     .from('contracts')
@@ -17,8 +18,8 @@ export default async function AdminTriggerPage({
 
   const activeContracts = (contracts ?? []) as unknown as Contract[]
 
-  const initialContractId = searchParams.contract
-    ? (activeContracts.find((c) => c.slug === searchParams.contract)?.id ?? '')
+  const initialContractId = contractSlug
+    ? (activeContracts.find((c) => c.slug === contractSlug)?.id ?? '')
     : ''
 
   const summaries = await Promise.all(

@@ -3,7 +3,7 @@ import { ContractForm } from '@/components/admin/contracts/ContractForm'
 import type { Category } from '@/lib/types'
 
 export default async function NewContractPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('categories')
     .select('*')

@@ -5,7 +5,7 @@ import SubmitForm from '@/components/submit/SubmitForm'
 import type { Category } from '@/lib/types'
 
 export default async function SubmitPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login?next=/submit')
 

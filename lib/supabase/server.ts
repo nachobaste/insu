@@ -4,10 +4,10 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from './database.types'
 
-export function createClient() {
+export async function createClient() {
   // Called only when env vars are confirmed present (checked at call sites).
   // The browser client (client.ts) returns null when unconfigured for client-side safety.
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
