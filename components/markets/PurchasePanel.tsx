@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { ContractWithTiers } from '@/lib/types'
 import { computePeriodFactor } from '@/lib/pricing/engine'
@@ -36,6 +36,10 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setSelectedPeriodDays(initialPeriodDays ?? null)
+  }, [initialPeriodDays])
 
   const isRecurring =
     contract.trigger_type === 'weather' || contract.trigger_type === 'urban'
