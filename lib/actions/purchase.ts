@@ -181,7 +181,9 @@ export async function activatePositionByPaymentIntent(
   } catch {
     return { error: 'Could not verify payment' }
   }
-  if (pi.status !== 'succeeded') return { error: `Payment not confirmed (status: ${pi.status})` }
+  if (pi.status !== 'succeeded' && pi.status !== 'processing') {
+    return { error: `Payment not confirmed (status: ${pi.status})` }
+  }
 
   const { position_type, position_id } = pi.metadata ?? {}
   if (!position_id || !position_type) return { error: 'Missing position metadata' }

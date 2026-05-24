@@ -272,7 +272,17 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                     ? Math.round(selectedTier.premium_usd * periodFactor * 100) / 100
                     : parseFloat(depositAmount)}
                   onSuccess={async () => {
-                    await activatePositionByPaymentIntent(clientSecret)
+                    try {
+                      const result = await activatePositionByPaymentIntent(clientSecret)
+                      if ('error' in result) {
+                        console.error('Activation failed:', result.error)
+                        setError(`Activation error: ${result.error}`)
+                        setStep('select')
+                        return
+                      }
+                    } catch (err) {
+                      console.error('Activation threw:', err)
+                    }
                     setStep('done')
                   }}
                   onError={(msg) => { setError(msg); setStep('select') }}
