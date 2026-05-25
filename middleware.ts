@@ -49,10 +49,10 @@ export async function middleware(request: NextRequest) {
       .filter(Boolean)
 
     if (allowlist.length > 0) {
+      const realIp = request.headers.get('x-real-ip')
       const forwarded = request.headers.get('x-forwarded-for')
-      const ip = forwarded
-        ? forwarded.split(',')[0].trim()
-        : (request.headers.get('x-real-ip') ?? '')
+      const forwardedEntries = forwarded ? forwarded.split(',').map(s => s.trim()).filter(Boolean) : []
+      const ip = realIp ?? forwardedEntries[forwardedEntries.length - 1] ?? ''
       if (!allowlist.includes(ip)) {
         return new NextResponse('Access denied', { status: 403 })
       }

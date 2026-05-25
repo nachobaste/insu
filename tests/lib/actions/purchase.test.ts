@@ -199,5 +199,6 @@ describe('createHedgerPaymentIntent', () => {
     })
     // Stripe and position insert should not have been called
     expect(mockPaymentIntentsCreate).not.toHaveBeenCalled()
+    expect(mockPositionInsert().insert).not.toHaveBeenCalled()
   })
 })
