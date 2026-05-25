@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/Header'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import { AdminMfaGateWrapper } from '@/components/admin/AdminMfaGateWrapper'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -15,6 +16,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .single()
 
   if ((profile as { role: string } | null)?.role !== 'admin') redirect('/')
+
+  // Show MFA gate if session is only AAL1
+  const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aalData?.currentLevel !== 'aal2') {
+    return <AdminMfaGateWrapper />
+  }
 
   return (
     <div className="flex min-h-screen flex-col">

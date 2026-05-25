@@ -12,6 +12,11 @@ async function assertAdmin() {
   const userClient = await createClient()
   const { data: { user } } = await userClient.auth.getUser()
   if (!user) throw new Error('Unauthorized')
+
+  // Require AAL2 (TOTP MFA) for all admin operations (PCI Req 8)
+  const { data: aalData } = await userClient.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aalData?.currentLevel !== 'aal2') throw new Error('MFA_REQUIRED')
+
   const supabase = createServiceClient()
   const { data: profile } = await supabase
     .from('profiles')

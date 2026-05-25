@@ -32,6 +32,9 @@ function makeSupabase({
   return {
     auth: {
       getUser: vi.fn().mockResolvedValue({ data: { user: { id: userId } }, error: null }),
+      mfa: {
+        getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({ data: { currentLevel: 'aal2' }, error: null }),
+      },
     },
     from: vi.fn((table: string) => {
       if (table === 'profiles') {
@@ -113,6 +116,9 @@ describe('upsertContract', () => {
     const userClientMock = {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({ data: { currentLevel: 'aal2' }, error: null }),
+        },
       },
       from: vi.fn(),
     }
@@ -138,6 +144,9 @@ describe('overrideContractTrigger', () => {
     const userClientMock = {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null }),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({ data: { currentLevel: 'aal2' }, error: null }),
+        },
       },
       from: vi.fn(),
     }
@@ -164,6 +173,9 @@ describe('overrideContractTrigger', () => {
     const userClientMock = {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null }),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({ data: { currentLevel: 'aal2' }, error: null }),
+        },
       },
       from: vi.fn(),
     }
@@ -204,6 +216,9 @@ describe('overrideContractTrigger', () => {
     const userClientMock = {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({ data: { currentLevel: 'aal2' }, error: null }),
+        },
       },
       from: vi.fn(),
     }
@@ -222,6 +237,9 @@ describe('retryPayout', () => {
     const userClientMock = {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null }),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({ data: { currentLevel: 'aal2' }, error: null }),
+        },
         from: vi.fn(),
       },
     }
@@ -262,6 +280,9 @@ describe('retryPayout', () => {
     const userClientMock = {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null }),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({ data: { currentLevel: 'aal2' }, error: null }),
+        },
         from: vi.fn(),
       },
     }
