@@ -33,10 +33,11 @@ export default async function MarketPage({
     supabase.auth.getUser(),
   ])
 
-  if (contractResult.error || !contractResult.data) notFound()
+  // Destructure before the guard so contractData is not narrowed to never.
+  const contractData = contractResult.data
+  if (contractResult.error || !contractData) notFound()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const contract = (contractResult as any).data as ContractDetailData
+  const contract = contractData as unknown as ContractDetailData
   const userId = userResult.data.user?.id ?? null
 
   const { data: latestReadingRaw, error: oracleError } = await supabase

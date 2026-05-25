@@ -10,7 +10,7 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
 
 vi.mock('next/link', () => {
   return {
-    default: ({ href, children, ...props }: any) =>
+    default: ({ href, children, ...props }: { href: string; children?: React.ReactNode; [key: string]: unknown }) =>
       React.createElement('a', { href, ...props }, children),
   }
 })

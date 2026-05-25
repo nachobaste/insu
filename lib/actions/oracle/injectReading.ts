@@ -2,6 +2,7 @@
 
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { evaluateTrigger, type TriggerCondition } from '@/lib/oracle/trigger'
+import type { Json } from '@/lib/supabase/database.types'
 
 export interface InjectResult {
   ok: true
@@ -73,8 +74,7 @@ export async function injectReading(
       contract_id: contractId,
       source,
       reading_type: 'manual',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      value: parsedValue as any,
+      value: parsedValue as Json,
       trigger_met,
     })
     .select('id')

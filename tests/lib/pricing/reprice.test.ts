@@ -1,5 +1,12 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, type Mock } from 'vitest'
 import { repriceAll, repriceTier } from '@/lib/pricing/reprice'
+
+interface MockDb {
+  from: Mock
+  _update: Mock
+  _updateEq: Mock
+  _insert: Mock
+}
 
 const futureDeadline = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString()
 
@@ -90,7 +97,7 @@ function makeDb(opts: {
     _updateEq: updateEq,
     _insert: insert,
   }
-  return db as any
+  return db as MockDb
 }
 
 describe('repriceAll', () => {
