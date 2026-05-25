@@ -33,7 +33,31 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refreshes the session — do not remove.
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { pathname } = request.nextUrl
+  const isProtected = pathname.startsWith('/dashboard') || pathname.startsWith('/admin')
+  if (isProtected && !user) {
+    return NextResponse.redirect(new URL('/auth/login', request.url))
+  }
+
+  // Optional IP allowlist for /admin — set ADMIN_IP_ALLOWLIST=ip1,ip2 in env to enable
+  if (pathname.startsWith('/admin') && user) {
+    const allowlist = (process.env.ADMIN_IP_ALLOWLIST ?? '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+
+    if (allowlist.length > 0) {
+      const realIp = request.headers.get('x-real-ip')
+      const forwarded = request.headers.get('x-forwarded-for')
+      const forwardedEntries = forwarded ? forwarded.split(',').map(s => s.trim()).filter(Boolean) : []
+      const ip = realIp ?? forwardedEntries[forwardedEntries.length - 1] ?? ''
+      if (!allowlist.includes(ip)) {
+        return new NextResponse('Access denied', { status: 403 })
+      }
+    }
+  }
 
   return supabaseResponse
 }

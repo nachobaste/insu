@@ -12,10 +12,21 @@ export async function createHedgerPaymentIntent(
   tierId: string,
   periodDays?: number,
 ): Promise<{ clientSecret: string } | { error: string }> {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'You must be signed in to purchase protection' }
+
+  // Prevent flood: cap pending purchases at 5 per user
+  const { count: pendingCount, error: countError } = await supabase
+    .from('hedger_positions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('status', 'pending_payment')
+  if (countError) return { error: 'Unable to verify pending purchases. Please try again.' }
+  if ((pendingCount ?? 0) >= 5) {
+    return { error: 'You have too many pending purchases. Complete or cancel them before buying again.' }
+  }
 
   const { data: tier, error: tierError } = await supabase
     .from('coverage_tiers')
@@ -107,7 +118,7 @@ export async function createProviderPaymentIntent(
 ): Promise<{ clientSecret: string } | { error: string }> {
   if (!amountUsd || amountUsd < 10) return { error: 'Minimum deposit is $10' }
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'You must be signed in to provide capital' }
@@ -167,7 +178,7 @@ export async function createProviderPaymentIntent(
 export async function activatePositionByPaymentIntent(
   clientSecret: string,
 ): Promise<{ ok: true } | { error: string }> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
@@ -207,28 +218,16 @@ export async function activatePositionByPaymentIntent(
     }
 
     if (position) {
-      const { data: tier } = await db
-        .from('coverage_tiers')
-        .select('current_capacity_usd')
-        .eq('id', position.tier_id)
-        .single()
-      if (tier) {
-        await db
-          .from('coverage_tiers')
-          .update({ current_capacity_usd: tier.current_capacity_usd + position.premium_paid_usd })
-          .eq('id', position.tier_id)
-      }
-      const { data: contract } = await db
-        .from('contracts')
-        .select('total_volume_usd')
-        .eq('id', position.contract_id)
-        .single()
-      if (contract) {
-        await db
-          .from('contracts')
-          .update({ total_volume_usd: contract.total_volume_usd + position.premium_paid_usd })
-          .eq('id', position.contract_id)
-      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (db.rpc as any)('increment_tier_capacity', {
+        p_tier_id: position.tier_id,
+        p_amount: position.premium_paid_usd,
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (db.rpc as any)('increment_contract_volume', {
+        p_contract_id: position.contract_id,
+        p_amount: position.premium_paid_usd,
+      })
     }
   } else {
     await db

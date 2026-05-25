@@ -3,7 +3,7 @@ import { ScenarioPanel } from '@/components/admin/scenario/ScenarioPanel'
 import type { Contract } from '@/lib/types'
 
 export default async function AdminScenarioPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: contracts } = await supabase
     .from('contracts')

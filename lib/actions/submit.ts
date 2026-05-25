@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export interface SubmitProgramInput {
   title: string
@@ -15,11 +15,9 @@ export interface SubmitProgramInput {
 }
 
 export async function submitProgram(input: SubmitProgramInput): Promise<{ id: string }> {
-  const userClient = createClient()
-  const { data: { user } } = await userClient.auth.getUser()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('You must be signed in to submit a program')
-
-  const supabase = createServiceClient()
 
   const slug = input.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
     + '-' + Date.now().toString(36)

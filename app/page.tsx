@@ -5,7 +5,7 @@ import { SearchProvider } from '@/lib/search-context'
 import type { ContractWithTiers, Category } from '@/lib/types'
 
 async function getCategories(): Promise<Category[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('categories')
     .select('*')
@@ -16,7 +16,7 @@ async function getCategories(): Promise<Category[]> {
 }
 
 async function getContracts(): Promise<ContractWithTiers[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('contracts')
     .select(`
@@ -33,7 +33,7 @@ async function getContracts(): Promise<ContractWithTiers[]> {
 }
 
 async function getPlatformStats() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('contracts')
     .select('total_volume_usd')

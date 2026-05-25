@@ -4,14 +4,19 @@ import Header from '@/components/layout/Header'
 import ContractDetailClient from '@/components/markets/ContractDetailClient'
 import type { ContractDetailData, LatestOracleReading } from '@/lib/types'
 
-export default async function MarketPage({ params }: { params: { slug: string } }) {
+export default async function MarketPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
   const isConfigured = !!(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   )
   if (!isConfigured) notFound()
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const [contractResult, userResult] = await Promise.all([
     supabase
@@ -22,16 +27,17 @@ export default async function MarketPage({ params }: { params: { slug: string } 
         coverage_tiers(*),
         pricing_history(id, tier_id, premium_usd_after, calculated_at)
       `)
-      .eq('slug', params.slug)
+      .eq('slug', slug)
       .in('status', ['active', 'settled'])
       .single(),
     supabase.auth.getUser(),
   ])
 
-  if (contractResult.error || !contractResult.data) notFound()
+  // Destructure before the guard so contractData is not narrowed to never.
+  const contractData = contractResult.data
+  if (contractResult.error || !contractData) notFound()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const contract = (contractResult as any).data as ContractDetailData
+  const contract = contractData as unknown as ContractDetailData
   const userId = userResult.data.user?.id ?? null
 
   const { data: latestReadingRaw, error: oracleError } = await supabase

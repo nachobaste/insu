@@ -39,7 +39,9 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Sync initialPeriodDays prop into state when it changes (e.g. parent passes a different default).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedPeriodDays(initialPeriodDays ?? null)
   }, [initialPeriodDays])
 

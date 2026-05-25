@@ -1,7 +1,8 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { evaluateTrigger, type TriggerCondition } from '@/lib/oracle/trigger'
+import type { Json } from '@/lib/supabase/database.types'
 
 export interface InjectResult {
   ok: true
@@ -26,9 +27,19 @@ export async function injectReading(
     return { ok: false, error: 'Invalid JSON — check your reading value' }
   }
 
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const userClient = await createClient()
+  const { data: { user } } = await userClient.auth.getUser()
   if (!user) return { ok: false, error: 'Unauthorized' }
+
+  const supabase = createServiceClient()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  if ((profile as { role: string } | null)?.role !== 'admin') {
+    return { ok: false, error: 'Forbidden' }
+  }
 
   const { data: contract, error: contractError } = await supabase
     .from('contracts')
@@ -63,8 +74,7 @@ export async function injectReading(
       contract_id: contractId,
       source,
       reading_type: 'manual',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      value: parsedValue as any,
+      value: parsedValue as Json,
       trigger_met,
     })
     .select('id')

@@ -39,41 +39,26 @@ export async function POST(req: NextRequest) {
         .from('hedger_positions')
         .update({ status: 'active' })
         .eq('id', position_id)
+        .eq('payment_intent_id', pi.id)
         .select('tier_id, premium_paid_usd, contract_id')
         .single()
 
       if (position) {
-        const { data: tier } = await supabase
-          .from('coverage_tiers')
-          .select('current_capacity_usd')
-          .eq('id', position.tier_id)
-          .single()
-
-        if (tier) {
-          await supabase
-            .from('coverage_tiers')
-            .update({ current_capacity_usd: tier.current_capacity_usd + position.premium_paid_usd })
-            .eq('id', position.tier_id)
-        }
-
-        const { data: contract } = await supabase
-          .from('contracts')
-          .select('total_volume_usd')
-          .eq('id', position.contract_id)
-          .single()
-
-        if (contract) {
-          await supabase
-            .from('contracts')
-            .update({ total_volume_usd: contract.total_volume_usd + position.premium_paid_usd })
-            .eq('id', position.contract_id)
-        }
+        await supabase.rpc('increment_tier_capacity', {
+          p_tier_id: position.tier_id,
+          p_amount: position.premium_paid_usd,
+        })
+        await supabase.rpc('increment_contract_volume', {
+          p_contract_id: position.contract_id,
+          p_amount: position.premium_paid_usd,
+        })
       }
     } else if (position_type === 'provider') {
       await supabase
         .from('provider_positions')
         .update({ status: 'active' })
         .eq('id', position_id)
+        .eq('payment_intent_id', pi.id)
     }
   }
 

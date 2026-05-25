@@ -87,12 +87,15 @@ async function settleContract(
   )
 
   let paid = 0
+  let totalHedgerPayout = 0
   for (const position of eligiblePositions) {
-    await payoutPosition(db, stripe, contract.id, position)
-    paid++
+    const amountPaid = await payoutPosition(db, stripe, contract.id, position)
+    if (amountPaid > 0) {
+      paid++
+      totalHedgerPayout += amountPaid
+    }
   }
 
-  const totalHedgerPayout = eligiblePositions.reduce((sum, p) => sum + p.payout_amount_usd, 0)
   await settleProviderPositions(db, contract.id, totalHedgerPayout)
 
   return paid
@@ -103,7 +106,16 @@ async function payoutPosition(
   stripe: StripeClient,
   contractId: string,
   position: HedgerPosition,
-): Promise<void> {
+): Promise<number> {
+  // Fetch authoritative payout amount from the tier, not the stored position value
+  const { data: tier } = await db
+    .from('coverage_tiers')
+    .select('payout_usd, payout_mxn')
+    .eq('id', position.tier_id)
+    .single()
+  const payoutAmountUsd = tier ? Number((tier as { payout_usd: number }).payout_usd) : position.payout_amount_usd
+  const payoutAmountMxn = tier ? Number((tier as { payout_mxn: number }).payout_mxn) : position.payout_amount_mxn
+
   const { data: profile } = await db
     .from('profiles')
     .select('stripe_customer_id')
@@ -121,8 +133,8 @@ async function payoutPosition(
     .insert({
       contract_id: contractId,
       hedger_position_id: position.id,
-      amount_usd: position.payout_amount_usd,
-      amount_mxn: position.payout_amount_mxn,
+      amount_usd: payoutAmountUsd,
+      amount_mxn: payoutAmountMxn,
       currency: position.currency,
       payment_provider: 'stripe',
       status: 'processing',
@@ -132,19 +144,19 @@ async function payoutPosition(
 
   if (!payout) {
     console.error(`Failed to create payout record for position ${position.id}`)
-    return
+    return 0
   }
 
   let txnId: string
   try {
     const txn = await stripe.customers.createBalanceTransaction(customerId, {
-      amount: -Math.round(position.payout_amount_usd * 100),
+      amount: -Math.round(payoutAmountUsd * 100),
       currency: 'usd',
     })
     txnId = txn.id
   } catch (err) {
     console.error(`Stripe balance transaction failed for position ${position.id}:`, err)
-    return
+    return 0
   }
 
   await db.from('payouts')
@@ -152,6 +164,7 @@ async function payoutPosition(
     .eq('id', (payout as { id: string }).id)
 
   await db.from('hedger_positions').update({ status: 'paid_out' }).eq('id', position.id)
+  return payoutAmountUsd
 }
 
 async function settleProviderPositions(

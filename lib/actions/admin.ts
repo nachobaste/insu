@@ -9,9 +9,14 @@ function getStripe() {
 }
 
 async function assertAdmin() {
-  const userClient = createClient()
+  const userClient = await createClient()
   const { data: { user } } = await userClient.auth.getUser()
   if (!user) throw new Error('Unauthorized')
+
+  // Require AAL2 (TOTP MFA) for all admin operations (PCI Req 8)
+  const { data: aalData } = await userClient.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aalData?.currentLevel !== 'aal2') throw new Error('MFA_REQUIRED')
+
   const supabase = createServiceClient()
   const { data: profile } = await supabase
     .from('profiles')
@@ -188,11 +193,13 @@ export async function retryPayout(payoutId: string): Promise<void> {
   if (error || !payout) throw new Error('Payout not found')
 
   const p = payout as {
-    id: string; amount_usd: number; currency: string; status: string
+    id: string; amount_usd: number; currency: string; status: string; transfer_id: string | null
     hedger_positions: { user_id: string; id: string }
   }
 
   if (p.status === 'completed') throw new Error('Payout already completed')
+  if (p.status === 'processing') throw new Error('Payout is already processing — check Stripe dashboard before retrying')
+  if (p.transfer_id) throw new Error('Transfer already issued — check Stripe dashboard before retrying')
 
   const { data: profile } = await supabase
     .from('profiles')

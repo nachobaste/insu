@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import Link from 'next/link'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { HedgerPositionWithContract } from '@/lib/types'
@@ -9,7 +10,8 @@ export function ProtectionCard({ position }: { position: HedgerPositionWithContr
     purchased_at, expires_at,
   } = position
 
-  const now = Date.now()
+  // eslint-disable-next-line react-hooks/purity
+  const now = useMemo(() => Date.now(), [])
   const expiresMs = new Date(expires_at).getTime()
   const purchasedMs = new Date(purchased_at).getTime()
   const totalDays = Math.max(1, Math.round((expiresMs - purchasedMs) / 86_400_000))

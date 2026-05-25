@@ -6,7 +6,7 @@ export default async function Header() {
   let userId: string | null = null
   let isAdmin = false
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     userId = user?.id ?? null
     if (userId) {

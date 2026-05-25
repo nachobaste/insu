@@ -1,0 +1,90 @@
+rules:
+  # Detect server actions missing auth check
+  - id: server-action-no-auth
+    patterns:
+      - pattern: |
+          'use server'
+          ...
+          export async function $FUNC(...) {
+            ...
+          }
+      - pattern-not: |
+          'use server'
+          ...
+          export async function $FUNC(...) {
+            ...
+            await $ANYTHING.auth.getUser()
+            ...
+          }
+      - pattern-not: |
+          'use server'
+          ...
+          export async function $FUNC(...) {
+            ...
+            await assertAdmin()
+            ...
+          }
+    message: "Server action '$FUNC' may be missing authentication check"
+    languages: [typescript]
+    severity: WARNING
+    paths:
+      include:
+        - lib/actions/
+
+  # Detect service client used where user client is expected
+  - id: service-client-in-user-context
+    pattern: |
+      createServiceClient()
+    message: "Verify this createServiceClient() call is intentional — service role bypasses RLS"
+    languages: [typescript]
+    severity: INFO
+    paths:
+      include:
+        - lib/actions/
+        - app/
+
+  # Detect raw SQL string interpolation (injection risk)
+  - id: sql-string-interpolation
+    patterns:
+      - pattern: |
+          $DB.rpc($SQL + $VAR, ...)
+      - pattern: |
+          $DB.rpc(`...${$VAR}...`, ...)
+    message: "Potential SQL injection via string interpolation in rpc() call"
+    languages: [typescript]
+    severity: ERROR
+
+  # Detect console.log with potentially sensitive variables
+  - id: sensitive-data-in-console
+    patterns:
+      - pattern: console.log(..., $X, ...)
+      - metavariable-regex:
+          metavariable: $X
+          regex: .*(secret|password|token|key|stripe|pi\.|paymentIntent).*
+    message: "Potential sensitive data logged to console"
+    languages: [typescript]
+    severity: WARNING
+
+  # Detect hardcoded secrets
+  - id: hardcoded-stripe-key
+    patterns:
+      - pattern: |
+          "$KEY"
+      - metavariable-regex:
+          metavariable: $KEY
+          regex: (sk_live_|sk_test_|pk_live_|pk_test_|whsec_)[a-zA-Z0-9]{10,}
+    message: "Hardcoded Stripe key detected"
+    languages: [typescript, javascript]
+    severity: ERROR
+
+  # Detect non-atomic counter updates (race condition pattern)
+  - id: non-atomic-counter-update
+    pattern: |
+      .update({ $FIELD: $TABLE.$FIELD + $VAL })
+    message: "Non-atomic read-then-write counter update — use rpc('increment_*') to prevent race conditions"
+    languages: [typescript]
+    severity: WARNING
+    paths:
+      include:
+        - lib/
+        - app/
