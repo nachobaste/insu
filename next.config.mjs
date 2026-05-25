@@ -34,7 +34,7 @@ const nextConfig = {
               "img-src 'self' data: https:",
               "font-src 'self' data:",
               "frame-src https://js.stripe.com",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.ingest.sentry.io",
               "form-action 'self'",
               "base-uri 'self'",
               "object-src 'none'",
@@ -48,4 +48,7 @@ const nextConfig = {
 
 export default withSentryConfig(nextConfig, {
   silent: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
 })
