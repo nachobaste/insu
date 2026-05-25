@@ -135,6 +135,20 @@ describe('upsertContract', () => {
     const bad = { ...baseInput, premium_tier: { premium_usd: 2000, payout_usd: 500, max_capacity_usd: 100000 } }
     await expect(upsertContract(bad)).rejects.toThrow('Payout must exceed premium')
   })
+
+  it('throws MFA_REQUIRED when session is aal1', async () => {
+    vi.mocked(createClient).mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null }),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({
+            data: { currentLevel: 'aal1', nextLevel: 'aal2' }, error: null,
+          }),
+        },
+      },
+    } as never)
+    await expect(upsertContract(baseInput)).rejects.toThrow('MFA_REQUIRED')
+  })
 })
 
 describe('overrideContractTrigger', () => {
@@ -228,6 +242,20 @@ describe('overrideContractTrigger', () => {
       overrideContractTrigger({ contractId: 'c-1', outcome: false, reason: 'test' })
     ).rejects.toThrow('Forbidden')
   })
+
+  it('throws MFA_REQUIRED when session is aal1', async () => {
+    vi.mocked(createClient).mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null }),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({
+            data: { currentLevel: 'aal1', nextLevel: 'aal2' }, error: null,
+          }),
+        },
+      },
+    } as never)
+    await expect(overrideContractTrigger({ contractId: 'c-1', outcome: false, reason: 'test' })).rejects.toThrow('MFA_REQUIRED')
+  })
 })
 
 describe('retryPayout', () => {
@@ -248,7 +276,7 @@ describe('retryPayout', () => {
       hedger_position_id: 'hp-1',
       amount_usd: 500,
       currency: 'USD',
-      status: 'processing',
+      status: 'failed',
       hedger_positions: { user_id: 'user-1', id: 'hp-1' },
     }
     const mockSupabase = makeSupabase({
@@ -295,5 +323,19 @@ describe('retryPayout', () => {
     vi.mocked(createServiceClient).mockReturnValue(mockSupabase as never)
 
     await expect(retryPayout('nonexistent')).rejects.toThrow('Payout not found')
+  })
+
+  it('throws MFA_REQUIRED when session is aal1', async () => {
+    vi.mocked(createClient).mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null }),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({
+            data: { currentLevel: 'aal1', nextLevel: 'aal2' }, error: null,
+          }),
+        },
+      },
+    } as never)
+    await expect(retryPayout('pay-1')).rejects.toThrow('MFA_REQUIRED')
   })
 })

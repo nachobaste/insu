@@ -7,48 +7,45 @@ export function AdminMfaGate({ onVerified }: { onVerified: () => void }) {
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const supabase = createClient()
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const supabase = createClient()!
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    try {
+      const { data: factors } = await supabase.auth.mfa.listFactors()
+      const totpFactor = factors?.totp?.[0]
+      if (!totpFactor) {
+        setError('No MFA factor enrolled. Contact your administrator to set up TOTP.')
+        return
+      }
 
-    if (!supabase) {
-      setError('Supabase client unavailable — check environment configuration.')
+      const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId: totpFactor.id,
+      })
+      if (challengeError || !challenge) {
+        setError(challengeError?.message ?? 'Failed to start MFA challenge')
+        return
+      }
+
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId: totpFactor.id,
+        challengeId: challenge.id,
+        code,
+      })
+      if (verifyError) {
+        setError('Invalid code — try again')
+        return
+      }
+
+      onVerified()
+    } catch {
+      setError('An unexpected error occurred — please try again')
+    } finally {
       setLoading(false)
-      return
     }
-
-    const { data: factors } = await supabase.auth.mfa.listFactors()
-    const totpFactor = factors?.totp?.[0]
-    if (!totpFactor) {
-      setError('No MFA factor enrolled. Contact your administrator to set up TOTP.')
-      setLoading(false)
-      return
-    }
-
-    const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
-      factorId: totpFactor.id,
-    })
-    if (challengeError || !challenge) {
-      setError(challengeError?.message ?? 'Failed to start MFA challenge')
-      setLoading(false)
-      return
-    }
-
-    const { error: verifyError } = await supabase.auth.mfa.verify({
-      factorId: totpFactor.id,
-      challengeId: challenge.id,
-      code,
-    })
-    if (verifyError) {
-      setError('Invalid code — try again')
-      setLoading(false)
-      return
-    }
-
-    onVerified()
   }
 
   return (
