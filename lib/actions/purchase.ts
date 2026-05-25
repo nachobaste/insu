@@ -6,7 +6,11 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { validateCapacity } from '@/lib/utils/capacity'
 import { computePeriodFactor } from '@/lib/pricing/engine'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? 'sk_test_placeholder')
+function getStripe() {
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) throw new Error('STRIPE_SECRET_KEY is not configured')
+  return new Stripe(key)
+}
 
 export async function createHedgerPaymentIntent(
   tierId: string,
@@ -66,7 +70,7 @@ export async function createHedgerPaymentIntent(
 
   let paymentIntent: Stripe.PaymentIntent
   try {
-    paymentIntent = await stripe.paymentIntents.create({
+    paymentIntent = await getStripe().paymentIntents.create({
       amount: amountCents,
       currency: 'usd',
       automatic_payment_methods: { enabled: true },
@@ -105,7 +109,7 @@ export async function createHedgerPaymentIntent(
     return { error: `Failed to create position: ${positionError?.message ?? 'unknown'}` }
   }
 
-  await stripe.paymentIntents.update(paymentIntent.id, {
+  await getStripe().paymentIntents.update(paymentIntent.id, {
     metadata: { position_type: 'hedger', position_id: position.id, tier_id: tierId, user_id: user.id },
   })
 
@@ -136,7 +140,7 @@ export async function createProviderPaymentIntent(
 
   let paymentIntent: Stripe.PaymentIntent
   try {
-    paymentIntent = await stripe.paymentIntents.create({
+    paymentIntent = await getStripe().paymentIntents.create({
       amount: Math.max(50, Math.round(amountUsd * 100)),
       currency: 'usd',
       automatic_payment_methods: { enabled: true },
@@ -168,7 +172,7 @@ export async function createProviderPaymentIntent(
 
   if (positionError || !position) return { error: 'Failed to create position' }
 
-  await stripe.paymentIntents.update(paymentIntent.id, {
+  await getStripe().paymentIntents.update(paymentIntent.id, {
     metadata: { position_type: 'provider', position_id: position.id, tier_id: tierId, user_id: user.id },
   })
 
@@ -189,7 +193,7 @@ export async function activatePositionByPaymentIntent(
   // Verify payment succeeded with Stripe before activating
   let pi: Stripe.PaymentIntent
   try {
-    pi = await stripe.paymentIntents.retrieve(paymentIntentId)
+    pi = await getStripe().paymentIntents.retrieve(paymentIntentId)
   } catch {
     return { error: 'Could not verify payment' }
   }
@@ -209,6 +213,7 @@ export async function activatePositionByPaymentIntent(
       .update({ status: 'active' })
       .eq('id', position_id)
       .eq('user_id', user.id)
+      .eq('status', 'pending_payment')
       .select('tier_id, premium_paid_usd, contract_id')
       .single()
 

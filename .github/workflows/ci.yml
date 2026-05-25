@@ -74,6 +74,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
+      SENTRY_AUTH_TOKEN: ${{ github.ref == 'refs/heads/main' && secrets.SENTRY_AUTH_TOKEN || '' }}
+      NEXT_PUBLIC_SENTRY_DSN: ''
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

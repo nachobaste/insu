@@ -5,7 +5,9 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { UpsertContractInput } from '@/lib/types'
 
 function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY ?? '', { apiVersion: '2023-10-16' as never })
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) throw new Error('STRIPE_SECRET_KEY is not configured')
+  return new Stripe(key, { apiVersion: '2023-10-16' as never })
 }
 
 async function assertAdmin() {
@@ -105,20 +107,19 @@ export async function overrideContractTrigger({
 }): Promise<void> {
   const { supabase, userId } = await assertAdmin()
 
+  // Guard against double-settlement
+  const { data: existing } = await supabase
+    .from('contracts')
+    .select('status')
+    .eq('id', contractId)
+    .single()
+  if (existing?.status === 'settled') throw new Error('Contract is already settled')
+
   await supabase.from('contracts').update({
     settled_outcome: outcome,
     status: 'settled',
     settled_at: new Date().toISOString(),
   }).eq('id', contractId)
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase.from('admin_audit_log') as any).insert({
-    admin_id: userId,
-    action: 'trigger_override',
-    contract_id: contractId,
-    reason,
-    metadata: { outcome },
-  })
 
   if (!outcome) {
     await supabase
@@ -126,6 +127,15 @@ export async function overrideContractTrigger({
       .update({ status: 'settled_no_payout' })
       .eq('contract_id', contractId)
       .eq('status', 'active')
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('admin_audit_log') as any).insert({
+      admin_id: userId,
+      action: 'trigger_override',
+      contract_id: contractId,
+      reason,
+      metadata: { outcome },
+    })
     return
   }
 
@@ -135,7 +145,17 @@ export async function overrideContractTrigger({
     .eq('contract_id', contractId)
     .eq('status', 'active')
 
-  if (!positions || (positions as unknown[]).length === 0) return
+  if (!positions || (positions as unknown[]).length === 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('admin_audit_log') as any).insert({
+      admin_id: userId,
+      action: 'trigger_override',
+      contract_id: contractId,
+      reason,
+      metadata: { outcome },
+    })
+    return
+  }
 
   const stripe = getStripe()
 
@@ -153,32 +173,47 @@ export async function overrideContractTrigger({
       status: 'processing',
     }).select('id').single()
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('stripe_customer_id')
-      .eq('id', position.user_id)
-      .single()
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('stripe_customer_id')
+        .eq('id', position.user_id)
+        .single()
 
-    let customerId = (profile as { stripe_customer_id: string | null } | null)?.stripe_customer_id
-    if (!customerId) {
-      const customer = await stripe.customers.create({ metadata: { user_id: position.user_id } })
-      customerId = customer.id
-      await supabase.from('profiles').update({ stripe_customer_id: customerId }).eq('id', position.user_id)
+      let customerId = (profile as { stripe_customer_id: string | null } | null)?.stripe_customer_id
+      if (!customerId) {
+        const customer = await stripe.customers.create({ metadata: { user_id: position.user_id } })
+        customerId = customer.id
+        await supabase.from('profiles').update({ stripe_customer_id: customerId }).eq('id', position.user_id)
+      }
+
+      const txn = await stripe.customers.createBalanceTransaction(customerId, {
+        amount: -Math.round(position.payout_amount_usd * 100),
+        currency: 'usd',
+      })
+
+      await supabase.from('payouts').update({
+        status: 'completed',
+        transfer_id: txn.id,
+        completed_at: new Date().toISOString(),
+      }).eq('id', (newPayout as { id: string }).id)
+
+      await supabase.from('hedger_positions').update({ status: 'paid_out' }).eq('id', position.id)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error(`Payout failed for position ${position.id}:`, msg)
+      await supabase.from('payouts').update({ status: 'failed' }).eq('id', (newPayout as { id: string }).id)
     }
-
-    const txn = await stripe.customers.createBalanceTransaction(customerId, {
-      amount: -Math.round(position.payout_amount_usd * 100),
-      currency: 'usd',
-    })
-
-    await supabase.from('payouts').update({
-      status: 'completed',
-      transfer_id: txn.id,
-      completed_at: new Date().toISOString(),
-    }).eq('id', (newPayout as { id: string }).id)
-
-    await supabase.from('hedger_positions').update({ status: 'paid_out' }).eq('id', position.id)
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from('admin_audit_log') as any).insert({
+    admin_id: userId,
+    action: 'trigger_override',
+    contract_id: contractId,
+    reason,
+    metadata: { outcome },
+  })
 }
 
 export async function retryPayout(payoutId: string): Promise<void> {
