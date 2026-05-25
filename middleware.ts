@@ -41,6 +41,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
+  // Optional IP allowlist for /admin — set ADMIN_IP_ALLOWLIST=ip1,ip2 in env to enable
+  if (pathname.startsWith('/admin') && user) {
+    const allowlist = (process.env.ADMIN_IP_ALLOWLIST ?? '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+
+    if (allowlist.length > 0) {
+      const forwarded = request.headers.get('x-forwarded-for')
+      const ip = forwarded
+        ? forwarded.split(',')[0].trim()
+        : (request.headers.get('x-real-ip') ?? '')
+      if (!allowlist.includes(ip)) {
+        return new NextResponse('Access denied', { status: 403 })
+      }
+    }
+  }
+
   return supabaseResponse
 }
 

@@ -8,6 +8,7 @@ const {
   mockPositionInsert,
   mockPaymentIntentsCreate,
   mockPaymentIntentsUpdate,
+  mockPendingCountQuery,
 } = vi.hoisted(() => ({
   mockGetUser: vi.fn(),
   mockTierQuery: vi.fn(),
@@ -15,6 +16,7 @@ const {
   mockPositionInsert: vi.fn(),
   mockPaymentIntentsCreate: vi.fn(),
   mockPaymentIntentsUpdate: vi.fn(),
+  mockPendingCountQuery: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -23,7 +25,24 @@ vi.mock('@/lib/supabase/server', () => ({
     from: vi.fn((table: string) => {
       if (table === 'coverage_tiers') return mockTierQuery()
       if (table === 'contracts') return mockContractQuery()
-      if (table === 'hedger_positions') return mockPositionInsert()
+      if (table === 'hedger_positions') {
+        // mockPendingCountQuery handles the count-only guard query;
+        // mockPositionInsert handles the insert chain.
+        // Return an object that dispatches based on which method is called first.
+        const countChain = mockPendingCountQuery()
+        const insertChain = mockPositionInsert()
+        return {
+          select: (...args: unknown[]) => {
+            // The pending-count guard calls .select('id', { count: 'exact', head: true })
+            // i.e. the second argument is an object with head: true
+            if (args[1] && typeof args[1] === 'object' && (args[1] as Record<string, unknown>).head === true) {
+              return countChain.select(...args)
+            }
+            return insertChain.select(...args)
+          },
+          insert: (...args: unknown[]) => insertChain.insert(...args),
+        }
+      }
       return {}
     }),
   })),
@@ -83,6 +102,18 @@ function setupMocks() {
   posInsertChain.select.mockReturnValue(posInsertChain)
   posInsertChain.single.mockResolvedValue({ data: { id: 'pos-1' }, error: null })
   mockPositionInsert.mockReturnValue(posInsertChain)
+
+  // Default: 0 pending positions (guard does not trigger)
+  // The full chain is: .select(...).eq(...).eq(...) and is then awaited.
+  // Make the chain thenable so awaiting it resolves to the count result.
+  const makeCountChain = (count: number) => {
+    const chain: Record<string, unknown> = {}
+    chain.select = vi.fn().mockReturnValue(chain)
+    chain.eq = vi.fn().mockReturnValue(chain)
+    chain.then = (resolve: (v: unknown) => unknown) => Promise.resolve({ count, error: null }).then(resolve)
+    return chain
+  }
+  mockPendingCountQuery.mockReturnValue(makeCountChain(0))
 
   mockPaymentIntentsCreate.mockResolvedValue({ id: 'pi_test', client_secret: 'secret_test' })
   mockPaymentIntentsUpdate.mockResolvedValue({})
@@ -150,5 +181,23 @@ describe('createHedgerPaymentIntent', () => {
     const { createHedgerPaymentIntent } = await import('@/lib/actions/purchase')
     const result = await createHedgerPaymentIntent('tier-basic', 7)
     expect(result).toEqual({ clientSecret: 'secret_test' })
+  })
+
+  it('rejects when user has 5 or more pending_payment positions', async () => {
+    // Override the count mock to return 5 pending positions
+    // Re-use the same makeCountChain helper via the module-level setupMocks pattern
+    const chain: Record<string, unknown> = {}
+    chain.select = vi.fn().mockReturnValue(chain)
+    chain.eq = vi.fn().mockReturnValue(chain)
+    chain.then = (resolve: (v: unknown) => unknown) => Promise.resolve({ count: 5, error: null }).then(resolve)
+    mockPendingCountQuery.mockReturnValue(chain)
+
+    const { createHedgerPaymentIntent } = await import('@/lib/actions/purchase')
+    const result = await createHedgerPaymentIntent('tier-basic')
+    expect(result).toEqual({
+      error: 'You have too many pending purchases. Complete or cancel them before buying again.',
+    })
+    // Stripe and position insert should not have been called
+    expect(mockPaymentIntentsCreate).not.toHaveBeenCalled()
   })
 })

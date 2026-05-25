@@ -17,6 +17,16 @@ export async function createHedgerPaymentIntent(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'You must be signed in to purchase protection' }
 
+  // Prevent flood: cap pending purchases at 5 per user
+  const { count: pendingCount } = await supabase
+    .from('hedger_positions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('status', 'pending_payment')
+  if ((pendingCount ?? 0) >= 5) {
+    return { error: 'You have too many pending purchases. Complete or cancel them before buying again.' }
+  }
+
   const { data: tier, error: tierError } = await supabase
     .from('coverage_tiers')
     .select('*')
