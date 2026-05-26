@@ -50,6 +50,11 @@ export default function TierSelector({ tiers, selectedTierId, onSelect, mode = '
               {isSelected && (
                 <span className="text-[11px] font-bold text-insu-accent">✓ Selected</span>
               )}
+              {isFull && !isSelected && (
+                <span className="text-[11px] text-insu-muted">
+                  {mode === 'provide' ? 'Pool full' : 'No capital yet'}
+                </span>
+              )}
             </div>
 
             {mode === 'buy' ? (

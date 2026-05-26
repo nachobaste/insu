@@ -52,6 +52,8 @@ export default function ContractDetailClient({ contract, userId, latestReading }
       ? computePeriodFactor(selectedPeriodDays, contract)
       : 1.0
 
+  const hasPoolCoverage = sortedTiers.some(t => t.current_capacity_usd >= t.payout_usd)
+
   return (
     <main className="mx-auto max-w-[1320px] px-8 py-10">
       <div className="grid grid-cols-[1fr_360px] items-start gap-8">
@@ -131,7 +133,8 @@ export default function ContractDetailClient({ contract, userId, latestReading }
           <div className="space-y-2 pt-1">
             <button
               onClick={() => openPanel('buy')}
-              className="w-full rounded-lg bg-insu-accent py-3 text-[14px] font-bold text-bg transition-all hover:bg-[#f7b84a]"
+              disabled={!hasPoolCoverage}
+              className="w-full rounded-lg bg-insu-accent py-3 text-[14px] font-bold text-bg transition-all hover:bg-[#f7b84a] disabled:cursor-not-allowed disabled:opacity-40"
             >
               Buy Protection
             </button>
