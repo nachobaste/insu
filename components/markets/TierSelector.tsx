@@ -25,7 +25,9 @@ export default function TierSelector({ tiers, selectedTierId, onSelect, mode = '
       {sorted.map((tier) => {
         const isSelected = tier.id === selectedTierId
         const remaining = tier.max_capacity_usd - tier.current_capacity_usd
-        const isFull = remaining <= 0
+        const isFull = mode === 'provide'
+          ? remaining <= 0
+          : tier.current_capacity_usd < tier.payout_usd
         const displayPremium = Math.round(tier.premium_usd * factor * 100) / 100
 
         return (

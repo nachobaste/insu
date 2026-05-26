@@ -3,7 +3,7 @@
 import Stripe from 'stripe'
 import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { validateCapacity } from '@/lib/utils/capacity'
+import { validateProviderCapacity, validateBuyerCapacity } from '@/lib/utils/capacity'
 import { computePeriodFactor } from '@/lib/pricing/engine'
 
 function getStripe() {
@@ -40,11 +40,7 @@ export async function createHedgerPaymentIntent(
 
   if (tierError || !tier) return { error: 'Coverage tier not found' }
 
-  const capacityError = validateCapacity(
-    tier.max_capacity_usd,
-    tier.current_capacity_usd,
-    tier.premium_usd,
-  )
+  const capacityError = validateBuyerCapacity(tier.current_capacity_usd, tier.payout_usd)
   if (capacityError) return { error: capacityError }
 
   const { data: contract, error: contractError } = await supabase
@@ -135,7 +131,7 @@ export async function createProviderPaymentIntent(
 
   if (tierError || !tier) return { error: 'Coverage tier not found' }
 
-  const capacityError = validateCapacity(tier.max_capacity_usd, tier.current_capacity_usd, amountUsd)
+  const capacityError = validateProviderCapacity(tier.max_capacity_usd, tier.current_capacity_usd, amountUsd)
   if (capacityError) return { error: capacityError }
 
   let paymentIntent: Stripe.PaymentIntent
@@ -222,24 +218,30 @@ export async function activatePositionByPaymentIntent(
       return { error: `Failed to activate position: ${updateError?.message ?? 'no row matched'}` }
     }
 
-    if (position) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (db.rpc as any)('increment_tier_capacity', {
-        p_tier_id: position.tier_id,
-        p_amount: position.premium_paid_usd,
-      })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (db.rpc as any)('increment_contract_volume', {
-        p_contract_id: position.contract_id,
-        p_amount: position.premium_paid_usd,
-      })
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (db.rpc as any)('increment_contract_volume', {
+      p_contract_id: position.contract_id,
+      p_amount: position.premium_paid_usd,
+    })
   } else {
-    await db
+    const { data: providerPosition, error: providerError } = await db
       .from('provider_positions')
       .update({ status: 'active' })
       .eq('id', position_id)
       .eq('user_id', user.id)
+      .select('tier_id, capital_deposited_usd')
+      .single()
+
+    if (providerError || !providerPosition) {
+      return { error: `Failed to activate position: ${providerError?.message ?? 'no row matched'}` }
+    }
+
+    // Provider deposit fills the pool — increment capacity by the deposited amount.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (db.rpc as any)('increment_tier_capacity', {
+      p_tier_id: providerPosition.tier_id,
+      p_amount: providerPosition.capital_deposited_usd,
+    })
   }
 
   revalidatePath('/dashboard')
