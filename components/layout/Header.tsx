@@ -26,11 +26,9 @@ export default async function Header() {
     <header className="sticky top-0 z-50 flex h-[60px] items-center gap-5 border-b border-white/[0.07] bg-bg/85 px-8 backdrop-blur-xl">
       {/* Logo */}
       <Link href="/" className="flex flex-shrink-0 items-center gap-2.5">
-        <svg width="50" height="28" viewBox="0 0 50 28" fill="none" aria-hidden>
-          {/* Triangle — left */}
-          <polygon points="0,28 12,1 24,28" fill="#e8edf5" />
-          {/* Right trapezoid — diagonal left edge, vertical right edge */}
-          <polygon points="27,28 33,1 50,1 50,28" fill="#f5a623" />
+        <svg width="48" height="18" viewBox="0 62 404 152" fill="none" aria-hidden>
+          <polygon points="0,210 0,122 112,66 212,122 212,210" fill="#e8edf5" />
+          <polygon points="228,210 270,66 400,66 358,210" fill="#f5a623" />
         </svg>
         <span className="font-display text-[26px] tracking-[4px] text-insu-text">
           INSU
