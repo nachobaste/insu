@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { cn, formatCurrency, categoryTextClass, countryFlag } from '@/lib/utils'
+import { cn, categoryTextClass, countryFlag } from '@/lib/utils'
 import { computePeriodFactor } from '@/lib/pricing/engine'
 import type { ContractDetailData, LatestOracleReading } from '@/lib/types'
 import type { TriggerCondition } from '@/lib/oracle/trigger'
@@ -9,6 +9,7 @@ import ContractMeta from './ContractMeta'
 import OracleConditions from './OracleConditions'
 import PriceChart from './PriceChart'
 import PurchasePanel from './PurchasePanel'
+import TierSelector from './TierSelector'
 
 type PanelMode = 'buy' | 'provide'
 
@@ -28,6 +29,7 @@ export default function ContractDetailClient({ contract, userId, latestReading }
   const [panelOpen, setPanelOpen] = useState(false)
   const [panelMode, setPanelMode] = useState<PanelMode>('buy')
   const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(null)
+  const [selectedTierId, setSelectedTierId] = useState<string | null>(null)
 
   const isRecurring =
     contract.trigger_type === 'weather' || contract.trigger_type === 'urban'
@@ -118,28 +120,13 @@ export default function ContractDetailClient({ contract, userId, latestReading }
             Select tier
           </p>
 
-          <div className="space-y-2">
-            {sortedTiers.map((tier) => {
-              const displayPremium = Math.round(tier.premium_usd * periodFactor * 100) / 100
-              return (
-                <div
-                  key={tier.id}
-                  className="rounded-card border border-white/[0.07] bg-bg-card p-4"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-semibold capitalize text-insu-text">
-                      {tier.name}
-                    </span>
-                  </div>
-                  <div className="mt-1 flex items-center gap-1 font-mono text-[12px]">
-                    <span className="text-insu-text">{formatCurrency(displayPremium, 'USD')}</span>
-                    <span className="text-insu-muted">→</span>
-                    <span className="text-insu-green">{formatCurrency(tier.payout_usd, 'USD')}</span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <TierSelector
+            tiers={contract.coverage_tiers}
+            selectedTierId={selectedTierId}
+            onSelect={(id) => setSelectedTierId(prev => prev === id ? null : id)}
+            mode="buy"
+            periodFactor={periodFactor}
+          />
 
           <div className="space-y-2 pt-1">
             <button
@@ -164,6 +151,7 @@ export default function ContractDetailClient({ contract, userId, latestReading }
         open={panelOpen}
         initialMode={panelMode}
         initialPeriodDays={selectedPeriodDays}
+        initialTierId={selectedTierId}
         onClose={() => setPanelOpen(false)}
       />
     </main>

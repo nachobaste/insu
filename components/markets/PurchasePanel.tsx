@@ -25,14 +25,15 @@ interface Props {
   open: boolean
   initialMode: PanelMode
   initialPeriodDays?: number | null
+  initialTierId?: string | null
   onClose: () => void
 }
 
-export default function PurchasePanel({ contract, userId, open, initialMode, initialPeriodDays, onClose }: Props) {
+export default function PurchasePanel({ contract, userId, open, initialMode, initialPeriodDays, initialTierId, onClose }: Props) {
   const router = useRouter()
   const [mode, setMode] = useState<PanelMode>(initialMode)
   const [step, setStep] = useState<Step>('select')
-  const [selectedTierId, setSelectedTierId] = useState<string | null>(null)
+  const [selectedTierId, setSelectedTierId] = useState<string | null>(initialTierId ?? null)
   const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(initialPeriodDays ?? null)
   const [depositAmount, setDepositAmount] = useState('')
   const [clientSecret, setClientSecret] = useState<string | null>(null)
@@ -44,6 +45,11 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedPeriodDays(initialPeriodDays ?? null)
   }, [initialPeriodDays])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedTierId(initialTierId ?? null)
+  }, [initialTierId])
 
   const isRecurring =
     contract.trigger_type === 'weather' || contract.trigger_type === 'urban'
@@ -61,7 +67,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
 
   function switchMode(next: PanelMode) {
     setMode(next)
-    setSelectedTierId(null)
+    setSelectedTierId(next === 'buy' ? (initialTierId ?? null) : null)
     setSelectedPeriodDays(initialPeriodDays ?? null)
     setStep('select')
     setClientSecret(null)
@@ -70,7 +76,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
 
   function handleClose() {
     setStep('select')
-    setSelectedTierId(null)
+    setSelectedTierId(initialTierId ?? null)
     setSelectedPeriodDays(initialPeriodDays ?? null)
     setClientSecret(null)
     setError(null)
