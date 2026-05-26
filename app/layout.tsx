@@ -1,5 +1,27 @@
 import type { Metadata } from 'next'
+import { Bebas_Neue, JetBrains_Mono, Outfit } from 'next/font/google'
 import './globals.css'
+
+const bebasNeue = Bebas_Neue({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-bebas',
+  display: 'swap',
+})
+
+const jetBrainsMono = JetBrains_Mono({
+  weight: ['400', '600', '700'],
+  subsets: ['latin'],
+  variable: '--font-jetbrains',
+  display: 'swap',
+})
+
+const outfit = Outfit({
+  weight: ['300', '400', '500', '600', '700'],
+  subsets: ['latin'],
+  variable: '--font-outfit',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Insu — Everyday Risk, Instantly Covered',
@@ -13,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${bebasNeue.variable} ${jetBrainsMono.variable} ${outfit.variable}`}>
       <body className="min-h-screen antialiased">{children}</body>
     </html>
   )

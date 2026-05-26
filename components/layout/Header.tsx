@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import SearchInput from './SearchInput'
+import LogoutButton from './LogoutButton'
 
 export default async function Header() {
   let userId: string | null = null
@@ -73,6 +74,7 @@ export default async function Header() {
           >
             Portfolio
           </Link>
+          <LogoutButton />
         </>
       ) : (
         <>
