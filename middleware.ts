@@ -59,18 +59,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Enforce AAL2 (MFA) for all /admin routes
-  if (pathname.startsWith('/admin') && user) {
-    const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-    if (aalData?.currentLevel !== 'aal2') {
-      // Redirect to dashboard — AdminMfaGate will handle the challenge on next admin visit
-      const url = request.nextUrl.clone()
-      url.pathname = '/dashboard'
-      url.searchParams.set('mfa_required', '1')
-      return NextResponse.redirect(url)
-    }
-  }
-
   return supabaseResponse
 }
 
