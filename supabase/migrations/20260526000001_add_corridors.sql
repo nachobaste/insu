@@ -1,7 +1,7 @@
 -- Add corridors table and wire it to contracts + oracle_readings
 
 CREATE TABLE corridors (
-  id           uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   slug         text UNIQUE NOT NULL,
   name         text NOT NULL,
   road         text NOT NULL,
