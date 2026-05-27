@@ -43,12 +43,45 @@ export async function fetchTomorrowReading(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function fetchWazeReading(_lat: number, _lng: number): FetchedReading {
-  // Waze has no public API. Returns stub — urban contracts use admin manual override.
+export async function fetchGoogleMapsReading(
+  originLat: number,
+  originLng: number,
+  destLat: number,
+  destLng: number,
+  apiKey: string,
+): Promise<FetchedReading> {
+  const res = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': apiKey,
+      'X-Goog-FieldMask': 'routes.duration,routes.staticDuration',
+    },
+    body: JSON.stringify({
+      origin: { location: { latLng: { latitude: originLat, longitude: originLng } } },
+      destination: { location: { latLng: { latitude: destLat, longitude: destLng } } },
+      travelMode: 'DRIVE',
+      routingPreference: 'TRAFFIC_AWARE',
+    }),
+  })
+
+  if (!res.ok) throw new Error(`Google Maps Routes API error: ${res.status}`)
+
+  const data = await res.json()
+  const route = (data.routes as Array<{ duration: string; staticDuration: string }>)?.[0]
+  if (!route) throw new Error('Google Maps Routes API: no routes returned')
+
+  const durationS = parseInt(route.duration.replace('s', ''), 10)
+  const staticDurationS = parseInt(route.staticDuration.replace('s', ''), 10)
+
+  if (!staticDurationS) throw new Error('Google Maps Routes API: zero static duration')
+
+  const rawIndex = ((durationS / staticDurationS) - 1) * 100
+  const traffic_index = Math.min(100, Math.max(0, Math.round(rawIndex)))
+
   return {
     source: 'google_maps',
     reading_type: 'traffic',
-    value: { traffic_index: 0 },
+    value: { traffic_index, duration_s: durationS, static_duration_s: staticDurationS },
   }
 }

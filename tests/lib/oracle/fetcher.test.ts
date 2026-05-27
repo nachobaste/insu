@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { fetchWeatherReading, fetchTomorrowReading, fetchWazeReading } from '@/lib/oracle/fetcher'
+import { fetchWeatherReading, fetchTomorrowReading, fetchGoogleMapsReading } from '@/lib/oracle/fetcher'
 
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
@@ -75,11 +75,78 @@ describe('fetchTomorrowReading', () => {
   })
 })
 
-describe('fetchWazeReading', () => {
-  it('returns a stub reading with traffic_index 0', () => {
-    const reading = fetchWazeReading(19.4, -99.1)
+describe('fetchGoogleMapsReading', () => {
+  beforeEach(() => mockFetch.mockReset())
+
+  it('calls the Routes API with correct origin and destination', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        routes: [{ duration: '1800s', staticDuration: '1200s' }],
+      }),
+    })
+    await fetchGoogleMapsReading(19.3983, -99.1918, 19.4147, -99.0790, 'test-key')
+    const [url, opts] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('https://routes.googleapis.com/directions/v2:computeRoutes')
+    const body = JSON.parse(opts.body as string)
+    expect(body.origin.location.latLng.latitude).toBe(19.3983)
+    expect(body.destination.location.latLng.latitude).toBe(19.4147)
+    expect(body.routingPreference).toBe('TRAFFIC_AWARE')
+  })
+
+  it('computes traffic_index from duration / staticDuration', async () => {
+    // 1800s actual vs 1200s free-flow → (1800/1200 - 1) * 100 = 50
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        routes: [{ duration: '1800s', staticDuration: '1200s' }],
+      }),
+    })
+    const reading = await fetchGoogleMapsReading(19.3983, -99.1918, 19.4147, -99.0790, 'test-key')
     expect(reading.source).toBe('google_maps')
     expect(reading.reading_type).toBe('traffic')
+    expect((reading.value as Record<string, unknown>).traffic_index).toBe(50)
+    expect((reading.value as Record<string, unknown>).duration_s).toBe(1800)
+    expect((reading.value as Record<string, unknown>).static_duration_s).toBe(1200)
+  })
+
+  it('clamps traffic_index to 100 when delay exceeds 100%', async () => {
+    // 3600s actual vs 1200s free-flow → (3/1 - 1) * 100 = 200 → clamped to 100
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        routes: [{ duration: '3600s', staticDuration: '1200s' }],
+      }),
+    })
+    const reading = await fetchGoogleMapsReading(19.3983, -99.1918, 19.4147, -99.0790, 'test-key')
+    expect((reading.value as Record<string, unknown>).traffic_index).toBe(100)
+  })
+
+  it('returns traffic_index 0 when no delay', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        routes: [{ duration: '1200s', staticDuration: '1200s' }],
+      }),
+    })
+    const reading = await fetchGoogleMapsReading(19.3983, -99.1918, 19.4147, -99.0790, 'test-key')
     expect((reading.value as Record<string, unknown>).traffic_index).toBe(0)
+  })
+
+  it('throws when Routes API returns non-ok status', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 403 })
+    await expect(
+      fetchGoogleMapsReading(19.3983, -99.1918, 19.4147, -99.0790, 'bad-key'),
+    ).rejects.toThrow('Google Maps Routes API error: 403')
+  })
+
+  it('throws when response has no routes', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ routes: [] }),
+    })
+    await expect(
+      fetchGoogleMapsReading(19.3983, -99.1918, 19.4147, -99.0790, 'test-key'),
+    ).rejects.toThrow('no routes returned')
   })
 })
