@@ -12,7 +12,7 @@ const METRIC_UNITS: Record<string, string> = {
 const SOURCE_LABELS: Record<string, string> = {
   openweathermap: 'OpenWeatherMap',
   tomorrow_io: 'Tomorrow.io',
-  waze: 'Waze',
+  google_maps: 'Google Maps',
   manual: 'Manual',
 }
 

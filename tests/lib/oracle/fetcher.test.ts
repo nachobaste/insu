@@ -78,7 +78,7 @@ describe('fetchTomorrowReading', () => {
 describe('fetchWazeReading', () => {
   it('returns a stub reading with traffic_index 0', () => {
     const reading = fetchWazeReading(19.4, -99.1)
-    expect(reading.source).toBe('waze')
+    expect(reading.source).toBe('google_maps')
     expect(reading.reading_type).toBe('traffic')
     expect((reading.value as Record<string, unknown>).traffic_index).toBe(0)
   })
