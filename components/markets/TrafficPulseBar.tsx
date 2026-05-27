@@ -24,6 +24,7 @@ function isCurrentlyInWindow(windowStart: string, windowEnd: string): boolean {
   const nowMinutes = nowH * 60 + nowM
   const [startH, startM] = windowStart.substring(0, 5).split(':').map(Number)
   const [endH, endM] = windowEnd.substring(0, 5).split(':').map(Number)
+  // NOTE: windows spanning midnight (e.g. 22:00–02:00) are not supported — all corridors use daytime windows
   return nowMinutes >= startH * 60 + startM && nowMinutes < endH * 60 + endM
 }
 
@@ -46,6 +47,7 @@ export function TrafficPulseBar({
     : null
   const inWindow = isCurrentlyInWindow(windowStart, windowEnd)
   const isTriggered = currentIndex !== null && currentIndex > threshold
+  const displayIndex = currentIndex !== null ? Math.min(100, currentIndex) : null
 
   const barColor =
     currentIndex === null ? 'bg-white/10'
@@ -84,7 +86,7 @@ export function TrafficPulseBar({
         <div
           className={cn('absolute inset-y-0 left-0 rounded-full transition-all duration-700', barColor,
             !inWindow && 'opacity-30')}
-          style={{ width: currentIndex !== null ? `${currentIndex}%` : '0%' }}
+          style={{ width: displayIndex !== null ? `${displayIndex}%` : '0%' }}
         />
         {/* Threshold marker */}
         <div
@@ -96,8 +98,8 @@ export function TrafficPulseBar({
       <div className="mb-3 flex items-center justify-between text-[10px]">
         <span className="text-insu-muted">0</span>
         <span className={cn('font-semibold tabular-nums', isTriggered ? 'text-red-400' : 'text-insu-text')}>
-          {currentIndex !== null
-            ? inWindow ? `${currentIndex} / 100` : `${currentIndex} (fuera de ventana)`
+          {displayIndex !== null
+            ? inWindow ? `${displayIndex} / 100` : `${displayIndex} (fuera de ventana)`
             : '—'}
         </span>
         <span className="text-insu-muted">100</span>
@@ -105,7 +107,7 @@ export function TrafficPulseBar({
 
       {/* Sparkline */}
       {sparkValues.length > 0 && (
-        <div className="relative flex h-8 items-end gap-0.5">
+        <div className="relative flex h-8 items-end gap-0.5 overflow-hidden">
           {/* Threshold dashed line */}
           <div
             className="pointer-events-none absolute inset-x-0 border-t border-dashed border-insu-accent/40"
