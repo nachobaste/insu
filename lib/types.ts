@@ -38,6 +38,20 @@ export interface ContractLocation {
   country: string
 }
 
+export interface Corridor {
+  id: string
+  slug: string
+  name: string
+  road: string
+  origin_lat: number
+  origin_lng: number
+  dest_lat: number
+  dest_lng: number
+  window_start: string  // 'HH:MM:SS' from PostgreSQL TIME
+  window_end: string
+  created_at: string
+}
+
 export interface Contract {
   id: string
   slug: string
@@ -59,6 +73,7 @@ export interface Contract {
   created_at: string
   settled_at: string | null
   coverage_tiers?: CoverageTier[]
+  corridor?: Corridor | null
 }
 
 export interface ContractWithTiers extends Contract {
@@ -117,7 +132,7 @@ export interface ProviderPosition {
 export interface OracleReading {
   id: string
   contract_id: string
-  source: 'openweathermap' | 'tomorrow_io' | 'waze' | 'manual'
+  source: 'openweathermap' | 'tomorrow_io' | 'google_maps' | 'manual'
   reading_type: string
   value: Record<string, unknown>
   trigger_met: boolean
@@ -127,7 +142,7 @@ export interface OracleReading {
 export interface LatestOracleReading {
   value: Record<string, unknown>
   read_at: string
-  source: 'openweathermap' | 'tomorrow_io' | 'waze' | 'manual'
+  source: 'openweathermap' | 'tomorrow_io' | 'google_maps' | 'manual'
   trigger_met: boolean
 }
 

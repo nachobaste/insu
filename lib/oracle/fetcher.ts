@@ -47,7 +47,7 @@ export async function fetchTomorrowReading(
 export function fetchWazeReading(_lat: number, _lng: number): FetchedReading {
   // Waze has no public API. Returns stub — urban contracts use admin manual override.
   return {
-    source: 'waze',
+    source: 'google_maps',
     reading_type: 'traffic',
     value: { traffic_index: 0 },
   }
