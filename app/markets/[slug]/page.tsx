@@ -65,12 +65,15 @@ export default async function MarketPage({
   if (latestReadingResult.error) {
     console.error('[MarketPage] oracle fetch failed:', latestReadingResult.error.message)
   }
+  if (sparklineResult.error) {
+    console.error('[MarketPage] sparkline fetch failed:', sparklineResult.error.message)
+  }
 
   const latestReading = latestReadingResult.data as LatestOracleReading | null
   const sparklineReadings = (sparklineResult.data ?? []) as OracleReading[]
   const corridor = contract.corridor as Corridor | null
 
-  const triggerCondition = contract.trigger_condition as Record<string, unknown>
+  const triggerCondition = contract.trigger_condition
 
   return (
     <>
