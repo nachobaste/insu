@@ -35,10 +35,11 @@ export function CorridorMap({
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ''
     if (!apiKey || !mapRef.current) return
 
+    let cancelled = false
     const loader = new Loader({ apiKey, version: 'weekly' })
 
-    ;(loader as any).load().then((google: any) => {
-      if (!mapRef.current) return
+    ;(loader as any).load().then(() => {
+      if (cancelled || !mapRef.current) return
 
       const midLat = (originLat + destLat) / 2
       const midLng = (originLng + destLng) / 2
@@ -96,6 +97,8 @@ export function CorridorMap({
         },
       })
     })
+
+    return () => { cancelled = true }
   }, [originLat, originLng, destLat, destLng])
 
   const mapsUrl = `https://www.google.com/maps/dir/${originLat},${originLng}/${destLat},${destLng}`
