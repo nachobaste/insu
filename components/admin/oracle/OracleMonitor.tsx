@@ -10,7 +10,25 @@ interface ContractWithLatestReading {
   readings: OracleReading[]
 }
 
-function getStatus(item: ContractWithLatestReading): 'triggered' | 'stale' | 'ok' | 'no-data' {
+function isWithinWindow(windowStart: string, windowEnd: string): boolean {
+  const mexicoCityTime = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Mexico_City',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date())
+  const [nowH, nowM] = mexicoCityTime.split(':').map(Number)
+  const nowMinutes = nowH * 60 + nowM
+  const [startH, startM] = windowStart.substring(0, 5).split(':').map(Number)
+  const [endH, endM] = windowEnd.substring(0, 5).split(':').map(Number)
+  return nowMinutes >= startH * 60 + startM && nowMinutes < endH * 60 + endM
+}
+
+function getStatus(item: ContractWithLatestReading): 'triggered' | 'stale' | 'ok' | 'no-data' | 'off-window' {
+  const corridor = item.contract.corridor
+  if (corridor && !isWithinWindow(corridor.window_start, corridor.window_end)) {
+    return item.latest?.trigger_met ? 'triggered' : 'off-window'
+  }
   if (!item.latest) return 'no-data'
   const ageMs = Date.now() - new Date(item.latest.read_at).getTime()
   if (ageMs > 10 * 60 * 1000) return 'stale'
@@ -36,8 +54,9 @@ function parseValue(reading: OracleReading): string {
 
 function parseThreshold(contract: Contract): string {
   const c = contract.trigger_condition as Record<string, unknown>
-  if (c.comparator && c.threshold !== undefined) {
-    return `${c.comparator} ${c.threshold} ${c.unit ?? ''}`
+  const op = c.operator ?? c.comparator
+  if (op && c.threshold !== undefined) {
+    return `${op} ${c.threshold}${c.unit ? ` ${c.unit}` : ''}`
   }
   return '—'
 }
@@ -92,13 +111,13 @@ export function OracleMonitor({ items }: { items: ContractWithLatestReading[] })
                     'flex-shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase',
                     status === 'triggered' ? 'bg-red-500 text-white'
                       : status === 'stale' ? 'bg-insu-accent/20 text-insu-accent'
-                        : status === 'ok' ? 'bg-white/5 text-insu-muted'
-                          : 'bg-white/5 text-insu-muted',
+                        : 'bg-white/5 text-insu-muted',
                   )}>
                     {status === 'triggered' ? '⚡ YES'
                       : status === 'stale' ? '⚠ STALE'
                         : status === 'ok' ? 'NO'
-                          : '—'}
+                          : status === 'off-window' ? 'OFF WIN'
+                            : '—'}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-x-2 gap-y-1">

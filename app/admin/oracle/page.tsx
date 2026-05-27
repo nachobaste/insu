@@ -7,7 +7,7 @@ export default async function AdminOraclePage() {
 
   const { data: contracts } = await supabase
     .from('contracts')
-    .select('*')
+    .select('*, corridor:corridors(*)')
     .eq('status', 'active')
     .order('created_at')
 
