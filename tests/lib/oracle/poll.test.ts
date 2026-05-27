@@ -122,4 +122,67 @@ describe('pollContracts', () => {
     expect(count).toBe(1)
     expect(db._insert).toHaveBeenCalledTimes(1)
   })
+
+  it('skips urban contract when outside its corridor window', async () => {
+    // 2026-05-26T20:00:00Z = 14:00 Mexico City (UTC-6) → outside 07:00–10:00 window
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-26T20:00:00.000Z'))
+
+    const urbanContract: Contract = {
+      ...mockContract,
+      id: 'u1',
+      trigger_type: 'urban',
+      corridor: {
+        id: 'cor1', slug: 'viaducto-am', name: 'Viaducto AM', road: 'Viaducto',
+        origin_lat: 19.3983, origin_lng: -99.1918,
+        dest_lat: 19.4147, dest_lng: -99.0790,
+        window_start: '07:00:00', window_end: '10:00:00', created_at: '',
+      },
+    }
+    const db = makeDb({ contracts: [urbanContract] })
+    const mockFetcher = vi.fn()
+
+    const count = await pollContracts(db as never, mockFetcher)
+    expect(count).toBe(0)
+    expect(mockFetcher).not.toHaveBeenCalled()
+
+    vi.useRealTimers()
+  })
+
+  it('polls urban contract when inside its corridor window', async () => {
+    // 2026-05-26T14:00:00Z = 08:00 Mexico City (UTC-6) → inside 07:00–10:00 window
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-26T14:00:00.000Z'))
+
+    const urbanContract: Contract = {
+      ...mockContract,
+      id: 'u2',
+      trigger_type: 'urban',
+      trigger_condition: { metric: 'traffic_index', threshold: 50, operator: 'gt' },
+      corridor: {
+        id: 'cor2', slug: 'viaducto-am', name: 'Viaducto AM', road: 'Viaducto',
+        origin_lat: 19.3983, origin_lng: -99.1918,
+        dest_lat: 19.4147, dest_lng: -99.0790,
+        window_start: '07:00:00', window_end: '10:00:00', created_at: '',
+      },
+    }
+    const db = makeDb({ contracts: [urbanContract] })
+    const mockFetcher = vi.fn().mockResolvedValue([{
+      source: 'google_maps',
+      reading_type: 'traffic',
+      value: { traffic_index: 60, duration_s: 1800, static_duration_s: 1200 },
+    }])
+
+    const count = await pollContracts(db as never, mockFetcher)
+    expect(count).toBe(1)
+    expect(mockFetcher).toHaveBeenCalledWith(
+      expect.objectContaining({ trigger_type: 'urban' }),
+    )
+    expect(db._insert.mock.calls[0][0]).toMatchObject({
+      source: 'google_maps',
+      trigger_met: true,
+    })
+
+    vi.useRealTimers()
+  })
 })

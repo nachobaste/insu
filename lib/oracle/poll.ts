@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { evaluateTrigger, type TriggerCondition } from './trigger'
-import { fetchWeatherReading, fetchTomorrowReading, fetchWazeReading } from './fetcher'
-import type { Contract } from '@/lib/types'
+import { fetchWeatherReading, fetchTomorrowReading, fetchGoogleMapsReading } from './fetcher'
+import type { Contract, Corridor } from '@/lib/types'
 
 interface FetchedReading {
   source: string
@@ -23,11 +23,27 @@ function getClient(): DbClient {
   )
 }
 
-async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
-  const { lat, lng } = contract.location
-  const readings: FetchedReading[] = []
+function isWithinWindow(windowStart: string, windowEnd: string): boolean {
+  // Mexico City abolished DST in 2023 — permanently UTC-6.
+  const mexicoCityTime = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Mexico_City',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date())
 
+  const [nowH, nowM] = mexicoCityTime.split(':').map(Number)
+  const nowMinutes = nowH * 60 + nowM
+  const [startH, startM] = windowStart.substring(0, 5).split(':').map(Number)
+  const [endH, endM] = windowEnd.substring(0, 5).split(':').map(Number)
+  return nowMinutes >= startH * 60 + startM && nowMinutes < endH * 60 + endM
+}
+
+async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
   if (contract.trigger_type === 'weather') {
+    const readings: FetchedReading[] = []
+    const { lat, lng } = contract.location
+
     const owmKey = process.env.OPENWEATHERMAP_API_KEY ?? ''
     if (owmKey) {
       try {
@@ -45,11 +61,30 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
         console.error(`Tomorrow.io fetch error for contract ${contract.id}:`, err)
       }
     }
-  } else if (contract.trigger_type === 'urban') {
-    readings.push(fetchWazeReading(lat, lng))
+
+    return readings
   }
 
-  return readings
+  if (contract.trigger_type === 'urban') {
+    const corridor = contract.corridor as Corridor | null
+    if (!corridor) return []
+
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY ?? ''
+    if (!apiKey) return []
+
+    try {
+      return [await fetchGoogleMapsReading(
+        corridor.origin_lat, corridor.origin_lng,
+        corridor.dest_lat, corridor.dest_lng,
+        apiKey,
+      )]
+    } catch (err) {
+      console.error(`Google Maps fetch error for contract ${contract.id}:`, err)
+      return []
+    }
+  }
+
+  return []
 }
 
 export async function pollContracts(
@@ -58,7 +93,7 @@ export async function pollContracts(
 ): Promise<number> {
   const { data: contracts } = await db
     .from('contracts')
-    .select('*')
+    .select('*, corridor:corridors(*)')
     .eq('status', 'active')
     .is('settled_outcome', null)
     .in('trigger_type', ['weather', 'urban'])
@@ -68,6 +103,13 @@ export async function pollContracts(
   let count = 0
   for (const contract of contracts as Contract[]) {
     try {
+      // Urban contracts: skip if no corridor or outside the active window
+      if (contract.trigger_type === 'urban') {
+        const corridor = contract.corridor as Corridor | null
+        if (!corridor) continue
+        if (!isWithinWindow(corridor.window_start, corridor.window_end)) continue
+      }
+
       const readings = await readingFetcher(contract)
       if (!readings || readings.length === 0) continue
 
