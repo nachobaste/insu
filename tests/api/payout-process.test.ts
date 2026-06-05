@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 
 vi.mock('@/lib/payout/processor', () => ({
   processPayouts: vi.fn().mockResolvedValue(2),
+  expireContracts: vi.fn().mockResolvedValue(1),
 }))
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn().mockReturnValue({}),
@@ -36,9 +37,9 @@ describe('POST /api/payout-process', () => {
     expect(res.status).toBe(401)
   })
 
-  it('returns paid count with correct secret', async () => {
+  it('returns paid and expired counts with correct secret', async () => {
     const res = await makeRequest('test-secret')
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ paid: 2 })
+    expect(await res.json()).toEqual({ paid: 2, expired: 1 })
   })
 })

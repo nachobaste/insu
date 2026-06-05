@@ -2,7 +2,7 @@ import { timingSafeEqual } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
-import { processPayouts } from '@/lib/payout/processor'
+import { processPayouts, expireContracts } from '@/lib/payout/processor'
 
 async function handlePayouts(req: NextRequest) {
   const secret = process.env.CRON_SECRET
@@ -17,8 +17,11 @@ async function handlePayouts(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-  const count = await processPayouts(db, stripe)
-  return NextResponse.json({ paid: count })
+  const [paid, expired] = await Promise.all([
+    processPayouts(db, stripe),
+    expireContracts(db),
+  ])
+  return NextResponse.json({ paid, expired })
 }
 
 // Vercel Cron sends GET; POST is kept for manual triggering
