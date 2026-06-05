@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { processPayouts } from '@/lib/payout/processor'
 
-export async function POST(req: NextRequest) {
+async function handlePayouts(req: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (!secret) return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
   const expected = Buffer.from(`Bearer ${secret}`)
@@ -20,3 +20,7 @@ export async function POST(req: NextRequest) {
   const count = await processPayouts(db, stripe)
   return NextResponse.json({ paid: count })
 }
+
+// Vercel Cron sends GET; POST is kept for manual triggering
+export const GET = handlePayouts
+export const POST = handlePayouts
