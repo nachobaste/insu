@@ -115,6 +115,7 @@ function makeDb(opts: {
   const providerUpdate = vi.fn().mockReturnValue({ eq: providerUpdateEq })
   const profileUpdateEq = vi.fn().mockResolvedValue({ error: null })
   const payoutsUpdateEq = vi.fn().mockResolvedValue({ error: null })
+  const payoutsUpdate = vi.fn().mockReturnValue({ eq: payoutsUpdateEq })
 
   const payoutsInsert = vi.fn().mockReturnValue({
     select: vi.fn().mockReturnValue({
@@ -154,7 +155,7 @@ function makeDb(opts: {
       if (table === 'payouts') {
         return {
           insert: payoutsInsert,
-          update: vi.fn().mockReturnValue({ eq: payoutsUpdateEq }),
+          update: payoutsUpdate,
         }
       }
       if (table === 'coverage_tiers') {
@@ -168,6 +169,7 @@ function makeDb(opts: {
     _providerUpdateEq: providerUpdateEq,
     _profileUpdateEq: profileUpdateEq,
     _payoutsInsert: payoutsInsert,
+    _payoutsUpdate: payoutsUpdate,
     _payoutsUpdateEq: payoutsUpdateEq,
   }
 }
@@ -299,6 +301,19 @@ describe('processPayouts', () => {
     })
     const count = await processPayouts(db as never, makeStripe() as never)
     expect(count).toBe(1)
+  })
+
+  it('marks payout as failed when Stripe balance transaction throws', async () => {
+    const db = makeDb()
+    const failingStripe = {
+      customers: {
+        create: vi.fn().mockResolvedValue({ id: 'cus_test123' }),
+        createBalanceTransaction: vi.fn().mockRejectedValue(new Error('Stripe network error')),
+      },
+    }
+    const count = await processPayouts(db as never, failingStripe as never)
+    expect(count).toBe(0)
+    expect(db._payoutsUpdate).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
   })
 })
 

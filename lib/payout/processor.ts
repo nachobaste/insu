@@ -156,6 +156,9 @@ async function payoutPosition(
     txnId = txn.id
   } catch (err) {
     console.error(`Stripe balance transaction failed for position ${position.id}:`, err)
+    await db.from('payouts')
+      .update({ status: 'failed' })
+      .eq('id', (payout as { id: string }).id)
     return 0
   }
 
