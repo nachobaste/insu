@@ -25,6 +25,9 @@ function makeSupabase(opts: {
   payoutsError?: Error
 } = {}) {
   return {
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }),
+    },
     from: vi.fn((table: string) => {
       if (table === 'hedger_positions')
         return makeChainable({ data: opts.hedgerData ?? [], error: opts.hedgerError ?? null })

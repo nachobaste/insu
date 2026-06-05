@@ -66,7 +66,10 @@ const baseInput = {
 }
 
 describe('upsertContract', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.env.STRIPE_SECRET_KEY = 'sk_test_mock_key'
+  })
 
   it('inserts contract and two tiers on create, returns new id', async () => {
     const mockSb = makeSupabase({
@@ -153,7 +156,10 @@ describe('upsertContract', () => {
 })
 
 describe('overrideContractTrigger', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.env.STRIPE_SECRET_KEY = 'sk_test_mock_key'
+  })
 
   it('settles contract and inserts audit log — no trigger (outcome=false)', async () => {
     const userClientMock = {
@@ -260,7 +266,10 @@ describe('overrideContractTrigger', () => {
 })
 
 describe('retryPayout', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.env.STRIPE_SECRET_KEY = 'sk_test_mock_key'
+  })
 
   it('issues Stripe credit and marks payout completed', async () => {
     const userClientMock = {

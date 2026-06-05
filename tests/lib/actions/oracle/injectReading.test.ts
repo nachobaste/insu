@@ -43,6 +43,25 @@ function makeChain(singleValue: unknown) {
   return chain
 }
 
+function makeProfilesChain() {
+  return {
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({ data: { role: 'admin' }, error: null }),
+      }),
+    }),
+  }
+}
+
+function makeDispatchFrom(contractChain: ReturnType<typeof makeChain>) {
+  return (table: string) => {
+    if (table === 'profiles') {
+      return makeProfilesChain()
+    }
+    return contractChain
+  }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null })
@@ -55,19 +74,19 @@ describe('injectReading', () => {
   })
 
   it('returns error when contract not found', async () => {
-    mockFrom.mockReturnValue(makeChain({ data: null, error: { message: 'not found' } }))
+    mockFrom.mockImplementation(makeDispatchFrom(makeChain({ data: null, error: { message: 'not found' } })))
     const result = await injectReading('bad-id', '{"x":1}', 'manual')
     expect(result).toMatchObject({ ok: false, error: 'Contract not found' })
   })
 
   it('returns error when contract already settled', async () => {
-    mockFrom.mockReturnValue(makeChain({ data: { ...CONTRACT, settled_outcome: true }, error: null }))
+    mockFrom.mockImplementation(makeDispatchFrom(makeChain({ data: { ...CONTRACT, settled_outcome: true }, error: null })))
     const result = await injectReading('c1', '{"precipitation_mm":45}', 'manual')
     expect(result).toMatchObject({ ok: false, error: expect.stringContaining('already settled') })
   })
 
   it('evaluates trigger_met correctly (above threshold)', async () => {
-    mockFrom.mockReturnValue(makeChain({ data: CONTRACT, error: null }))
+    mockFrom.mockImplementation(makeDispatchFrom(makeChain({ data: CONTRACT, error: null })))
     const result = await injectReading('c1', '{"precipitation_mm":45}', 'manual')
     expect(result).toMatchObject({
       ok: true,
@@ -80,13 +99,13 @@ describe('injectReading', () => {
   })
 
   it('evaluates trigger_met correctly (below threshold)', async () => {
-    mockFrom.mockReturnValue(makeChain({ data: CONTRACT, error: null }))
+    mockFrom.mockImplementation(makeDispatchFrom(makeChain({ data: CONTRACT, error: null })))
     const result = await injectReading('c1', '{"precipitation_mm":10}', 'manual')
     expect(result).toMatchObject({ ok: true, trigger_met: false, actual_value: 10 })
   })
 
   it('returns the reading_id on success', async () => {
-    mockFrom.mockReturnValue(makeChain({ data: CONTRACT, error: null }))
+    mockFrom.mockImplementation(makeDispatchFrom(makeChain({ data: CONTRACT, error: null })))
     const result = await injectReading('c1', '{"precipitation_mm":45}', 'manual')
     expect(result).toMatchObject({ ok: true, reading_id: 'reading-1' })
   })

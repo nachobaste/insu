@@ -60,7 +60,8 @@ vi.mock('stripe', () => ({
 }))
 
 vi.mock('@/lib/utils/capacity', () => ({
-  validateCapacity: vi.fn().mockReturnValue(null),
+  validateBuyerCapacity: vi.fn().mockReturnValue(null),
+  validateProviderCapacity: vi.fn().mockReturnValue(null),
 }))
 
 // Contract: 365-day duration (Jan 1 → Dec 31 2026)
@@ -122,6 +123,7 @@ function setupMocks() {
 describe('createHedgerPaymentIntent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    process.env.STRIPE_SECRET_KEY = 'sk_test_mock_key'
     setupMocks()
   })
 
