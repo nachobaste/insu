@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { upsertContract } from '@/lib/actions/admin'
+import { cn } from '@/lib/utils'
 import type { Category, ContractWithTiers, UpsertContractInput } from '@/lib/types'
 
 const WEATHER_METRICS = ['rainfall', 'temperature', 'wind', 'snow']
@@ -65,6 +66,7 @@ export function ContractForm({ categories, contract }: Props) {
   const [locationLng, setLocationLng] = useState(String(contract?.location?.lng ?? ''))
   const [iconUrl, setIconUrl] = useState(contract?.icon_url ?? '')
   const [isFeatured, setIsFeatured] = useState(contract?.is_featured ?? false)
+  const [isRecurring, setIsRecurring] = useState(contract?.is_recurring ?? false)
 
   const [condState, setCondState] = useState(() =>
     parseTriggerCondition(contract?.trigger_type ?? 'weather', (contract?.trigger_condition as Record<string, unknown>) ?? {}),
@@ -96,8 +98,8 @@ export function ContractForm({ categories, contract }: Props) {
       status: status as UpsertContractInput['status'],
       trigger_type: triggerType as UpsertContractInput['trigger_type'],
       trigger_condition: buildTriggerCondition(triggerType, condState),
-      trigger_deadline: new Date(deadline).toISOString(),
-      is_recurring: false,
+      trigger_deadline: isRecurring ? null : new Date(deadline).toISOString(),
+      is_recurring: isRecurring,
       location: {
         city: locationCity, country: locationCountry,
         lat: Number(locationLat), lng: Number(locationLng),
@@ -192,10 +194,12 @@ export function ContractForm({ categories, contract }: Props) {
             ))}
           </select>
         </div>
-        <div>
-          <label className={labelCls}>Deadline</label>
-          <input type="date" className={inputCls} value={deadline} onChange={(e) => setDeadline(e.target.value)} required />
-        </div>
+        {!isRecurring && (
+          <div>
+            <label className={labelCls}>Deadline</label>
+            <input type="date" className={inputCls} value={deadline} onChange={(e) => setDeadline(e.target.value)} required />
+          </div>
+        )}
       </div>
 
       {/* Trigger condition block */}
@@ -297,6 +301,28 @@ export function ContractForm({ categories, contract }: Props) {
           <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="rounded" />
           <span className="text-sm text-insu-dim">Featured on homepage</span>
         </label>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <label className="text-[13px] font-medium text-insu-text">Recurring contract</label>
+        <button
+          type="button"
+          onClick={() => setIsRecurring(v => !v)}
+          className={cn(
+            'relative h-6 w-11 rounded-full transition-colors',
+            isRecurring ? 'bg-insu-accent' : 'bg-white/10',
+          )}
+        >
+          <span
+            className={cn(
+              'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+              isRecurring ? 'translate-x-5' : 'translate-x-0.5',
+            )}
+          />
+        </button>
+        <span className="text-[12px] text-insu-muted">
+          {isRecurring ? 'Rolls over (no deadline)' : 'One-time event (expires at deadline)'}
+        </span>
       </div>
 
       <div className="flex gap-3 justify-end pt-2">
