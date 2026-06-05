@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { processPayouts } from '@/lib/payout/processor'
+import { processPayouts, expireContracts } from '@/lib/payout/processor'
 import type { Contract, HedgerPosition, ProviderPosition } from '@/lib/types'
 
 const mockContract: Contract = {
@@ -55,6 +55,16 @@ const activePosition: HedgerPosition = {
   id: 'pos-active',
   coverage_period_days: 7,
   expires_at: new Date(Date.now() + 86_400_000).toISOString(), // 1 day from now
+}
+
+const expiredOneTimeContract: Contract = {
+  ...mockContract,
+  id: 'c-onetime',
+  slug: 'bad-bunny',
+  trigger_type: 'event',
+  is_recurring: false,
+  trigger_deadline: new Date(Date.now() - 86_400_000).toISOString(),
+  settled_outcome: null,
 }
 
 const mockProviderPosition: ProviderPosition = {
@@ -146,6 +156,9 @@ function makeDb(opts: {
           insert: payoutsInsert,
           update: vi.fn().mockReturnValue({ eq: payoutsUpdateEq }),
         }
+      }
+      if (table === 'coverage_tiers') {
+        return makeChainable({ data: { payout_usd: 500, payout_mxn: 8500 }, error: null })
       }
       return {}
     }),
@@ -286,5 +299,102 @@ describe('processPayouts', () => {
     })
     const count = await processPayouts(db as never, makeStripe() as never)
     expect(count).toBe(1)
+  })
+})
+
+function makeExpireDb(opts: {
+  expiredContracts?: Contract[]
+  providerPositions?: ProviderPosition[]
+} = {}) {
+  const expiredContracts = opts.expiredContracts ?? [expiredOneTimeContract]
+  const providerPositions = opts.providerPositions ?? []
+
+  const contractUpdateEq = vi.fn().mockResolvedValue({ error: null })
+  const providerUpdateEq = vi.fn().mockResolvedValue({ error: null })
+  const providerUpdate = vi.fn().mockReturnValue({ eq: providerUpdateEq })
+
+  // A fully chainable stub for tables we don't assert on
+  function chainable(resolved: unknown) {
+    const b: Record<string, unknown> = {}
+    for (const m of ['select', 'update', 'eq', 'in', 'is', 'lt']) {
+      b[m] = vi.fn().mockReturnValue(b)
+    }
+    Object.assign(b, {
+      then: (res: (v: unknown) => unknown) => Promise.resolve(resolved).then(res),
+      single: vi.fn().mockResolvedValue(resolved),
+    })
+    return b
+  }
+
+  return {
+    from: vi.fn((table: string) => {
+      if (table === 'contracts') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                is: vi.fn().mockReturnValue({
+                  lt: vi.fn().mockResolvedValue({ data: expiredContracts, error: null }),
+                }),
+              }),
+            }),
+          }),
+          update: vi.fn().mockReturnValue({ eq: contractUpdateEq }),
+        }
+      }
+      if (table === 'hedger_positions') {
+        return chainable({ data: [], error: null })
+      }
+      if (table === 'provider_positions') {
+        return {
+          ...chainable({ data: providerPositions, error: null }),
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ data: providerPositions, error: null }),
+            }),
+          }),
+          update: providerUpdate,
+        }
+      }
+      return chainable({ data: [], error: null })
+    }),
+    _contractUpdateEq: contractUpdateEq,
+    _providerUpdate: providerUpdate,
+    _providerUpdateEq: providerUpdateEq,
+  }
+}
+
+describe('expireContracts', () => {
+  it('returns 0 when no one-time contracts have passed deadline', async () => {
+    const db = makeExpireDb({ expiredContracts: [] })
+    const count = await expireContracts(db as never)
+    expect(count).toBe(0)
+  })
+
+  it('returns 1 when one expired one-time contract is found', async () => {
+    const db = makeExpireDb()
+    const count = await expireContracts(db as never)
+    expect(count).toBe(1)
+  })
+
+  it('settles expired one-time contract with settled_outcome=false', async () => {
+    const db = makeExpireDb()
+    await expireContracts(db as never)
+    expect(db._contractUpdateEq).toHaveBeenCalledWith('id', 'c-onetime')
+  })
+
+  it('settles provider positions with full capital return when contract expires without trigger', async () => {
+    const providerPos: ProviderPosition = {
+      ...mockProviderPosition,
+      id: 'pp-event',
+      contract_id: 'c-onetime',
+      capital_deposited_usd: 5000,
+    }
+    const db = makeExpireDb({ providerPositions: [providerPos] })
+    await expireContracts(db as never)
+    expect(db._providerUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'settled', actual_return_usd: 5000 }),
+    )
+    expect(db._providerUpdateEq).toHaveBeenCalledWith('id', 'pp-event')
   })
 })

@@ -194,3 +194,50 @@ async function settleProviderPositions(
       .eq('id', position.id)
   }
 }
+
+export async function expireContracts(db: DbClient = getClient()): Promise<number> {
+  const now = new Date().toISOString()
+
+  const { data: pastDeadline } = await db
+    .from('contracts')
+    .select('id')
+    .eq('status', 'active')
+    .eq('is_recurring', false)
+    .is('settled_outcome', null)
+    .lt('trigger_deadline', now)
+
+  let expiredCount = 0
+
+  for (const contract of (pastDeadline ?? []) as Array<{ id: string }>) {
+    await db.from('contracts')
+      .update({ status: 'settled', settled_outcome: false, settled_at: now })
+      .eq('id', contract.id)
+
+    await db.from('hedger_positions')
+      .update({ status: 'expired' })
+      .eq('contract_id', contract.id)
+      .eq('status', 'active')
+
+    const { data: providerPositions } = await db
+      .from('provider_positions')
+      .select('id, capital_deposited_usd')
+      .eq('contract_id', contract.id)
+      .eq('status', 'active')
+
+    for (const pos of (providerPositions ?? []) as Array<{ id: string; capital_deposited_usd: number }>) {
+      await db.from('provider_positions')
+        .update({ status: 'settled', actual_return_usd: pos.capital_deposited_usd, settled_at: now })
+        .eq('id', pos.id)
+    }
+
+    expiredCount++
+  }
+
+  // Expire stale hedger positions on any active contract (covers recurring contracts)
+  await db.from('hedger_positions')
+    .update({ status: 'expired' })
+    .eq('status', 'active')
+    .lt('expires_at', now)
+
+  return expiredCount
+}
