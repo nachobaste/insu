@@ -14,6 +14,7 @@ function makeContract(overrides: Partial<ContractWithTiers>): ContractWithTiers 
     trigger_type: 'manual',
     trigger_condition: {},
     trigger_deadline: '2027-01-01T00:00:00Z',
+    is_recurring: false,
     location: { lat: 0, lng: 0, city: 'Test', country: 'MX' },
     icon_url: null,
     total_volume_usd: 1_000_000,

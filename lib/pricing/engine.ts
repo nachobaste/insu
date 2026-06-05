@@ -25,10 +25,12 @@ export function priceTier(
     ? tier.current_capacity_usd / tier.max_capacity_usd
     : 0
 
-  const daysRemaining = Math.max(
-    0,
-    (new Date(contract.trigger_deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-  )
+  const daysRemaining = contract.trigger_deadline
+    ? Math.max(
+        0,
+        (new Date(contract.trigger_deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+      )
+    : 30  // recurring contracts: assume 30-day window for pricing
 
   const utilizationFactor = 1 + 0.5 * utilization
   const timeFactor = 1 + 0.5 * Math.max(0, 1 - daysRemaining / 30)
@@ -50,9 +52,10 @@ export function computePeriodFactor(
   periodDays: number,
   contract: Pick<Contract, 'created_at' | 'trigger_deadline'>,
 ): number {
-  const contractDays =
-    (new Date(contract.trigger_deadline).getTime() - new Date(contract.created_at).getTime()) /
-    86_400_000
+  const contractDays = contract.trigger_deadline
+    ? (new Date(contract.trigger_deadline).getTime() - new Date(contract.created_at).getTime()) /
+      86_400_000
+    : 30  // recurring contracts: assume 30-day window
   if (contractDays <= 0) return 1.0
   return Math.min(1.0, periodDays / contractDays)
 }

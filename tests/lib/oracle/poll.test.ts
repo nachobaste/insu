@@ -12,6 +12,7 @@ const mockContract: Contract = {
   trigger_type: 'weather',
   trigger_condition: { metric: 'rain_mm', threshold: 10, operator: 'gte' },
   trigger_deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  is_recurring: false,
   location: { lat: 19.4, lng: -99.1, city: 'CDMX', country: 'MX' },
   icon_url: null,
   total_volume_usd: 0,

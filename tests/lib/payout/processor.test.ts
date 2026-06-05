@@ -12,6 +12,7 @@ const mockContract: Contract = {
   trigger_type: 'weather',
   trigger_condition: {},
   trigger_deadline: new Date(Date.now() + 86400000).toISOString(),
+  is_recurring: false,
   location: { lat: 19.4, lng: -99.1, city: 'CDMX', country: 'MX' },
   icon_url: null,
   total_volume_usd: 0,

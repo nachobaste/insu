@@ -83,7 +83,7 @@ export function ContractList({ contracts }: { contracts: ContractWithTiers[] }) 
             <div>
               <p className="font-medium text-insu-text">{c.title}</p>
               <p className="mt-0.5 text-[11px] text-insu-muted">
-                Deadline {new Date(c.trigger_deadline).toLocaleDateString()}
+                Deadline {c.trigger_deadline ? new Date(c.trigger_deadline).toLocaleDateString() : '—'}
               </p>
             </div>
             <span className="self-center text-insu-dim capitalize">{c.category?.name ?? '—'}</span>

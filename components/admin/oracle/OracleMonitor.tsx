@@ -148,7 +148,7 @@ export function OracleMonitor({ items }: { items: ContractWithLatestReading[] })
             <div>
               <h2 className="text-lg font-semibold text-insu-text">{selected.contract.title}</h2>
               <p className="mt-0.5 text-[12px] text-insu-muted">
-                {selected.contract.trigger_type} · {parseThreshold(selected.contract)} · Deadline {new Date(selected.contract.trigger_deadline).toLocaleDateString()}
+                {selected.contract.trigger_type} · {parseThreshold(selected.contract)} · Deadline {selected.contract.trigger_deadline ? new Date(selected.contract.trigger_deadline).toLocaleDateString() : '—'}
               </p>
             </div>
             {selected.latest && (

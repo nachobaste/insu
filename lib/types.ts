@@ -62,7 +62,8 @@ export interface Contract {
   status: ContractStatus
   trigger_type: TriggerType
   trigger_condition: Record<string, unknown>
-  trigger_deadline: string
+  trigger_deadline: string | null
+  is_recurring: boolean
   location: ContractLocation
   icon_url: string | null
   total_volume_usd: number
@@ -193,7 +194,8 @@ export interface UpsertContractInput {
   status: ContractStatus
   trigger_type: TriggerType
   trigger_condition: Record<string, unknown>
-  trigger_deadline: string
+  trigger_deadline: string | null
+  is_recurring: boolean
   location: ContractLocation
   icon_url: string | null
   is_featured: boolean

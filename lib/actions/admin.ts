@@ -32,7 +32,7 @@ async function assertAdmin() {
 export async function upsertContract(input: UpsertContractInput): Promise<string> {
   const { supabase, userId } = await assertAdmin()
 
-  if (new Date(input.trigger_deadline) <= new Date()) {
+  if (input.trigger_deadline && new Date(input.trigger_deadline) <= new Date()) {
     throw new Error('Deadline must be in the future')
   }
   if (input.basic_tier.payout_usd <= input.basic_tier.premium_usd) {

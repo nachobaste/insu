@@ -32,6 +32,7 @@ function makeContract(daysFromNow: number, overrides: Partial<Contract> = {}): C
     trigger_type: 'manual',
     trigger_condition: {},
     trigger_deadline: deadline,
+    is_recurring: false,
     location: { lat: 0, lng: 0, city: 'Test', country: 'MX' },
     icon_url: null,
     total_volume_usd: 0,

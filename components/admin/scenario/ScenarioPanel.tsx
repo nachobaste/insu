@@ -80,7 +80,7 @@ export function ScenarioPanel({ contracts }: Props) {
             <option value="">Select a contract…</option>
             {contracts.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.title} · {new Date(c.trigger_deadline).toLocaleDateString()}
+                {c.title} · {c.trigger_deadline ? new Date(c.trigger_deadline).toLocaleDateString() : '—'}
               </option>
             ))}
           </select>

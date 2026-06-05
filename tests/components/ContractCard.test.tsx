@@ -25,6 +25,7 @@ const mockContract: ContractWithTiers = {
   trigger_type: 'manual',
   trigger_condition: {},
   trigger_deadline: '2026-01-31T23:59:59Z',
+  is_recurring: false,
   location: { lat: 19.4, lng: -99.1, city: 'CDMX', country: 'MX' },
   icon_url: null,
   total_volume_usd: 9_000_000,

@@ -13,9 +13,11 @@ const TRIGGER_LABELS: Record<string, string> = {
 }
 
 export default function ContractMeta({ contract }: Props) {
-  const deadline = new Date(contract.trigger_deadline).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-  })
+  const deadline = contract.trigger_deadline
+    ? new Date(contract.trigger_deadline).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric',
+      })
+    : '—'
   const condition = contract.trigger_condition as Record<string, unknown>
   const conditionText = (condition.description as string) ?? JSON.stringify(condition)
   const { city, country } = contract.location

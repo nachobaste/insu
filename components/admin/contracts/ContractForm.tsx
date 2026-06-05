@@ -97,6 +97,7 @@ export function ContractForm({ categories, contract }: Props) {
       trigger_type: triggerType as UpsertContractInput['trigger_type'],
       trigger_condition: buildTriggerCondition(triggerType, condState),
       trigger_deadline: new Date(deadline).toISOString(),
+      is_recurring: false,
       location: {
         city: locationCity, country: locationCountry,
         lat: Number(locationLat), lng: Number(locationLng),

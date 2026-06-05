@@ -57,6 +57,7 @@ const baseInput = {
   trigger_type: 'weather' as const,
   trigger_condition: { metric: 'rainfall', comparator: '>', threshold: 25, unit: 'mm/hr' },
   trigger_deadline: new Date(Date.now() + 86400000 * 30).toISOString(),
+  is_recurring: false,
   location: { city: 'CDMX', country: 'MX', lat: 19.4, lng: -99.1 },
   icon_url: null,
   is_featured: false,
