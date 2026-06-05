@@ -2,7 +2,7 @@ import { timingSafeEqual } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { repriceAll } from '@/lib/pricing/reprice'
 
-export async function POST(req: NextRequest) {
+async function handleReprice(req: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (!secret) return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
   const expected = Buffer.from(`Bearer ${secret}`)
@@ -13,3 +13,7 @@ export async function POST(req: NextRequest) {
   const count = await repriceAll()
   return NextResponse.json({ repriced: count })
 }
+
+// Vercel Cron sends GET; POST is kept for manual triggering
+export const GET = handleReprice
+export const POST = handleReprice

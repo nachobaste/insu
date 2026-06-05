@@ -52,7 +52,7 @@ async function getPlatformStats() {
   const { count: protectionsSold } = await supabase
     .from('hedger_positions')
     .select('*', { count: 'exact', head: true })
-    .eq('status', 'active')
+    .in('status', ['active', 'paid_out', 'expired'])
 
   return {
     totalVolumeUsd,
