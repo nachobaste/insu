@@ -49,8 +49,8 @@ describe('TierSelector', () => {
 
   it('calls onSelect with tier id when clicked', async () => {
     const onSelect = vi.fn()
-    render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={onSelect} />)
-    await userEvent.click(screen.getAllByRole('button')[1]) // second button = Premium
+    render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={onSelect} mode="provide" />)
+    await userEvent.click(screen.getByText(/pro/i))
     expect(onSelect).toHaveBeenCalledWith('tier-premium')
   })
 
@@ -60,7 +60,7 @@ describe('TierSelector', () => {
   })
 
   it('disables full tier', () => {
-    const fullTiers = [{ ...tiers[0], current_capacity_usd: 100000 }]
+    const fullTiers = [{ ...tiers[0], id: 'tier-full', current_capacity_usd: 100, payout_usd: 500 }]
     render(<TierSelector tiers={fullTiers} selectedTierId={null} onSelect={vi.fn()} />)
     expect(screen.getByRole('button')).toBeDisabled()
   })
