@@ -1,17 +1,12 @@
-import { timingSafeEqual } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
+import { validateCronRequest } from '@/lib/auth/cronAuth'
 import { processPayouts, expireContracts } from '@/lib/payout/processor'
 
 async function handlePayouts(req: NextRequest) {
-  const secret = process.env.CRON_SECRET
-  if (!secret) return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
-  const expected = Buffer.from(`Bearer ${secret}`)
-  const actual = Buffer.from(req.headers.get('authorization') ?? '')
-  if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = validateCronRequest(req)
+  if (authError) return authError
   const db = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
