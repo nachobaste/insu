@@ -95,9 +95,10 @@ async function settleContract(
   // Mark contract settled after payouts are processed.
   // If this function is retried due to an earlier crash, positions already paid out
   // are filtered by .eq('status', 'active') above so they won't be double-charged.
-  await db.from('contracts')
+  const { error: settleError } = await db.from('contracts')
     .update({ settled_outcome: true, status: 'settled', settled_at: new Date().toISOString() })
     .eq('id', contract.id)
+  if (settleError) throw new Error(`Failed to settle contract ${contract.id}: ${settleError.message}`)
 
   await settleProviderPositions(db, contract.id, totalHedgerPayout)
 
