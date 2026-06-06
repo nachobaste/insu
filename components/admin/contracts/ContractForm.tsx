@@ -8,14 +8,25 @@ import type { Category, ContractWithTiers, UpsertContractInput } from '@/lib/typ
 
 const WEATHER_METRICS = ['rainfall', 'temperature', 'wind', 'snow']
 const URBAN_METRICS = ['delay', 'congestion']
-const COMPARATORS = ['>', '<', '=']
+const COMPARATORS = ['>', '>=', '<', '<='] as const
+const SYMBOL_TO_OPERATOR: Record<string, 'gt' | 'gte' | 'lt' | 'lte'> = {
+  '>': 'gt', '>=': 'gte', '<': 'lt', '<=': 'lte',
+}
+const OPERATOR_TO_SYMBOL: Record<string, string> = {
+  gt: '>', gte: '>=', lt: '<', lte: '<=',
+}
 
 function buildTriggerCondition(
   type: string,
   state: { metric: string; comparator: string; threshold: string; unit: string; description: string },
 ): Record<string, unknown> {
   if (type === 'weather' || type === 'urban') {
-    return { metric: state.metric, comparator: state.comparator, threshold: Number(state.threshold), unit: state.unit }
+    return {
+      metric: state.metric,
+      operator: SYMBOL_TO_OPERATOR[state.comparator] ?? 'gt',
+      threshold: Number(state.threshold),
+      unit: state.unit,
+    }
   }
   if (type === 'event') return { description: state.description }
   return {}
@@ -26,9 +37,11 @@ function parseTriggerCondition(
   condition: Record<string, unknown>,
 ) {
   if (type === 'weather' || type === 'urban') {
+    const operator = String(condition.operator ?? condition.comparator ?? 'gt')
+    const comparator = OPERATOR_TO_SYMBOL[operator] ?? operator
     return {
       metric: String(condition.metric ?? ''),
-      comparator: String(condition.comparator ?? '>'),
+      comparator,
       threshold: String(condition.threshold ?? ''),
       unit: String(condition.unit ?? ''),
       description: '',
