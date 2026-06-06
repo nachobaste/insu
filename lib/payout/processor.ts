@@ -68,10 +68,6 @@ async function settleContract(
   contract: Contract,
   triggerReadAt: string,
 ): Promise<number> {
-  await db.from('contracts')
-    .update({ settled_outcome: true, status: 'settled', settled_at: new Date().toISOString() })
-    .eq('id', contract.id)
-
   const { data: positions } = await db
     .from('hedger_positions')
     .select('*')
@@ -96,6 +92,13 @@ async function settleContract(
     }
   }
 
+  // Mark contract settled after payouts are processed.
+  // If this function is retried due to an earlier crash, positions already paid out
+  // are filtered by .eq('status', 'active') above so they won't be double-charged.
+  await db.from('contracts')
+    .update({ settled_outcome: true, status: 'settled', settled_at: new Date().toISOString() })
+    .eq('id', contract.id)
+
   await settleProviderPositions(db, contract.id, totalHedgerPayout)
 
   return paid
@@ -115,6 +118,15 @@ async function payoutPosition(
     .single()
   const payoutAmountUsd = tier ? Number((tier as { payout_usd: number }).payout_usd) : position.payout_amount_usd
   const payoutAmountMxn = tier ? Number((tier as { payout_mxn: number }).payout_mxn) : position.payout_amount_mxn
+
+  // Idempotency: skip if a non-failed payout already exists (prevents duplicate charges on retry)
+  const { data: existingPayout } = await db
+    .from('payouts')
+    .select('id, status')
+    .eq('hedger_position_id', position.id)
+    .neq('status', 'failed')
+    .maybeSingle()
+  if (existingPayout) return 0
 
   const { data: profile } = await db
     .from('profiles')

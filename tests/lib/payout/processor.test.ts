@@ -156,6 +156,13 @@ function makeDb(opts: {
         return {
           insert: payoutsInsert,
           update: payoutsUpdate,
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              neq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+              }),
+            }),
+          }),
         }
       }
       if (table === 'coverage_tiers') {
@@ -314,6 +321,69 @@ describe('processPayouts', () => {
     const count = await processPayouts(db as never, failingStripe as never)
     expect(count).toBe(0)
     expect(db._payoutsUpdate).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
+  })
+
+  it('does not create a second payout record when a non-failed payout already exists for the position', async () => {
+    const db = makeDb()
+    const originalFrom = db.from.bind(db)
+    db.from = vi.fn((table: string) => {
+      if (table === 'payouts') {
+        return {
+          insert: db._payoutsInsert,
+          update: db._payoutsUpdate,
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              neq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'payout-existing', status: 'processing' }, error: null }),
+              }),
+            }),
+          }),
+        }
+      }
+      return originalFrom(table)
+    }) as never
+
+    await processPayouts(db as never, makeStripe() as never)
+    expect(db._payoutsInsert).not.toHaveBeenCalled()
+  })
+
+  it('marks contract settled after processing payouts (not before)', async () => {
+    const callOrder: string[] = []
+    const db = makeDb()
+    const originalFrom = db.from.bind(db)
+    db.from = vi.fn((table: string) => {
+      const branch = originalFrom(table)
+      if (table === 'contracts') {
+        const originalUpdate = branch.update.bind(branch)
+        branch.update = vi.fn((...args: unknown[]) => {
+          callOrder.push('contracts.update')
+          return originalUpdate(...args)
+        })
+      }
+      if (table === 'payouts') {
+        return {
+          insert: vi.fn((...args: unknown[]) => {
+            callOrder.push('payouts.insert')
+            return db._payoutsInsert(...args)
+          }),
+          update: db._payoutsUpdate,
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              neq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+              }),
+            }),
+          }),
+        }
+      }
+      return branch
+    }) as never
+
+    await processPayouts(db as never, makeStripe() as never)
+    const payoutsInsertIdx = callOrder.indexOf('payouts.insert')
+    const contractsUpdateIdx = callOrder.indexOf('contracts.update')
+    expect(payoutsInsertIdx).toBeGreaterThanOrEqual(0)
+    expect(contractsUpdateIdx).toBeGreaterThan(payoutsInsertIdx)
   })
 })
 
