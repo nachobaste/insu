@@ -15,5 +15,6 @@ export function evaluateTrigger(
     case 'lte': return actual <= condition.threshold
     case 'gt':  return actual > condition.threshold
     case 'lt':  return actual < condition.threshold
+    default:    return false
   }
 }
