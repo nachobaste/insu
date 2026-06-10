@@ -30,6 +30,10 @@
 }
 
 @layer base {
+  html {
+    font-size: 17px;
+  }
+
   body {
     @apply bg-bg text-insu-text font-body;
   }
