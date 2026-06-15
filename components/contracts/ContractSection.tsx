@@ -4,7 +4,7 @@ import { useState } from 'react'
 import ContractCard from './ContractCard'
 import AddContractCard from './AddContractCard'
 import { cn } from '@/lib/utils'
-import { getUrbanRoads } from '@/lib/corridors'
+import { getContractPeriod, getRecommendedPeriod, getUrbanRoads } from '@/lib/corridors'
 import type { ContractWithTiers, Currency, CategoryName } from '@/lib/types'
 
 const SECTION_STYLES: Record<string, string> = {
@@ -51,6 +51,7 @@ export default function ContractSection({
   const visibleContracts = activeRoad
     ? contracts.filter((c) => c.corridor?.road === activeRoad)
     : contracts
+  const recommendedPeriod = getRecommendedPeriod()
 
   return (
     <section className="mt-9 first:mt-0">
@@ -90,14 +91,22 @@ export default function ContractSection({
       )}
 
       <div className="grid grid-cols-4 gap-3">
-        {visibleContracts.map((contract) => (
-          <ContractCard
-            key={contract.id}
-            contract={contract}
-            currency={currency}
-            badge={contract.is_featured ? 'trending' : undefined}
-          />
-        ))}
+        {visibleContracts.map((contract) => {
+          const badge =
+            contract.corridor && getContractPeriod(contract.corridor) === recommendedPeriod
+              ? 'recommended'
+              : contract.is_featured
+                ? 'trending'
+                : undefined
+          return (
+            <ContractCard
+              key={contract.id}
+              contract={contract}
+              currency={currency}
+              badge={badge}
+            />
+          )
+        })}
         <AddContractCard />
       </div>
     </section>

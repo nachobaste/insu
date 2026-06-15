@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import ContractSection from '@/components/contracts/ContractSection'
 import type { ContractWithTiers, Corridor } from '@/lib/types'
 
@@ -116,5 +116,59 @@ describe('ContractSection road chips', () => {
     render(<ContractSection categoryName="Nature" categorySlug="nature" contracts={contracts} currency="USD" />)
 
     expect(screen.queryByRole('button', { name: 'All' })).not.toBeInTheDocument()
+  })
+})
+
+describe('ContractSection recommended badge', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('shows a recommended badge on the corridor contract matching the current commute period', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-14T08:00:00')) // 08:00 -> recommended period is "evening"
+
+    const contracts = [
+      makeContract({ id: '1', title: 'Reforma Morning', corridor: makeCorridor({ road: 'Paseo de la Reforma', window_start: '07:00:00' }) }),
+      makeContract({ id: '2', title: 'Reforma Evening', corridor: makeCorridor({ road: 'Paseo de la Reforma', slug: 'reforma-pm', window_start: '17:00:00' }) }),
+    ]
+    render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
+
+    const eveningCard = screen.getByText('Reforma Evening').closest('article')
+    const morningCard = screen.getByText('Reforma Morning').closest('article')
+    expect(eveningCard).toHaveTextContent('recommended')
+    expect(morningCard).not.toHaveTextContent('recommended')
+  })
+
+  it('shows recommended instead of trending when a featured contract also matches the recommended period', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-14T08:00:00')) // -> "evening" recommended
+
+    const contracts = [
+      makeContract({
+        id: '1',
+        title: 'Reforma Evening',
+        is_featured: true,
+        corridor: makeCorridor({ road: 'Paseo de la Reforma', slug: 'reforma-pm', window_start: '17:00:00' }),
+      }),
+    ]
+    render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
+
+    const card = screen.getByText('Reforma Evening').closest('article')
+    expect(card).toHaveTextContent('recommended')
+    expect(card).not.toHaveTextContent('trending')
+  })
+
+  it('keeps the trending badge for a featured contract with no corridor', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-14T08:00:00'))
+
+    const contracts = [
+      makeContract({ id: '1', title: 'General Traffic', is_featured: true, corridor: null }),
+    ]
+    render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
+
+    const card = screen.getByText('General Traffic').closest('article')
+    expect(card).toHaveTextContent('trending')
   })
 })
