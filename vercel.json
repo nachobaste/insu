@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/oracle-poll",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/payout-process",
