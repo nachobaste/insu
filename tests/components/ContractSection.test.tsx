@@ -82,6 +82,7 @@ describe('ContractSection road chips', () => {
     const contracts = [
       makeContract({ id: '1', title: 'General Traffic', corridor: null }),
       makeContract({ id: '2', title: 'Reforma Morning', corridor: makeCorridor({ road: 'Paseo de la Reforma' }) }),
+      makeContract({ id: '3', title: 'Bicentenario Morning', corridor: makeCorridor({ road: 'Circuito Bicentenario', slug: 'bicentenario-am' }) }),
     ]
     render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
 
@@ -91,6 +92,18 @@ describe('ContractSection road chips', () => {
 
     expect(screen.queryByText('General Traffic')).not.toBeInTheDocument()
     expect(screen.getByText('Reforma Morning')).toBeInTheDocument()
+  })
+
+  it('renders no chip row when only one distinct corridor road is present', () => {
+    const contracts = [
+      makeContract({ id: '1', title: 'Reforma Morning', corridor: makeCorridor({ road: 'Paseo de la Reforma' }) }),
+      makeContract({ id: '2', title: 'Reforma Evening', corridor: makeCorridor({ road: 'Paseo de la Reforma', slug: 'reforma-pm', window_start: '17:00:00' }) }),
+    ]
+    render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
+
+    expect(screen.queryByRole('button', { name: 'All' })).not.toBeInTheDocument()
+    expect(screen.getByText('Reforma Morning')).toBeInTheDocument()
+    expect(screen.getByText('Reforma Evening')).toBeInTheDocument()
   })
 
   it('renders no chip row for non-urban categories', () => {

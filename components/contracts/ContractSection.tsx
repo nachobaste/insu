@@ -69,7 +69,7 @@ export default function ContractSection({
         <div className="h-px flex-1 bg-white/[0.07]" />
       </div>
 
-      {roads.length > 0 && (
+      {roads.length > 1 && (
         <div className="mb-4 flex flex-wrap gap-2">
           <button
             onClick={() => setActiveRoad(null)}
