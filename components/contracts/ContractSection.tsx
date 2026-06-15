@@ -1,6 +1,10 @@
+'use client'
+
+import { useState } from 'react'
 import ContractCard from './ContractCard'
 import AddContractCard from './AddContractCard'
 import { cn } from '@/lib/utils'
+import { getContractPeriod, getRecommendedPeriod, getUrbanRoads } from '@/lib/corridors'
 import type { ContractWithTiers, Currency, CategoryName } from '@/lib/types'
 
 const SECTION_STYLES: Record<string, string> = {
@@ -24,6 +28,10 @@ const SECTION_ICONS: Record<string, string> = {
   events:      '🎤',
 }
 
+const CHIP_BASE = 'rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.08em] transition-colors'
+const CHIP_ACTIVE = 'border-category-urban/30 bg-category-urban/10 text-category-urban'
+const CHIP_INACTIVE = 'border-white/10 text-insu-muted hover:text-insu-text hover:border-white/20'
+
 interface Props {
   categoryName: CategoryName
   categorySlug: string
@@ -37,6 +45,14 @@ export default function ContractSection({
   contracts,
   currency,
 }: Props) {
+  const [activeRoad, setActiveRoad] = useState<string | null>(null)
+
+  const roads = categorySlug === 'urban' ? getUrbanRoads(contracts) : []
+  const visibleContracts = activeRoad
+    ? contracts.filter((c) => c.corridor?.road === activeRoad)
+    : contracts
+  const recommendedPeriod = getRecommendedPeriod()
+
   return (
     <section className="mt-9 first:mt-0">
       <div className="mb-4 flex items-baseline gap-3">
@@ -54,15 +70,43 @@ export default function ContractSection({
         <div className="h-px flex-1 bg-white/[0.07]" />
       </div>
 
+      {roads.length > 1 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          <button
+            onClick={() => setActiveRoad(null)}
+            className={cn(CHIP_BASE, activeRoad === null ? CHIP_ACTIVE : CHIP_INACTIVE)}
+          >
+            All
+          </button>
+          {roads.map((road) => (
+            <button
+              key={road}
+              onClick={() => setActiveRoad(activeRoad === road ? null : road)}
+              className={cn(CHIP_BASE, activeRoad === road ? CHIP_ACTIVE : CHIP_INACTIVE)}
+            >
+              {road}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="grid grid-cols-4 gap-3">
-        {contracts.map((contract) => (
-          <ContractCard
-            key={contract.id}
-            contract={contract}
-            currency={currency}
-            badge={contract.is_featured ? 'trending' : undefined}
-          />
-        ))}
+        {visibleContracts.map((contract) => {
+          const badge =
+            contract.corridor && getContractPeriod(contract.corridor) === recommendedPeriod
+              ? 'recommended'
+              : contract.is_featured
+                ? 'trending'
+                : undefined
+          return (
+            <ContractCard
+              key={contract.id}
+              contract={contract}
+              currency={currency}
+              badge={badge}
+            />
+          )
+        })}
         <AddContractCard />
       </div>
     </section>

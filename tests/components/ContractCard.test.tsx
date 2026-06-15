@@ -96,4 +96,9 @@ describe('ContractCard', () => {
     render(<ContractCard contract={mockContract} currency="USD" />)
     expect(screen.getByRole('button', { name: /buy now/i })).toBeInTheDocument()
   })
+
+  it('renders a recommended badge when badge="recommended"', () => {
+    render(<ContractCard contract={mockContract} currency="USD" badge="recommended" />)
+    expect(screen.getByText('recommended')).toBeInTheDocument()
+  })
 })

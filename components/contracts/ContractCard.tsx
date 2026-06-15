@@ -27,13 +27,14 @@ const TIER_LABELS: Record<CoverageLevel, string> = {
 interface Props {
   contract: ContractWithTiers
   currency: Currency
-  badge?: 'trending' | 'new' | 'live'
+  badge?: 'trending' | 'new' | 'live' | 'recommended'
 }
 
 const BADGE_STYLES = {
-  trending: 'bg-insu-accent/15 text-insu-accent border border-insu-accent/25',
-  new:      'bg-insu-green/10 text-insu-green border border-insu-green/25',
-  live:     'bg-red-500/12 text-red-400 border border-red-500/25 animate-pulse',
+  trending:    'bg-insu-accent/15 text-insu-accent border border-insu-accent/25',
+  new:         'bg-insu-green/10 text-insu-green border border-insu-green/25',
+  live:        'bg-red-500/12 text-red-400 border border-red-500/25 animate-pulse',
+  recommended: 'bg-blue-400/15 text-blue-400 border border-blue-400/25',
 }
 
 export default function ContractCard({ contract, currency, badge }: Props) {

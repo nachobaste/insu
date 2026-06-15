@@ -22,7 +22,8 @@ async function getContracts(): Promise<ContractWithTiers[]> {
     .select(`
       *,
       category:categories(*),
-      coverage_tiers(*)
+      coverage_tiers(*),
+      corridor:corridors(*)
     `)
     .eq('status', 'active')
     .order('is_featured', { ascending: false })
