@@ -48,10 +48,42 @@ export default function ContractSection({
   const [activeRoad, setActiveRoad] = useState<string | null>(null)
 
   const roads = categorySlug === 'urban' ? getUrbanRoads(contracts) : []
-  const visibleContracts = activeRoad
+  const recommendedPeriod = getRecommendedPeriod()
+
+  function getBadge(contract: ContractWithTiers) {
+    if (contract.corridor && getContractPeriod(contract.corridor) === recommendedPeriod) {
+      return 'recommended' as const
+    }
+    return contract.is_featured ? 'trending' as const : undefined
+  }
+
+  const showGrouped = categorySlug === 'urban' && !activeRoad
+
+  // Contracts to show when a road chip is active
+  const filteredContracts = activeRoad
     ? contracts.filter((c) => c.corridor?.road === activeRoad)
     : contracts
-  const recommendedPeriod = getRecommendedPeriod()
+
+  // Build road groups for the grouped view
+  const byRoad = new Map<string, ContractWithTiers[]>()
+  if (showGrouped) {
+    for (const c of contracts) {
+      const road = c.corridor?.road
+      if (!road) continue
+      if (!byRoad.has(road)) byRoad.set(road, [])
+      byRoad.get(road)!.push(c)
+    }
+    // Morning before evening within each group
+    for (const group of byRoad.values()) {
+      group.sort((a, b) => {
+        const aPeriod = a.corridor ? getContractPeriod(a.corridor) : 'evening'
+        const bPeriod = b.corridor ? getContractPeriod(b.corridor) : 'evening'
+        return aPeriod === bPeriod ? 0 : aPeriod === 'morning' ? -1 : 1
+      })
+    }
+  }
+
+  const nonCorridorContracts = contracts.filter((c) => !c.corridor?.road)
 
   return (
     <section className="mt-9 first:mt-0">
@@ -90,25 +122,68 @@ export default function ContractSection({
         </div>
       )}
 
-      <div className="grid grid-cols-4 gap-3">
-        {visibleContracts.map((contract) => {
-          const badge =
-            contract.corridor && getContractPeriod(contract.corridor) === recommendedPeriod
-              ? 'recommended'
-              : contract.is_featured
-                ? 'trending'
-                : undefined
-          return (
+      {showGrouped ? (
+        <div className="space-y-5">
+          {roads.map((road) => {
+            const group = byRoad.get(road)
+            if (!group?.length) return null
+            return (
+              <div key={road}>
+                <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-insu-muted/60">
+                  {road}
+                </p>
+                <div className="grid grid-cols-4 gap-3">
+                  {group.map((contract) => (
+                    <ContractCard
+                      key={contract.id}
+                      contract={contract}
+                      currency={currency}
+                      badge={getBadge(contract)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+
+          {(nonCorridorContracts.length > 0) && (
+            <div>
+              <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-insu-muted/60">
+                Other
+              </p>
+              <div className="grid grid-cols-4 gap-3">
+                {nonCorridorContracts.map((contract) => (
+                  <ContractCard
+                    key={contract.id}
+                    contract={contract}
+                    currency={currency}
+                    badge={getBadge(contract)}
+                  />
+                ))}
+                <AddContractCard />
+              </div>
+            </div>
+          )}
+
+          {nonCorridorContracts.length === 0 && (
+            <div className="grid grid-cols-4 gap-3">
+              <AddContractCard />
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-4 gap-3">
+          {filteredContracts.map((contract) => (
             <ContractCard
               key={contract.id}
               contract={contract}
               currency={currency}
-              badge={badge}
+              badge={getBadge(contract)}
             />
-          )
-        })}
-        <AddContractCard />
-      </div>
+          ))}
+          <AddContractCard />
+        </div>
+      )}
     </section>
   )
 }
