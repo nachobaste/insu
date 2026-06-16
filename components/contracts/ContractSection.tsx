@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import ContractCard from './ContractCard'
+import CorridorPairCard from './CorridorPairCard'
 import AddContractCard from './AddContractCard'
 import { cn } from '@/lib/utils'
 import { getContractPeriod, getRecommendedPeriod, getUrbanRoads } from '@/lib/corridors'
@@ -73,14 +74,6 @@ export default function ContractSection({
       if (!byRoad.has(road)) byRoad.set(road, [])
       byRoad.get(road)!.push(c)
     }
-    // Morning before evening within each group
-    for (const group of byRoad.values()) {
-      group.sort((a, b) => {
-        const aPeriod = a.corridor ? getContractPeriod(a.corridor) : 'evening'
-        const bPeriod = b.corridor ? getContractPeriod(b.corridor) : 'evening'
-        return aPeriod === bPeriod ? 0 : aPeriod === 'morning' ? -1 : 1
-      })
-    }
   }
 
   const nonCorridorContracts = contracts.filter((c) => !c.corridor?.road)
@@ -123,53 +116,29 @@ export default function ContractSection({
       )}
 
       {showGrouped ? (
-        <div className="space-y-5">
+        <div className="grid grid-cols-4 gap-3">
           {roads.map((road) => {
-            const group = byRoad.get(road)
-            if (!group?.length) return null
+            const group = byRoad.get(road) ?? []
+            const morning = group.find((c) => c.corridor && getContractPeriod(c.corridor) === 'morning') ?? null
+            const evening = group.find((c) => c.corridor && getContractPeriod(c.corridor) === 'evening') ?? null
             return (
-              <div key={road}>
-                <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-insu-muted/60">
-                  {road}
-                </p>
-                <div className="grid grid-cols-4 gap-3">
-                  {group.map((contract) => (
-                    <ContractCard
-                      key={contract.id}
-                      contract={contract}
-                      currency={currency}
-                      badge={getBadge(contract)}
-                    />
-                  ))}
-                </div>
-              </div>
+              <CorridorPairCard
+                key={road}
+                morning={morning}
+                evening={evening}
+                currency={currency}
+              />
             )
           })}
-
-          {(nonCorridorContracts.length > 0) && (
-            <div>
-              <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-insu-muted/60">
-                Other
-              </p>
-              <div className="grid grid-cols-4 gap-3">
-                {nonCorridorContracts.map((contract) => (
-                  <ContractCard
-                    key={contract.id}
-                    contract={contract}
-                    currency={currency}
-                    badge={getBadge(contract)}
-                  />
-                ))}
-                <AddContractCard />
-              </div>
-            </div>
-          )}
-
-          {nonCorridorContracts.length === 0 && (
-            <div className="grid grid-cols-4 gap-3">
-              <AddContractCard />
-            </div>
-          )}
+          {nonCorridorContracts.map((contract) => (
+            <ContractCard
+              key={contract.id}
+              contract={contract}
+              currency={currency}
+              badge={getBadge(contract)}
+            />
+          ))}
+          <AddContractCard />
         </div>
       ) : (
         <div className="grid grid-cols-4 gap-3">
