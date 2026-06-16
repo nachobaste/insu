@@ -96,21 +96,21 @@ export default function PriceChart({ history, tiers }: Props) {
           />
           <Area
             type="monotone"
-            dataKey="Basic"
-            stroke="#f5a623"
-            strokeWidth={2}
-            fill="url(#gradBasic)"
-            dot={false}
-            activeDot={{ r: 4, fill: '#f5a623' }}
-          />
-          <Area
-            type="monotone"
             dataKey="Pro"
             stroke="#22c55e"
             strokeWidth={2}
             fill="url(#gradPro)"
             dot={false}
             activeDot={{ r: 4, fill: '#22c55e' }}
+          />
+          <Area
+            type="monotone"
+            dataKey="Basic"
+            stroke="#f5a623"
+            strokeWidth={2}
+            fill="url(#gradBasic)"
+            dot={false}
+            activeDot={{ r: 4, fill: '#f5a623' }}
           />
         </AreaChart>
       </ResponsiveContainer>
