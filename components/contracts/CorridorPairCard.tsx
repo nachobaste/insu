@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { cn, formatCurrency, formatVolume, countryFlag } from '@/lib/utils'
@@ -25,13 +25,26 @@ function formatWindow(time: string): string {
   return m === 0 ? `${hour}${period}` : `${hour}:${m.toString().padStart(2, '0')}${period}`
 }
 
+function stripPeriodSuffix(title: string): string {
+  const idx = title.indexOf(' — Protección')
+  return idx >= 0 ? title.slice(0, idx) : title
+}
+
 export default function CorridorPairCard({ morning, evening, currency }: Props) {
   const router = useRouter()
-  const recommendedPeriod = getRecommendedPeriod()
 
   const hasBoth = morning !== null && evening !== null
-  const defaultPeriod: CommutePeriod = hasBoth ? recommendedPeriod : (morning ? 'morning' : 'evening')
-  const [activePeriod, setActivePeriod] = useState<CommutePeriod>(defaultPeriod)
+
+  // SSR-safe default: stable value that doesn't depend on new Date()
+  const [activePeriod, setActivePeriod] = useState<CommutePeriod>(morning ? 'morning' : 'evening')
+  // null until mounted so badge doesn't render during SSR (avoids hydration mismatch)
+  const [recommendedPeriod, setRecommendedPeriod] = useState<CommutePeriod | null>(null)
+
+  useEffect(() => {
+    const period = getRecommendedPeriod()
+    setRecommendedPeriod(period)
+    if (hasBoth) setActivePeriod(period)
+  }, [hasBoth])
 
   const active = activePeriod === 'morning' ? morning : evening
   if (!active) return null
@@ -40,8 +53,8 @@ export default function CorridorPairCard({ morning, evening, currency }: Props) 
     a.name === 'basic' ? -1 : b.name === 'basic' ? 1 : 0
   )
 
-  const isRecommended = activePeriod === recommendedPeriod
-  const recommendedOnOther = !isRecommended
+  const isRecommended = recommendedPeriod !== null && activePeriod === recommendedPeriod
+  const recommendedOnOther = recommendedPeriod !== null && activePeriod !== recommendedPeriod
 
   function handleToggle(e: React.MouseEvent, period: CommutePeriod) {
     e.stopPropagation()
@@ -82,7 +95,7 @@ export default function CorridorPairCard({ morning, evening, currency }: Props) 
 
       {/* Title */}
       <p className="mb-1.5 text-[13.5px] font-semibold leading-[1.45] text-insu-text">
-        {active.title}
+        {stripPeriodSuffix(active.title)}
       </p>
 
       {/* Location */}
@@ -105,7 +118,7 @@ export default function CorridorPairCard({ morning, evening, currency }: Props) 
           >
             {morningTime && <span className="font-normal normal-case tracking-normal opacity-70">{morningTime}</span>}
             <span>Morning</span>
-            {recommendedPeriod === 'morning' && recommendedOnOther && activePeriod !== 'morning' && (
+            {recommendedPeriod === 'morning' && recommendedOnOther && (
               <span className="h-1 w-1 rounded-full bg-blue-400" />
             )}
           </button>
@@ -120,7 +133,7 @@ export default function CorridorPairCard({ morning, evening, currency }: Props) 
           >
             {eveningTime && <span className="font-normal normal-case tracking-normal opacity-70">{eveningTime}</span>}
             <span>Evening</span>
-            {recommendedPeriod === 'evening' && recommendedOnOther && activePeriod !== 'evening' && (
+            {recommendedPeriod === 'evening' && recommendedOnOther && (
               <span className="h-1 w-1 rounded-full bg-blue-400" />
             )}
           </button>
