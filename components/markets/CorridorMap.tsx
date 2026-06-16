@@ -2,7 +2,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { Loader } from '@googlemaps/js-api-loader'
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
 
 const DARK_STYLE: google.maps.MapTypeStyle[] = [
   { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
@@ -36,15 +36,25 @@ export function CorridorMap({
     if (!apiKey || !mapRef.current) return
 
     let cancelled = false
-    const loader = new Loader({ apiKey, version: 'weekly' })
 
-    ;(loader as any).load().then(() => {
+    // v2 API: setOptions configures the loader (key/v, not apiKey/version)
+    setOptions({ key: apiKey, v: 'weekly' })
+
+    Promise.all([
+      importLibrary('maps'),
+      importLibrary('marker'),
+      importLibrary('core'),
+    ]).then(([mapsLib, markerLib, coreLib]) => {
       if (cancelled || !mapRef.current) return
+
+      const { Map, Polyline, TrafficLayer } = mapsLib as google.maps.MapsLibrary
+      const { Marker } = markerLib as google.maps.MarkerLibrary
+      const { SymbolPath } = coreLib as google.maps.CoreLibrary
 
       const midLat = (originLat + destLat) / 2
       const midLng = (originLng + destLng) / 2
 
-      const map = new google.maps.Map(mapRef.current, {
+      const map = new Map(mapRef.current, {
         center: { lat: midLat, lng: midLng },
         zoom: 12,
         gestureHandling: 'none',
@@ -55,9 +65,9 @@ export function CorridorMap({
         styles: DARK_STYLE,
       })
 
-      new google.maps.TrafficLayer().setMap(map)
+      new TrafficLayer().setMap(map)
 
-      new google.maps.Polyline({
+      new Polyline({
         path: [
           { lat: originLat, lng: originLng },
           { lat: destLat, lng: destLng },
@@ -69,12 +79,12 @@ export function CorridorMap({
         map,
       })
 
-      new google.maps.Marker({
+      new Marker({
         position: { lat: originLat, lng: originLng },
         map,
         title: 'Origen',
         icon: {
-          path: google.maps.SymbolPath.CIRCLE,
+          path: SymbolPath.CIRCLE,
           scale: 7,
           fillColor: '#818cf8',
           fillOpacity: 1,
@@ -83,12 +93,12 @@ export function CorridorMap({
         },
       })
 
-      new google.maps.Marker({
+      new Marker({
         position: { lat: destLat, lng: destLng },
         map,
         title: 'Destino',
         icon: {
-          path: google.maps.SymbolPath.CIRCLE,
+          path: SymbolPath.CIRCLE,
           scale: 7,
           fillColor: '#f43f5e',
           fillOpacity: 1,
@@ -96,7 +106,7 @@ export function CorridorMap({
           strokeWeight: 2,
         },
       })
-    })
+    }).catch(() => {})  // map failures (CSP, invalid key) should not crash the page
 
     return () => { cancelled = true }
   }, [originLat, originLng, destLat, destLng])
