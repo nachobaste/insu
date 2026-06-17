@@ -14,12 +14,12 @@ const config: Config = {
       colors: {
         bg: {
           DEFAULT: '#080c18',
-          card: '#0e1420',
-          'card-hover': '#121929',
+          card: '#111d30',
+          'card-hover': '#162238',
         },
         border: {
-          DEFAULT: 'rgba(255,255,255,0.07)',
-          hover: 'rgba(255,255,255,0.15)',
+          DEFAULT: 'rgba(255,255,255,0.10)',
+          hover: 'rgba(255,255,255,0.18)',
         },
         insu: {
           text: '#e8edf5',
