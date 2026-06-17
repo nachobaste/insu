@@ -34,19 +34,27 @@ function buildChartData(history: PricingHistoryRow[], tiers: CoverageTier[]): Ch
 
   if (byDate.size === 0) return []
 
-  // Always generate all 30 days so the x-axis always spans a full month.
-  // Days before the first pricing run have no values (undefined) — recharts
-  // renders them as gaps, so lines start from the first day with actual data.
-  // Days after the first run are forward-filled with the last known price.
   const today = new Date()
+
+  // Start from whichever is later: 30 days ago or the first date with actual data.
+  // This means a new contract shows only its real history (e.g. 3 days), while a
+  // mature contract is capped at the last 30 days — never padded with empty space.
+  const thirtyDaysAgo = new Date(today)
+  thirtyDaysAgo.setDate(today.getDate() - 29)
+  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0]
+  const firstDataStr = [...byDate.keys()].sort()[0]
+  const startStr = firstDataStr > thirtyDaysAgoStr ? firstDataStr : thirtyDaysAgoStr
+
   let carryBasic: number | undefined
   let carryPro: number | undefined
   const result: ChartPoint[] = []
 
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(today.getDate() - i)
-    const dateKey = d.toISOString().split('T')[0]
+  const cursor = new Date(startStr + 'T12:00:00Z')
+  const end = new Date(today)
+  end.setHours(23, 59, 59, 999)
+
+  while (cursor <= end) {
+    const dateKey = cursor.toISOString().split('T')[0]
     const dayData = byDate.get(dateKey)
 
     if (dayData) {
@@ -54,12 +62,13 @@ function buildChartData(history: PricingHistoryRow[], tiers: CoverageTier[]): Ch
       if (dayData.Pro !== undefined) carryPro = dayData.Pro
       result.push(dayData)
     } else {
-      // Include the day regardless; forward-fill if prior data exists, else no values
       const point: ChartPoint = { date: formatDate(dateKey + 'T00:00:00') }
       if (carryBasic !== undefined) point.Basic = carryBasic
       if (carryPro !== undefined) point.Pro = carryPro
       result.push(point)
     }
+
+    cursor.setDate(cursor.getDate() + 1)
   }
 
   return result
