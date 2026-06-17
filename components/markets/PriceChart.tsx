@@ -34,7 +34,10 @@ function buildChartData(history: PricingHistoryRow[], tiers: CoverageTier[]): Ch
 
   if (byDate.size === 0) return []
 
-  // Build a 30-day window and forward-fill days that had no repricing run
+  // Always generate all 30 days so the x-axis always spans a full month.
+  // Days before the first pricing run have no values (undefined) — recharts
+  // renders them as gaps, so lines start from the first day with actual data.
+  // Days after the first run are forward-filled with the last known price.
   const today = new Date()
   let carryBasic: number | undefined
   let carryPro: number | undefined
@@ -50,14 +53,13 @@ function buildChartData(history: PricingHistoryRow[], tiers: CoverageTier[]): Ch
       if (dayData.Basic !== undefined) carryBasic = dayData.Basic
       if (dayData.Pro !== undefined) carryPro = dayData.Pro
       result.push(dayData)
-    } else if (carryBasic !== undefined || carryPro !== undefined) {
-      // forward-fill: carry previous known price forward
+    } else {
+      // Include the day regardless; forward-fill if prior data exists, else no values
       const point: ChartPoint = { date: formatDate(dateKey + 'T00:00:00') }
       if (carryBasic !== undefined) point.Basic = carryBasic
       if (carryPro !== undefined) point.Pro = carryPro
       result.push(point)
     }
-    // days before any data exists are skipped
   }
 
   return result

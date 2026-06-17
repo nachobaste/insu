@@ -22,6 +22,8 @@ const DARK_STYLE: google.maps.MapTypeStyle[] = [
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
 ]
 
+type MapState = 'loading' | 'ready' | 'error'
+
 export function CorridorMap({
   originLat,
   originLng,
@@ -36,22 +38,30 @@ export function CorridorMap({
   corridorName: string
 }) {
   const mapRef = useRef<HTMLDivElement>(null)
-  const [mapError, setMapError] = useState(false)
+  const [mapState, setMapState] = useState<MapState>('loading')
 
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ''
-    if (!apiKey || !mapRef.current) return
+    if (!apiKey || !mapRef.current) {
+      setMapState('error')
+      return
+    }
 
     let cancelled = false
 
-    // Intercept auth failures before the Maps SDK renders its own error overlay.
-    // Setting gm_authFailure suppresses the "Sorry! Something went wrong." div.
+    // gm_authFailure is called for global script-level auth errors (e.g. invalid key).
+    // RefererNotAllowedMapError bypasses it — handled via the tilesloaded timeout below.
     const prevAuthFailure = window.gm_authFailure
-    window.gm_authFailure = () => { if (!cancelled) setMapError(true) }
+    window.gm_authFailure = () => { if (!cancelled) setMapState('error') }
 
-    // v2 API: setOptions configures the loader (key/v, not apiKey/version).
-    // Omit v so the stable quarterly channel is used instead of unstable weekly.
     setOptions({ key: apiKey })
+
+    // If tiles haven't loaded within 5s the key is likely blocked (referrer restriction).
+    // The map div stays visibility:hidden the whole time so the Google error overlay
+    // is never visible to the user regardless of error type.
+    const timer = setTimeout(() => {
+      if (!cancelled) setMapState(prev => prev === 'loading' ? 'error' : prev)
+    }, 5000)
 
     Promise.all([
       importLibrary('maps'),
@@ -76,6 +86,14 @@ export function CorridorMap({
         fullscreenControl: false,
         mapTypeControl: false,
         styles: DARK_STYLE,
+      })
+
+      // Reveal the map only after tiles confirm successful auth and render
+      map.addListener('tilesloaded', () => {
+        if (!cancelled) {
+          clearTimeout(timer)
+          setMapState('ready')
+        }
       })
 
       new TrafficLayer().setMap(map)
@@ -120,11 +138,12 @@ export function CorridorMap({
         },
       })
     }).catch(() => {
-      if (!cancelled) setMapError(true)
+      if (!cancelled) setMapState('error')
     })
 
     return () => {
       cancelled = true
+      clearTimeout(timer)
       window.gm_authFailure = prevAuthFailure
     }
   }, [originLat, originLng, destLat, destLng])
@@ -147,29 +166,36 @@ export function CorridorMap({
     </div>
   )
 
-  if (mapError) {
-    return (
-      <div className="overflow-hidden rounded-lg border border-white/[0.07]">
-        {header}
-        <div className="flex h-48 items-center justify-center gap-1.5 text-[13px] text-insu-muted">
-          Mapa no disponible —
-          <a
-            href={mapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-insu-accent hover:underline"
-          >
-            ver ruta en Google Maps ↗
-          </a>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="overflow-hidden rounded-lg border border-white/[0.07]">
       {header}
-      <div ref={mapRef} className="h-48 w-full" />
+      <div className="relative h-48">
+        {/* Map div is always mounted so the SDK can render into it.
+            Kept invisible until tilesloaded confirms auth succeeded — this
+            prevents Google's error overlay from ever being visible. */}
+        <div
+          ref={mapRef}
+          className="absolute inset-0"
+          style={{ visibility: mapState === 'ready' ? 'visible' : 'hidden' }}
+        />
+        {mapState !== 'ready' && (
+          <div className="absolute inset-0 flex items-center justify-center gap-1.5 text-[13px] text-insu-muted">
+            {mapState === 'loading' ? 'Cargando mapa…' : (
+              <>
+                Mapa no disponible —
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-insu-accent hover:underline"
+                >
+                  ver ruta en Google Maps ↗
+                </a>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
