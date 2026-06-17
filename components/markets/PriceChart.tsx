@@ -19,21 +19,48 @@ function formatDate(iso: string): string {
 }
 
 function buildChartData(history: PricingHistoryRow[], tiers: CoverageTier[]): ChartPoint[] {
-  const byDate = new Map<string, ChartPoint>()
+  // Sort ascending so the last overwrite per (date, tier) is the most recent price
+  const sorted = [...history].sort((a, b) => a.calculated_at.localeCompare(b.calculated_at))
 
-  history.forEach((row) => {
+  const byDate = new Map<string, ChartPoint>()
+  sorted.forEach((row) => {
     const dateKey = row.calculated_at.split('T')[0]
-    const label = formatDate(row.calculated_at)
     const tier = tiers.find((t) => t.id === row.tier_id)
     if (!tier) return
-    if (!byDate.has(dateKey)) byDate.set(dateKey, { date: label })
+    if (!byDate.has(dateKey)) byDate.set(dateKey, { date: formatDate(row.calculated_at) })
     const tierLabel = tier.name === 'basic' ? 'Basic' : 'Pro'
     byDate.get(dateKey)![tierLabel] = row.premium_usd_after
   })
 
-  return Array.from(byDate.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([, point]) => point)
+  if (byDate.size === 0) return []
+
+  // Build a 30-day window and forward-fill days that had no repricing run
+  const today = new Date()
+  let carryBasic: number | undefined
+  let carryPro: number | undefined
+  const result: ChartPoint[] = []
+
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - i)
+    const dateKey = d.toISOString().split('T')[0]
+    const dayData = byDate.get(dateKey)
+
+    if (dayData) {
+      if (dayData.Basic !== undefined) carryBasic = dayData.Basic
+      if (dayData.Pro !== undefined) carryPro = dayData.Pro
+      result.push(dayData)
+    } else if (carryBasic !== undefined || carryPro !== undefined) {
+      // forward-fill: carry previous known price forward
+      const point: ChartPoint = { date: formatDate(dateKey + 'T00:00:00') }
+      if (carryBasic !== undefined) point.Basic = carryBasic
+      if (carryPro !== undefined) point.Pro = carryPro
+      result.push(point)
+    }
+    // days before any data exists are skipped
+  }
+
+  return result
 }
 
 const AXIS_STYLE = { fill: '#e8edf5', fontSize: 11 }
@@ -80,6 +107,10 @@ export default function PriceChart({ history, tiers }: Props) {
             interval="preserveStartEnd"
           />
           <YAxis
+            domain={[
+              (dataMin: number) => Math.max(0, Math.floor(dataMin * 0.92)),
+              (dataMax: number) => Math.ceil(dataMax * 1.05),
+            ]}
             tick={AXIS_STYLE}
             tickLine={false}
             axisLine={false}

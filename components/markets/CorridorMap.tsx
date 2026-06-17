@@ -1,8 +1,14 @@
 /// <reference types="@types/google.maps" />
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
+
+declare global {
+  interface Window {
+    gm_authFailure?: () => void
+  }
+}
 
 const DARK_STYLE: google.maps.MapTypeStyle[] = [
   { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
@@ -30,6 +36,7 @@ export function CorridorMap({
   corridorName: string
 }) {
   const mapRef = useRef<HTMLDivElement>(null)
+  const [mapError, setMapError] = useState(false)
 
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ''
@@ -37,8 +44,14 @@ export function CorridorMap({
 
     let cancelled = false
 
-    // v2 API: setOptions configures the loader (key/v, not apiKey/version)
-    setOptions({ key: apiKey, v: 'weekly' })
+    // Intercept auth failures before the Maps SDK renders its own error overlay.
+    // Setting gm_authFailure suppresses the "Sorry! Something went wrong." div.
+    const prevAuthFailure = window.gm_authFailure
+    window.gm_authFailure = () => { if (!cancelled) setMapError(true) }
+
+    // v2 API: setOptions configures the loader (key/v, not apiKey/version).
+    // Omit v so the stable quarterly channel is used instead of unstable weekly.
+    setOptions({ key: apiKey })
 
     Promise.all([
       importLibrary('maps'),
@@ -106,28 +119,56 @@ export function CorridorMap({
           strokeWeight: 2,
         },
       })
-    }).catch(() => {})  // map failures (CSP, invalid key) should not crash the page
+    }).catch(() => {
+      if (!cancelled) setMapError(true)
+    })
 
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      window.gm_authFailure = prevAuthFailure
+    }
   }, [originLat, originLng, destLat, destLng])
 
   const mapsUrl = `https://www.google.com/maps/dir/${originLat},${originLng}/${destLat},${destLng}`
 
+  const header = (
+    <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-2">
+      <p className="text-[11px] text-insu-muted">
+        <span className="mr-1">📍</span>{corridorName} — tráfico en tiempo real
+      </p>
+      <a
+        href={mapsUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-[10px] text-insu-accent hover:underline"
+      >
+        Abrir en Google Maps ↗
+      </a>
+    </div>
+  )
+
+  if (mapError) {
+    return (
+      <div className="overflow-hidden rounded-lg border border-white/[0.07]">
+        {header}
+        <div className="flex h-48 items-center justify-center gap-1.5 text-[13px] text-insu-muted">
+          Mapa no disponible —
+          <a
+            href={mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-insu-accent hover:underline"
+          >
+            ver ruta en Google Maps ↗
+          </a>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="overflow-hidden rounded-lg border border-white/[0.07]">
-      <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-2">
-        <p className="text-[11px] text-insu-muted">
-          <span className="mr-1">📍</span>{corridorName} — tráfico en tiempo real
-        </p>
-        <a
-          href={mapsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[10px] text-insu-accent hover:underline"
-        >
-          Abrir en Google Maps ↗
-        </a>
-      </div>
+      {header}
       <div ref={mapRef} className="h-48 w-full" />
     </div>
   )
