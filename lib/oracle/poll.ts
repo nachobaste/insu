@@ -89,6 +89,11 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
     const condition = contract.trigger_condition as unknown as {
       fuel_type: 'magna' | 'premium' | 'diesel'
     }
+    const VALID_FUEL_TYPES = ['magna', 'premium', 'diesel'] as const
+    if (!VALID_FUEL_TYPES.includes(condition.fuel_type as never)) {
+      console.error(`Invalid fuel_type "${condition.fuel_type}" for contract ${contract.id}`)
+      return []
+    }
     try {
       return [await fetchGasPrice(condition.fuel_type)]
     } catch (err) {

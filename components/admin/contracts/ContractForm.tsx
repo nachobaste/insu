@@ -301,6 +301,7 @@ export function ContractForm({ categories, contract }: Props) {
               <input
                 className={inputCls}
                 type="number"
+                min="0"
                 step="0.01"
                 placeholder="e.g. 26.50"
                 value={condState.threshold}
