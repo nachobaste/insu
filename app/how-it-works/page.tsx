@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import Header from '@/components/layout/Header'
 
 const STEPS = [
@@ -17,7 +18,7 @@ const STEPS = [
   {
     n: '03',
     title: 'Oracle monitors the trigger',
-    body: 'Our oracle layer polls live data sources — OpenWeatherMap, Waze traffic feeds, and verified event APIs — every five minutes. No manual input. No human discretion.',
+    body: 'Our oracle layer polls live data sources — OpenWeatherMap and Tomorrow.io weather feeds, Google Maps traffic, and CRE fuel prices — automatically. No manual input. No human discretion.',
     tag: 'ORACLE',
   },
   {
@@ -104,18 +105,32 @@ const SHOWCASE = [
     premium: '$18',
     payout: '$350',
   },
+  {
+    photo: '/showcase/fuel.jpg',
+    alt: 'Gas station fuel pumps lit up at night',
+    category: 'Fuel',
+    categoryColor: '#f5a623',
+    contract: 'CDMX Magna Price Surge',
+    trigger: 'Magna > $26.50 / L',
+    premium: '$22',
+    payout: '$400',
+  },
 ]
 
 const SCREENSHOTS = [
   {
-    src: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Dashboard analytics overview',
+    src: '/screenshots/marketplace.png',
+    width: 2560,
+    height: 1440,
+    alt: 'Insu marketplace showing live parametric protection contracts',
     label: 'Live marketplace — browse and filter active contracts',
   },
   {
-    src: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Financial charts and data',
-    label: 'Oracle monitor — real-time data feeds and trigger status',
+    src: '/screenshots/price-history.png',
+    width: 1636,
+    height: 478,
+    alt: 'Premium price-history chart with Basic and Pro tiers',
+    label: 'Live pricing — premiums move as risk and capacity shift',
   },
 ]
 
@@ -123,7 +138,7 @@ const STATS = [
   { value: '$103K+', label: 'Total volume protected' },
   { value: '< 10 min', label: 'Average payout time' },
   { value: '6', label: 'Live contracts' },
-  { value: '2', label: 'Oracle data sources' },
+  { value: '4', label: 'Oracle data sources' },
 ]
 
 export default function HowItWorksPage() {
@@ -192,7 +207,7 @@ export default function HowItWorksPage() {
           </h2>
 
           {/* Event photo grid */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {SHOWCASE.map((item) => (
               <div
                 key={item.contract}
@@ -200,11 +215,12 @@ export default function HowItWorksPage() {
                 style={{ aspectRatio: '3/4' }}
               >
                 {/* Photo */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={item.photo}
                   alt={item.alt}
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 20vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 {/* Gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/60 to-transparent" />
@@ -236,7 +252,7 @@ export default function HowItWorksPage() {
           </div>
 
           {/* App screenshot strip */}
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
+          <div className="mt-8 grid items-start gap-4 md:grid-cols-2">
             {SCREENSHOTS.map((s) => (
               <div key={s.label} className="overflow-hidden rounded-[14px] border border-white/[0.07]">
                 {/* Browser chrome */}
@@ -248,11 +264,13 @@ export default function HowItWorksPage() {
                     insu-theta.vercel.app
                   </span>
                 </div>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={s.src}
                   alt={s.alt}
-                  className="aspect-video w-full object-cover"
+                  width={s.width}
+                  height={s.height}
+                  sizes="(max-width: 768px) 100vw, 550px"
+                  className="h-auto w-full"
                 />
                 <div className="border-t border-white/[0.07] bg-bg-card px-4 py-3">
                   <p className="text-[12px] text-insu-muted">{s.label}</p>
@@ -392,7 +410,7 @@ export default function HowItWorksPage() {
               {[
                 {
                   label: 'DATA SOURCES',
-                  items: ['OpenWeatherMap', 'Waze Traffic', 'Event APIs'],
+                  items: ['OpenWeatherMap', 'Tomorrow.io', 'Google Maps traffic', 'CRE fuel prices'],
                   color: '#94a3b8',
                   bg: 'rgba(148,163,184,0.06)',
                 },

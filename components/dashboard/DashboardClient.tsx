@@ -44,6 +44,17 @@ export function DashboardClient({
   const [hedgerPositions, setHedgerPositions] = useState(initialHedger)
   const [providerPositions, setProviderPositions] = useState(initialProvider)
 
+  // Re-sync local state whenever the server component re-fetches (e.g. after a
+  // router.refresh() triggered by an INSERT/DELETE realtime event). This uses
+  // React's render-phase "adjust state when a prop changes" pattern rather than
+  // an effect, so the resync happens before paint without cascading renders.
+  const [syncedProps, setSyncedProps] = useState({ h: initialHedger, p: initialProvider })
+  if (syncedProps.h !== initialHedger || syncedProps.p !== initialProvider) {
+    setSyncedProps({ h: initialHedger, p: initialProvider })
+    setHedgerPositions(initialHedger)
+    setProviderPositions(initialProvider)
+  }
+
   const setTab = (tab: Tab) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set('tab', tab)
@@ -70,6 +81,23 @@ export function DashboardClient({
           )
         }
       )
+      // New positions / deletions need the contract+tier joins, so re-fetch
+      // server-side rather than patching the raw row into local state.
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'hedger_positions',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => router.refresh()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'hedger_positions' },
+        () => router.refresh()
+      )
       .subscribe()
 
     const providerChannel = supabase
@@ -88,13 +116,28 @@ export function DashboardClient({
           )
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'provider_positions',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => router.refresh()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'provider_positions' },
+        () => router.refresh()
+      )
       .subscribe()
 
     return () => {
       supabase.removeChannel(hedgerChannel)
       supabase.removeChannel(providerChannel)
     }
-  }, [userId])
+  }, [userId, router])
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-8">
