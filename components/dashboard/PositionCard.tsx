@@ -21,10 +21,23 @@ export function PositionCard({ position }: { position: ProviderPositionWithContr
     ? { label: 'SETTLED ✓', bg: 'bg-[#14532d]', text: 'text-insu-green', ring: 'ring-insu-green' }
     : { label: 'ACTIVE', bg: 'bg-[#14532d]', text: 'text-insu-green', ring: 'ring-insu-green/20' }
 
-  // Yield column
+  // Yield column. Active positions show the estimated premium yield
+  // (expected_return_usd is the expected profit). Settled positions show the
+  // realized capital delta — actual_return_usd is the capital returned
+  // (deposit minus loss share), so the delta is 0% on a clean settle and
+  // negative when a trigger fired and ate into principal.
   const yieldPct = capital_deposited_usd > 0
     ? ((expected_return_usd / capital_deposited_usd) * 100).toFixed(1)
     : '0.0'
+
+  const realizedPct =
+    isSettled && actual_return_usd !== null && capital_deposited_usd > 0
+      ? ((actual_return_usd - capital_deposited_usd) / capital_deposited_usd) * 100
+      : null
+  const realizedLabel =
+    realizedPct !== null
+      ? `Yield ${realizedPct >= 0 ? '+' : ''}${realizedPct.toFixed(1)}%`
+      : 'Yield'
 
   // Settles date
   let settlesStr = '-'
@@ -62,7 +75,7 @@ export function PositionCard({ position }: { position: ProviderPositionWithContr
             </p>
           </div>
           <span className={cn(
-            'shrink-0 rounded-full px-2 py-0.5 font-mono text-[8px] ring-1',
+            'shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] ring-1',
             badge.bg, badge.text, badge.ring,
           )}>
             {badge.label}
@@ -72,17 +85,17 @@ export function PositionCard({ position }: { position: ProviderPositionWithContr
         {/* numbers */}
         <div className="grid grid-cols-3 gap-2">
           <div className="text-center">
-            <p className="font-body text-[8px] uppercase tracking-wide text-insu-muted">Capital</p>
+            <p className="font-body text-[10px] uppercase tracking-wide text-insu-muted">Capital</p>
             <p className="mt-0.5 font-mono text-sm text-insu-text">{formatCurrency(capital_deposited_usd)}</p>
           </div>
           <div className="text-center">
-            <p className="font-body text-[8px] uppercase tracking-wide text-insu-muted">
-              {isSettled ? 'Yield' : `Yield +${yieldPct}%`}
+            <p className="font-body text-[10px] uppercase tracking-wide text-insu-muted">
+              {isSettled ? realizedLabel : `Yield +${yieldPct}%`}
             </p>
             <p className={cn('mt-0.5 font-mono text-sm', returnColor)}>{returnValue}</p>
           </div>
           <div className="text-center">
-            <p className="font-body text-[8px] uppercase tracking-wide text-insu-muted">Settles</p>
+            <p className="font-body text-[10px] uppercase tracking-wide text-insu-muted">Settles</p>
             <p className="mt-0.5 font-body text-sm text-insu-text">{settlesStr}</p>
           </div>
         </div>

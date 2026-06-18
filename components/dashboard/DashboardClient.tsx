@@ -142,8 +142,8 @@ export function DashboardClient({
   return (
     <div className="mx-auto max-w-2xl px-6 py-8">
       <div className="mb-6">
-        <p className="font-display text-[11px] uppercase tracking-[2px] text-insu-accent">My Portfolio</p>
-        <p className="font-body text-[11px] text-insu-muted">Live updates · positions as of right now</p>
+        <p className="font-display text-[13px] uppercase tracking-[2px] text-insu-accent">My Portfolio</p>
+        <p className="font-body text-[12px] text-insu-muted">Live updates · positions as of right now</p>
       </div>
 
       <StatsStrip hedgerPositions={hedgerPositions} providerPositions={providerPositions} />
@@ -154,7 +154,7 @@ export function DashboardClient({
             key={tab.id}
             onClick={() => setTab(tab.id)}
             className={cn(
-              'rounded-full px-4 py-1 font-body text-[11px] transition-colors',
+              'rounded-full px-4 py-1.5 font-body text-[12px] transition-colors',
               activeTab === tab.id
                 ? 'bg-insu-accent font-bold text-bg'
                 : 'border border-white/[0.07] text-insu-muted hover:text-insu-dim',

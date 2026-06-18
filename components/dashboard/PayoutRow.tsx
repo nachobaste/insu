@@ -27,7 +27,7 @@ export function PayoutRow({ payout }: { payout: PayoutWithContract }) {
         <div className="ml-4 flex items-center gap-3">
           <p className="font-mono text-sm text-insu-green">{formatCurrency(amount_usd)}</p>
           <span className={cn(
-            'shrink-0 rounded-full px-2 py-0.5 font-mono text-[8px]',
+            'shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px]',
             badge.bg, badge.text,
           )}>
             {badge.label}

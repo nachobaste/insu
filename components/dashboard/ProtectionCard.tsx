@@ -16,7 +16,9 @@ export function ProtectionCard({ position }: { position: HedgerPositionWithContr
   const purchasedMs = new Date(purchased_at).getTime()
   const totalDays = Math.max(1, Math.round((expiresMs - purchasedMs) / 86_400_000))
   const daysLeft = Math.max(0, Math.round((expiresMs - now) / 86_400_000))
-  const progressPct = Math.min(100, (daysLeft / totalDays) * 100)
+  // Fill represents elapsed coverage (conventional progress direction): empty at
+  // purchase, full at expiry. The label below states the time remaining.
+  const elapsedPct = Math.min(100, Math.max(0, ((now - purchasedMs) / (expiresMs - purchasedMs)) * 100))
 
   const isPaidOut = status === 'paid_out'
   const isExpired = status === 'expired'
@@ -45,7 +47,7 @@ export function ProtectionCard({ position }: { position: HedgerPositionWithContr
             </p>
           </div>
           <span className={cn(
-            'shrink-0 rounded-full px-2 py-0.5 font-mono text-[8px] ring-1',
+            'shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] ring-1',
             badge.bg, badge.text, badge.ring,
           )}>
             {badge.label}
@@ -55,17 +57,17 @@ export function ProtectionCard({ position }: { position: HedgerPositionWithContr
         {/* numbers */}
         <div className="mb-3 grid grid-cols-3 gap-2">
           <div className="text-center">
-            <p className="font-body text-[8px] uppercase tracking-wide text-insu-muted">Paid</p>
+            <p className="font-body text-[10px] uppercase tracking-wide text-insu-muted">Paid</p>
             <p className="mt-0.5 font-mono text-sm text-insu-text">{formatCurrency(premium_paid_usd)}</p>
           </div>
           <div className="text-center">
-            <p className="font-body text-[8px] uppercase tracking-wide text-insu-muted">
+            <p className="font-body text-[10px] uppercase tracking-wide text-insu-muted">
               {isPaidOut ? 'Received' : 'Payout'}
             </p>
             <p className="mt-0.5 font-mono text-sm text-insu-green">{formatCurrency(payout_amount_usd)}</p>
           </div>
           <div className="text-center">
-            <p className="font-body text-[8px] uppercase tracking-wide text-insu-muted">
+            <p className="font-body text-[10px] uppercase tracking-wide text-insu-muted">
               Expires
             </p>
             <p className="mt-0.5 font-body text-sm text-insu-text">{dateStr}</p>
@@ -78,11 +80,11 @@ export function ProtectionCard({ position }: { position: HedgerPositionWithContr
             <div className="h-[3px] overflow-hidden rounded-full bg-[#0d1117]">
               <div
                 className="h-full rounded-full bg-insu-accent transition-all"
-                style={{ width: `${progressPct}%` }}
+                style={{ width: `${elapsedPct}%` }}
               />
             </div>
-            <p className="mt-1 font-body text-[8px] text-insu-muted">
-              {daysLeft} days left of {totalDays}
+            <p className="mt-1 font-body text-[10px] text-insu-muted">
+              {daysLeft} days of coverage left ({totalDays}-day window)
             </p>
           </div>
         )}
