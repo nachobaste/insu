@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { evaluateTrigger, type TriggerCondition } from './trigger'
 import { fetchWeatherReading, fetchTomorrowReading, fetchGoogleMapsReading } from './fetcher'
+import { fetchGasPrice } from './gasFetcher'
 import type { Contract, Corridor } from '@/lib/types'
 
 interface FetchedReading {
@@ -84,6 +85,18 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
     }
   }
 
+  if (contract.trigger_type === 'fuel') {
+    const condition = contract.trigger_condition as unknown as {
+      fuel_type: 'magna' | 'premium' | 'diesel'
+    }
+    try {
+      return [await fetchGasPrice(condition.fuel_type)]
+    } catch (err) {
+      console.error(`CRE fetch error for contract ${contract.id}:`, err)
+      return []
+    }
+  }
+
   return []
 }
 
@@ -96,7 +109,7 @@ export async function pollContracts(
     .select('*, corridor:corridors(*)')
     .eq('status', 'active')
     .is('settled_outcome', null)
-    .in('trigger_type', ['weather', 'urban'])
+    .in('trigger_type', ['weather', 'urban', 'fuel'])
 
   if (!contracts || contracts.length === 0) return 0
 

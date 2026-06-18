@@ -186,4 +186,32 @@ describe('pollContracts', () => {
 
     vi.useRealTimers()
   })
+
+  it('polls fuel contracts using the readingFetcher', async () => {
+    const fuelContract: Contract = {
+      ...mockContract,
+      id: 'f1',
+      trigger_type: 'fuel',
+      trigger_condition: {
+        metric: 'price_mxn_per_liter',
+        operator: 'gt',
+        threshold: 25.0,
+        fuel_type: 'magna',
+        region: 'cdmx',
+      },
+    }
+    const db = makeDb({ contracts: [fuelContract] })
+    const mockFetcher = vi.fn().mockResolvedValue([{
+      source: 'cre_datos_gob',
+      reading_type: 'fuel',
+      value: { price_mxn_per_liter: 26.49, fuel_type: 'magna', sample_size: 120 },
+    }])
+    const count = await pollContracts(db as never, mockFetcher)
+    expect(count).toBe(1)
+    expect(db._insert.mock.calls[0][0]).toMatchObject({
+      contract_id: 'f1',
+      source: 'cre_datos_gob',
+      trigger_met: true, // 26.49 > 25.0
+    })
+  })
 })
