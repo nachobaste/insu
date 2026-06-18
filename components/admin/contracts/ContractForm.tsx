@@ -8,6 +8,7 @@ import type { Category, ContractWithTiers, UpsertContractInput } from '@/lib/typ
 
 const WEATHER_METRICS = ['rainfall', 'temperature', 'wind', 'snow']
 const URBAN_METRICS = ['delay', 'congestion']
+const FUEL_TYPES = ['magna', 'premium', 'diesel'] as const
 const COMPARATORS = ['>', '>=', '<', '<='] as const
 const SYMBOL_TO_OPERATOR: Record<string, 'gt' | 'gte' | 'lt' | 'lte'> = {
   '>': 'gt', '>=': 'gte', '<': 'lt', '<=': 'lte',
@@ -18,7 +19,7 @@ const OPERATOR_TO_SYMBOL: Record<string, string> = {
 
 function buildTriggerCondition(
   type: string,
-  state: { metric: string; comparator: string; threshold: string; unit: string; description: string },
+  state: { metric: string; comparator: string; threshold: string; unit: string; description: string; fuel_type: string },
 ): Record<string, unknown> {
   if (type === 'weather' || type === 'urban') {
     return {
@@ -26,6 +27,15 @@ function buildTriggerCondition(
       operator: SYMBOL_TO_OPERATOR[state.comparator] ?? 'gt',
       threshold: Number(state.threshold),
       unit: state.unit,
+    }
+  }
+  if (type === 'fuel') {
+    return {
+      metric: 'price_mxn_per_liter',
+      operator: SYMBOL_TO_OPERATOR[state.comparator] ?? 'gt',
+      threshold: Number(state.threshold),
+      fuel_type: state.fuel_type,
+      region: 'cdmx',
     }
   }
   if (type === 'event') return { description: state.description }
@@ -45,12 +55,24 @@ function parseTriggerCondition(
       threshold: String(condition.threshold ?? ''),
       unit: String(condition.unit ?? ''),
       description: '',
+      fuel_type: '',
+    }
+  }
+  if (type === 'fuel') {
+    const operator = String(condition.operator ?? 'gt')
+    return {
+      metric: 'price_mxn_per_liter',
+      comparator: OPERATOR_TO_SYMBOL[operator] ?? '>',
+      threshold: String(condition.threshold ?? ''),
+      unit: '',
+      description: '',
+      fuel_type: String(condition.fuel_type ?? 'magna'),
     }
   }
   if (type === 'event') {
-    return { metric: '', comparator: '>', threshold: '', unit: '', description: String(condition.description ?? '') }
+    return { metric: '', comparator: '>', threshold: '', unit: '', description: String(condition.description ?? ''), fuel_type: '' }
   }
-  return { metric: '', comparator: '>', threshold: '', unit: '', description: '' }
+  return { metric: '', comparator: '>', threshold: '', unit: '', description: '', fuel_type: '' }
 }
 
 interface Props {
@@ -96,7 +118,7 @@ export function ContractForm({ categories, contract }: Props) {
 
   function handleTypeChange(newType: string) {
     setTriggerType(newType)
-    setCondState({ metric: '', comparator: '>', threshold: '', unit: '', description: '' })
+    setCondState({ metric: '', comparator: '>', threshold: '', unit: '', description: '', fuel_type: newType === 'fuel' ? 'magna' : '' })
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -202,7 +224,7 @@ export function ContractForm({ categories, contract }: Props) {
         <div>
           <label className={labelCls}>Trigger type</label>
           <select className={selectCls} value={triggerType} onChange={(e) => handleTypeChange(e.target.value)}>
-            {['weather', 'urban', 'event', 'manual'].map((t) => (
+            {['weather', 'urban', 'fuel', 'event', 'manual'].map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
@@ -245,6 +267,47 @@ export function ContractForm({ categories, contract }: Props) {
               <label className={labelCls}>Unit</label>
               <input className={inputCls} placeholder="e.g. mm/hr, min" value={condState.unit} onChange={(e) => setCondState((s) => ({ ...s, unit: e.target.value }))} />
             </div>
+          </div>
+        )}
+
+        {triggerType === 'fuel' && (
+          <div className="space-y-3">
+            <div>
+              <label className={labelCls}>Fuel Type</label>
+              <select
+                className={selectCls}
+                value={condState.fuel_type}
+                onChange={(e) => setCondState((s) => ({ ...s, fuel_type: e.target.value }))}
+              >
+                {FUEL_TYPES.map((f) => (
+                  <option key={f} value={f}>{f.charAt(0).toUpperCase() + f.slice(1)}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Comparator</label>
+              <select
+                className={selectCls}
+                value={condState.comparator}
+                onChange={(e) => setCondState((s) => ({ ...s, comparator: e.target.value }))}
+              >
+                {['>', '>=', '<', '<='].map((op) => (
+                  <option key={op} value={op}>{op}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Threshold (MXN/liter)</label>
+              <input
+                className={inputCls}
+                type="number"
+                step="0.01"
+                placeholder="e.g. 26.50"
+                value={condState.threshold}
+                onChange={(e) => setCondState((s) => ({ ...s, threshold: e.target.value }))}
+              />
+            </div>
+            <p className="text-xs text-insu-dim">Region: CDMX (fixed)</p>
           </div>
         )}
 
