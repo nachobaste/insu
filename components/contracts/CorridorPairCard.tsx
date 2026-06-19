@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { cn, formatCurrency, formatVolume, countryFlag } from '@/lib/utils'
-import { getContractPeriod, getRecommendedPeriod, type CommutePeriod } from '@/lib/corridors'
+import { getRecommendedPeriod, formatWindow, type CommutePeriod } from '@/lib/corridors'
 import type { ContractWithTiers, Currency, CoverageLevel } from '@/lib/types'
 
 const TIER_LABELS: Record<CoverageLevel, string> = {
@@ -16,13 +16,6 @@ interface Props {
   morning: ContractWithTiers | null
   evening: ContractWithTiers | null
   currency: Currency
-}
-
-function formatWindow(time: string): string {
-  const [h, m] = time.split(':').map(Number)
-  const period = h < 12 ? 'am' : 'pm'
-  const hour = h % 12 || 12
-  return m === 0 ? `${hour}${period}` : `${hour}:${m.toString().padStart(2, '0')}${period}`
 }
 
 function stripPeriodSuffix(title: string): string {

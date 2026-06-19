@@ -101,9 +101,11 @@ describe('ContractSection road chips', () => {
     ]
     render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
 
+    // A road's morning + evening protections collapse into one CorridorPairCard
+    // with a period toggle, so both periods are reachable from a single card.
     expect(screen.queryByRole('button', { name: 'All' })).not.toBeInTheDocument()
-    expect(screen.getByText('Reforma Morning')).toBeInTheDocument()
-    expect(screen.getByText('Reforma Evening')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /morning/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /evening/i })).toBeInTheDocument()
   })
 
   it('renders no chip row for non-urban categories', () => {
@@ -134,10 +136,11 @@ describe('ContractSection recommended badge', () => {
     ]
     render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
 
-    const eveningCard = screen.getByText('Reforma Evening').closest('article')
-    const morningCard = screen.getByText('Reforma Morning').closest('article')
-    expect(eveningCard).toHaveTextContent('recommended')
-    expect(morningCard).not.toHaveTextContent('recommended')
+    // The merged CorridorPairCard defaults its active period to the recommended
+    // one (evening at 08:00) and surfaces the badge for it.
+    const card = screen.getByText('Reforma Evening').closest('article')
+    expect(card).toHaveTextContent('recommended')
+    expect(screen.queryByText('Reforma Morning')).not.toBeInTheDocument()
   })
 
   it('shows recommended instead of trending when a featured contract also matches the recommended period', () => {

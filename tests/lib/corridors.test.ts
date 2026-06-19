@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { getContractPeriod, getRecommendedPeriod, getUrbanRoads } from '@/lib/corridors'
+import { getContractPeriod, getRecommendedPeriod, getUrbanRoads, getSiblingPeriod, formatWindow } from '@/lib/corridors'
 import type { ContractWithTiers, Corridor } from '@/lib/types'
 
 function makeCorridor(overrides: Partial<Corridor> = {}): Corridor {
@@ -54,6 +54,32 @@ describe('getContractPeriod', () => {
 
   it('returns "evening" for a corridor whose window starts at or after noon', () => {
     expect(getContractPeriod(makeCorridor({ window_start: '17:00:00' }))).toBe('evening')
+  })
+})
+
+describe('getSiblingPeriod', () => {
+  it('returns the opposite period', () => {
+    expect(getSiblingPeriod('morning')).toBe('evening')
+    expect(getSiblingPeriod('evening')).toBe('morning')
+  })
+})
+
+describe('formatWindow', () => {
+  it('formats a morning hour with no minutes', () => {
+    expect(formatWindow('07:00:00')).toBe('7am')
+  })
+
+  it('formats an afternoon hour as pm', () => {
+    expect(formatWindow('17:00:00')).toBe('5pm')
+  })
+
+  it('includes minutes when non-zero', () => {
+    expect(formatWindow('07:30')).toBe('7:30am')
+  })
+
+  it('renders noon and midnight as 12', () => {
+    expect(formatWindow('12:00')).toBe('12pm')
+    expect(formatWindow('00:00')).toBe('12am')
   })
 })
 
