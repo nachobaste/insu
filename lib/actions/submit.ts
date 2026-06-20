@@ -30,9 +30,15 @@ export async function submitProgram(input: SubmitProgramInput): Promise<{ id: st
   const slug = input.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
     + '-' + Date.now().toString(36)
 
-  const { data: contract, error } = await supabase
+  // Generate the id ourselves: we can't .select() the inserted row back, because
+  // the public RLS read policy only exposes active/settled contracts, so reading
+  // a freshly-inserted `pending` row returns zero rows and rolls the insert back.
+  const id = crypto.randomUUID()
+
+  const { error } = await supabase
     .from('contracts')
     .insert({
+      id,
       slug,
       title: input.title,
       description: input.description,
@@ -49,9 +55,7 @@ export async function submitProgram(input: SubmitProgramInput): Promise<{ id: st
       is_featured: false,
       created_by: user.id,
     })
-    .select('id')
-    .single()
 
   if (error) throw new Error(`Failed to submit program: ${error.message}`)
-  return { id: (contract as { id: string }).id }
+  return { id }
 }
