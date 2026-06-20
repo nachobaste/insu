@@ -9,5 +9,5 @@ export default async function AdminContractsPage() {
     .select('*, category:categories(*), coverage_tiers(*)')
     .order('created_at', { ascending: false })
 
-  return <ContractList contracts={(data ?? []) as ContractWithTiers[]} />
+  return <ContractList contracts={(data ?? []) as unknown as ContractWithTiers[]} />
 }

@@ -24,7 +24,7 @@ export default async function EditContractPage({
   return (
     <ContractForm
       categories={(categoriesResult.data ?? []) as Category[]}
-      contract={contract as ContractWithTiers}
+      contract={contract as unknown as ContractWithTiers}
     />
   )
 }

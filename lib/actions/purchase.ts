@@ -57,9 +57,9 @@ export async function createHedgerPaymentIntent(
   const coverageEndMs = periodDays
     ? Math.min(
         Date.now() + periodDays * 86_400_000,
-        new Date(contract.trigger_deadline).getTime(),
+        new Date(contract.trigger_deadline!).getTime(),
       )
-    : new Date(contract.trigger_deadline).getTime()
+    : new Date(contract.trigger_deadline!).getTime()
   const expiresAt = new Date(coverageEndMs).toISOString()
 
   const amountCents = Math.max(50, Math.round(periodPremium * 100))

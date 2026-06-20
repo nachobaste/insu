@@ -99,8 +99,7 @@ export default async function MarketPage({
       const { data: siblingData } = await supabase
         .from('contracts')
         .select(CONTRACT_SELECT)
-        // corridor_id added by migration but not yet in generated types; use filter() to bypass
-        .filter('corridor_id', 'eq', siblingCorridorId)
+        .eq('corridor_id', siblingCorridorId)
         .in('status', ['active', 'settled'])
         .maybeSingle()
       if (siblingData) sibling = siblingData as unknown as ContractDetailData

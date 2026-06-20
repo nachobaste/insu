@@ -30,7 +30,7 @@ async function getContracts(): Promise<ContractWithTiers[]> {
     .order('total_volume_usd', { ascending: false })
 
   if (error) throw new Error(`Failed to load contracts: ${error.message}`)
-  return (data ?? []) as ContractWithTiers[]
+  return (data ?? []) as unknown as ContractWithTiers[]
 }
 
 async function getPlatformStats() {
