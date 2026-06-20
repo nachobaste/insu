@@ -133,11 +133,18 @@ describe('fetchGoogleMapsReading', () => {
     expect((reading.value as Record<string, unknown>).traffic_index).toBe(0)
   })
 
-  it('throws when Routes API returns non-ok status', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 403 })
+  it('throws when Routes API returns non-ok status, including the error body', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 403,
+      text: () => Promise.resolve('{"error":{"status":"PERMISSION_DENIED"}}'),
+    })
     await expect(
       fetchGoogleMapsReading(19.3983, -99.1918, 19.4147, -99.0790, 'bad-key'),
     ).rejects.toThrow('Google Maps Routes API error: 403')
+    await expect(
+      fetchGoogleMapsReading(19.3983, -99.1918, 19.4147, -99.0790, 'bad-key'),
+    ).rejects.toThrow('PERMISSION_DENIED')
   })
 
   it('throws when response has no routes', async () => {
