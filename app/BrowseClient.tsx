@@ -54,7 +54,7 @@ export default function BrowseClient({ categories, initialContracts, stats }: Pr
         onSelect={(slug) => setActiveSlug(slug === activeSlug ? 'all' : slug)}
       />
 
-      <main className="mx-auto max-w-[1320px] px-8 py-7">
+      <main className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-7 lg:px-8">
         <StatsBar stats={stats} />
 
         {isSearching ? (

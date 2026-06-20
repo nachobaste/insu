@@ -116,7 +116,7 @@ export default function ContractSection({
       )}
 
       {showGrouped ? (
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {roads.map((road) => {
             const group = byRoad.get(road) ?? []
             const morning = group.find((c) => c.corridor && getContractPeriod(c.corridor) === 'morning') ?? null
@@ -141,7 +141,7 @@ export default function ContractSection({
           <AddContractCard />
         </div>
       ) : (
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {filteredContracts.map((contract) => (
             <ContractCard
               key={contract.id}

@@ -40,14 +40,14 @@ const items = [
 
 export default function StatsBar({ stats }: Props) {
   return (
-    <div className="relative mb-7 flex overflow-hidden rounded-card border border-white/[0.07] bg-bg-card">
+    <div className="relative mb-7 grid grid-cols-2 gap-px overflow-hidden rounded-card border border-white/[0.07] bg-white/[0.07] lg:grid-cols-5">
       {/* Amber left accent */}
       <div className="absolute bottom-0 left-0 top-0 w-[3px] bg-insu-accent" />
 
       {items.map((item) => (
         <div
           key={item.key}
-          className="flex flex-1 flex-col items-center border-r border-white/[0.07] px-5 py-4 last:border-r-0"
+          className="flex flex-col items-center bg-bg-card px-4 py-4"
         >
           <span className={`font-mono text-[20px] font-bold tracking-tight ${item.className}`}>
             {item.format(stats[item.key])}
@@ -59,7 +59,7 @@ export default function StatsBar({ stats }: Props) {
       ))}
 
       {/* 100% auto-settled */}
-      <div className="flex flex-1 flex-col items-center px-5 py-4">
+      <div className="flex flex-col items-center bg-bg-card px-4 py-4 col-span-2 lg:col-span-1">
         <span className="font-mono text-[20px] font-bold tracking-tight text-insu-green">
           100%
         </span>

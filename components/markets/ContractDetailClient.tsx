@@ -59,7 +59,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
   const hasPoolCoverage = sortedTiers.some(t => t.current_capacity_usd >= t.payout_usd)
 
   return (
-    <main className="mx-auto max-w-[1320px] px-8 py-10">
+    <main className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_360px]">
         {/* Left column */}
         <div className="space-y-5">
