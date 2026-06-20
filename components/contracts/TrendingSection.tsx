@@ -66,20 +66,20 @@ export default function TrendingSection({ contracts, currency }: Props) {
                 <span aria-hidden="true">{CATEGORY_ICONS[slug] ?? '◆'}</span>
               </div>
 
-              <p className="mb-1 text-[11px] font-semibold leading-[1.4] text-insu-text">
+              <p className="mb-1 text-[13px] font-semibold leading-[1.4] text-insu-text">
                 {contract.title}
               </p>
-              <p className="mb-2 flex items-center gap-0.5 text-[10px] text-insu-muted">
+              <p className="mb-2 flex items-center gap-0.5 text-[12px] text-insu-muted">
                 <span aria-hidden="true">{countryFlag(contract.location?.country ?? 'MX')}</span>
                 <span>{contract.location?.city ?? ''}</span>
               </p>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[8px] font-semibold uppercase tracking-[0.06em] text-insu-muted">from</p>
-                  <p className={cn('text-[12px] font-bold', styles.text)}>{fromPrice}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-insu-muted">from</p>
+                  <p className={cn('text-[14px] font-bold', styles.text)}>{fromPrice}</p>
                 </div>
-                <span className={cn('rounded px-[6px] py-[2px] text-[8px] font-bold uppercase tracking-[0.06em]', styles.pill)}>
+                <span className={cn('rounded px-[6px] py-[2px] text-[10px] font-bold uppercase tracking-[0.06em]', styles.pill)}>
                   {contract.category?.name ?? slug}
                 </span>
               </div>
