@@ -21,9 +21,6 @@ vi.mock('@/components/markets/ContractDetailClient', () => ({
   ),
 }))
 vi.mock('@/components/markets/CorridorEvidence', () => ({ CorridorEvidence: () => null }))
-vi.mock('@/components/markets/CorridorMap', () => ({ CorridorMap: () => <div data-testid="map" /> }))
-vi.mock('@/components/markets/TrafficPulseBar', () => ({ TrafficPulseBar: () => <div data-testid="pulse" /> }))
-vi.mock('@/components/markets/TrafficPulseBarRefresher', () => ({ TrafficPulseBarRefresher: () => null }))
 
 function makeBundle(period: 'morning' | 'evening', slug: string, title: string): PeriodBundle {
   return {
