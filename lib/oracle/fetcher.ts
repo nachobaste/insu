@@ -65,7 +65,13 @@ export async function fetchGoogleMapsReading(
     }),
   })
 
-  if (!res.ok) throw new Error(`Google Maps Routes API error: ${res.status}`)
+  if (!res.ok) {
+    // Include Google's error body — it carries the actionable reason
+    // (e.g. API_KEY_HTTP_REFERRER_BLOCKED, API_KEY_SERVICE_BLOCKED) that a
+    // bare status code hides.
+    const body = await res.text().catch(() => '')
+    throw new Error(`Google Maps Routes API error: ${res.status} ${body}`.trim())
+  }
 
   const data = await res.json()
   const route = (data.routes as Array<{ duration: string; staticDuration: string }>)?.[0]
