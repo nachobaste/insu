@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { cn, categoryTextClass, countryFlag } from '@/lib/utils'
 import { computePeriodFactor } from '@/lib/pricing/engine'
 import type { ContractDetailData, LatestOracleReading } from '@/lib/types'
@@ -23,9 +23,13 @@ interface Props {
   contract: ContractDetailData
   userId: string | null
   latestReading: LatestOracleReading | null
+  /** Optional content rendered at the very top of the left column (e.g. period toggle). */
+  periodToggle?: ReactNode
+  /** Optional content rendered below the description, above the price chart (e.g. corridor evidence). */
+  evidence?: ReactNode
 }
 
-export default function ContractDetailClient({ contract, userId, latestReading }: Props) {
+export default function ContractDetailClient({ contract, userId, latestReading, periodToggle, evidence }: Props) {
   const [panelOpen, setPanelOpen] = useState(false)
   const [panelMode, setPanelMode] = useState<PanelMode>('buy')
   const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(null)
@@ -56,9 +60,10 @@ export default function ContractDetailClient({ contract, userId, latestReading }
 
   return (
     <main className="mx-auto max-w-[1320px] px-8 py-10">
-      <div className="grid grid-cols-[1fr_360px] items-start gap-8">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_360px]">
         {/* Left column */}
         <div className="space-y-5">
+          {periodToggle}
           <div>
             <span className={cn('text-[11px] font-bold uppercase tracking-[0.12em]', categoryTextClass(slug))}>
               {contract.category.name}
@@ -77,6 +82,8 @@ export default function ContractDetailClient({ contract, userId, latestReading }
             )}
           </div>
 
+          {evidence}
+
           <PriceChart history={contract.pricing_history} tiers={contract.coverage_tiers} />
 
           {latestReading && (
@@ -90,8 +97,8 @@ export default function ContractDetailClient({ contract, userId, latestReading }
           <ContractMeta contract={contract} />
         </div>
 
-        {/* Right column — sticky */}
-        <div className="sticky top-[80px] space-y-4">
+        {/* Right column — sticky on desktop, stacked below lg */}
+        <div className="space-y-4 lg:sticky lg:top-[80px]">
 
           {/* Period selector — oracle-driven contracts only */}
           {isRecurring && (

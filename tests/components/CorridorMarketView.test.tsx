@@ -1,3 +1,4 @@
+import React from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -6,13 +7,20 @@ import type { PeriodBundle } from '@/lib/corridors'
 
 // Mock the heavy children so the test isolates the wrapper's swap behaviour.
 vi.mock('@/components/markets/ContractDetailClient', () => ({
-  default: ({ contract }: { contract: { title: string } }) => (
-    <div data-testid="detail">{contract.title}</div>
+  default: ({
+    contract,
+    periodToggle,
+  }: {
+    contract: { title: string }
+    periodToggle?: React.ReactNode
+  }) => (
+    <div data-testid="detail">
+      {contract.title}
+      {periodToggle}
+    </div>
   ),
 }))
-vi.mock('@/components/markets/CorridorMap', () => ({ CorridorMap: () => <div data-testid="map" /> }))
-vi.mock('@/components/markets/TrafficPulseBar', () => ({ TrafficPulseBar: () => <div data-testid="pulse" /> }))
-vi.mock('@/components/markets/TrafficPulseBarRefresher', () => ({ TrafficPulseBarRefresher: () => null }))
+vi.mock('@/components/markets/CorridorEvidence', () => ({ CorridorEvidence: () => null }))
 
 function makeBundle(period: 'morning' | 'evening', slug: string, title: string): PeriodBundle {
   return {
