@@ -2,9 +2,7 @@
 
 import { useState } from 'react'
 import ContractDetailClient from './ContractDetailClient'
-import { TrafficPulseBar } from './TrafficPulseBar'
-import { TrafficPulseBarRefresher } from './TrafficPulseBarRefresher'
-import { CorridorMap } from './CorridorMap'
+import { CorridorEvidence } from './CorridorEvidence'
 import { CorridorPeriodSwitch, type PeriodOption } from './CorridorPeriodSwitch'
 import type { CommutePeriod, PeriodBundle } from '@/lib/corridors'
 
@@ -39,35 +37,23 @@ export function CorridorMarketView({ bundles, initialPeriod, userId }: Props) {
   }
 
   const { contract, corridor } = active
-  const triggerCondition = contract.trigger_condition
 
   return (
-    <>
-      <div className="mx-auto max-w-4xl space-y-3 px-4 pb-2 pt-4">
+    <ContractDetailClient
+      key={active.slug}
+      contract={contract}
+      userId={userId}
+      latestReading={active.latestReading}
+      periodToggle={
         <CorridorPeriodSwitch active={activePeriod} options={options} onSelect={handleSelect} />
-        <TrafficPulseBar
+      }
+      evidence={
+        <CorridorEvidence
+          corridor={corridor}
           readings={active.sparklineReadings}
-          threshold={Number(triggerCondition.threshold ?? 50)}
-          windowStart={corridor.window_start}
-          windowEnd={corridor.window_end}
-          triggerDescription={String(triggerCondition.description ?? '')}
+          triggerCondition={contract.trigger_condition}
         />
-        <CorridorMap
-          key={active.slug}
-          originLat={corridor.origin_lat}
-          originLng={corridor.origin_lng}
-          destLat={corridor.dest_lat}
-          destLng={corridor.dest_lng}
-          corridorName={corridor.name}
-        />
-        <TrafficPulseBarRefresher />
-      </div>
-      <ContractDetailClient
-        key={active.slug}
-        contract={contract}
-        userId={userId}
-        latestReading={active.latestReading}
-      />
-    </>
+      }
+    />
   )
 }
