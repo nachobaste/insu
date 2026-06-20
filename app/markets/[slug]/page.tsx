@@ -2,9 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/Header'
 import ContractDetailClient from '@/components/markets/ContractDetailClient'
-import { TrafficPulseBar } from '@/components/markets/TrafficPulseBar'
-import { TrafficPulseBarRefresher } from '@/components/markets/TrafficPulseBarRefresher'
-import { CorridorMap } from '@/components/markets/CorridorMap'
+import { CorridorEvidence } from '@/components/markets/CorridorEvidence'
 import { CorridorMarketView } from '@/components/markets/CorridorMarketView'
 import { getContractPeriod, type PeriodBundle } from '@/lib/corridors'
 import type { ContractDetailData, LatestOracleReading, OracleReading, Corridor } from '@/lib/types'
@@ -157,26 +155,20 @@ export default async function MarketPage({
   return (
     <>
       <Header />
-      {contract.trigger_type === 'urban' && corridor && (
-        <div className="mx-auto max-w-4xl space-y-3 px-4 pb-2 pt-4">
-          <TrafficPulseBar
-            readings={sparklineReadings}
-            threshold={Number(triggerCondition.threshold ?? 50)}
-            windowStart={corridor.window_start}
-            windowEnd={corridor.window_end}
-            triggerDescription={String(triggerCondition.description ?? '')}
-          />
-          <CorridorMap
-            originLat={corridor.origin_lat}
-            originLng={corridor.origin_lng}
-            destLat={corridor.dest_lat}
-            destLng={corridor.dest_lng}
-            corridorName={corridor.name}
-          />
-          <TrafficPulseBarRefresher />
-        </div>
-      )}
-      <ContractDetailClient contract={contract} userId={userId} latestReading={latestReading} />
+      <ContractDetailClient
+        contract={contract}
+        userId={userId}
+        latestReading={latestReading}
+        evidence={
+          contract.trigger_type === 'urban' && corridor ? (
+            <CorridorEvidence
+              corridor={corridor}
+              readings={sparklineReadings}
+              triggerCondition={triggerCondition}
+            />
+          ) : undefined
+        }
+      />
     </>
   )
 }
