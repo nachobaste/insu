@@ -47,4 +47,38 @@ describe('ContractMeta', () => {
     render(<ContractMeta contract={mockContract} />)
     expect(screen.getByText('$50k')).toBeInTheDocument()
   })
+
+  it('formats a metric/operator/threshold condition instead of dumping JSON', () => {
+    const c = {
+      ...mockContract,
+      trigger_type: 'weather',
+      trigger_condition: { metric: 'temp_c', operator: 'gt', threshold: 40 },
+    } as ContractWithTiers
+    render(<ContractMeta contract={c} />)
+    expect(
+      screen.getByText((t) => t.includes('Temperature') && t.includes('40')),
+    ).toBeInTheDocument()
+    // never expose raw JSON / internal keys
+    expect(screen.queryByText(/[{}]|"metric"|operator/)).not.toBeInTheDocument()
+  })
+
+  it('formats a typed event-cancellation condition', () => {
+    const c = {
+      ...mockContract,
+      trigger_type: 'manual',
+      trigger_condition: { type: 'event_cancellation', event_name: 'Bad Bunny Concert' },
+    } as ContractWithTiers
+    render(<ContractMeta contract={c} />)
+    expect(screen.getByText('Bad Bunny Concert cancelled')).toBeInTheDocument()
+  })
+
+  it('omits a missing country instead of showing "undefined"', () => {
+    const c = {
+      ...mockContract,
+      location: { lat: 0, lng: 0, city: 'Manaus' } as ContractWithTiers['location'],
+    }
+    render(<ContractMeta contract={c} />)
+    expect(screen.getByText('Manaus')).toBeInTheDocument()
+    expect(screen.queryByText(/undefined/)).not.toBeInTheDocument()
+  })
 })
