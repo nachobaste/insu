@@ -35,7 +35,7 @@ export default function TrendingSection({ contracts, currency }: Props) {
         </span>
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {contracts.map((contract) => {
           const slug = contract.category?.slug ?? 'urban'
           const styles = CATEGORY_STYLES[slug] ?? CATEGORY_STYLES.urban

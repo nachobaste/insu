@@ -15,7 +15,7 @@ export default function SearchInput() {
         onChange={(e) => setQuery(e.target.value)}
         aria-label="Search contracts"
         placeholder="Search contracts, events, locations…"
-        className="flex-1 bg-transparent font-body text-[13.5px] text-insu-text outline-none placeholder:text-insu-muted"
+        className="w-full min-w-0 flex-1 bg-transparent font-body text-[13.5px] text-insu-text outline-none placeholder:text-insu-muted"
       />
       {query && (
         <button

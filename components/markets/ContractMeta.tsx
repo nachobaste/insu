@@ -32,8 +32,8 @@ export default function ContractMeta({ contract }: Props) {
         ['Total volume',  formatVolume(contract.total_volume_usd)],
       ].map(([label, value]) => (
         <div key={label} className="flex justify-between gap-4">
-          <dt className="text-insu-muted">{label}</dt>
-          <dd className="text-right font-medium text-insu-text">{value}</dd>
+          <dt className="flex-shrink-0 text-insu-muted">{label}</dt>
+          <dd className="min-w-0 text-right font-medium text-insu-text [overflow-wrap:anywhere]">{value}</dd>
         </div>
       ))}
     </dl>

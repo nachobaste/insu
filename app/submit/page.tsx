@@ -23,7 +23,7 @@ export default async function SubmitPage() {
           <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-insu-accent">
             Submit your own program
           </p>
-          <h1 className="mb-3 font-display text-[52px] leading-tight tracking-wide text-insu-text">
+          <h1 className="mb-3 font-display text-[40px] leading-tight tracking-wide sm:text-[52px] text-insu-text">
             Pitch a protection
           </h1>
           <p className="text-[14px] leading-relaxed text-insu-muted">
@@ -46,7 +46,7 @@ export default async function SubmitPage() {
         </div>
 
         {/* Form */}
-        <div className="rounded-[14px] border border-white/[0.07] bg-bg-card p-8">
+        <div className="rounded-[14px] border border-white/[0.07] bg-bg-card p-5 sm:p-8">
           <SubmitForm categories={(categories ?? []) as Category[]} />
         </div>
       </main>
