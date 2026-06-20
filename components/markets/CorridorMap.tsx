@@ -70,7 +70,7 @@ export function CorridorMap({
     ]).then(([mapsLib, markerLib, coreLib]) => {
       if (cancelled || !mapRef.current) return
 
-      const { Map, Polyline, TrafficLayer } = mapsLib as google.maps.MapsLibrary
+      const { Map, TrafficLayer } = mapsLib as google.maps.MapsLibrary
       const { Marker } = markerLib as google.maps.MarkerLibrary
       const { SymbolPath } = coreLib as google.maps.CoreLibrary
 
@@ -98,18 +98,9 @@ export function CorridorMap({
 
       new TrafficLayer().setMap(map)
 
-      new Polyline({
-        path: [
-          { lat: originLat, lng: originLng },
-          { lat: destLat, lng: destLng },
-        ],
-        geodesic: true,
-        strokeColor: '#818cf8',
-        strokeOpacity: 0.9,
-        strokeWeight: 4,
-        map,
-      })
-
+      // Origin and destination are plotted as standalone markers. We intentionally
+      // don't draw a connecting line: a straight geodesic line misrepresents the
+      // actual road route, and the two endpoints are all the corridor needs to convey.
       new Marker({
         position: { lat: originLat, lng: originLng },
         map,
