@@ -1,6 +1,22 @@
-import type { ContractWithTiers, Corridor } from './types'
+import type {
+  ContractWithTiers,
+  Corridor,
+  ContractDetailData,
+  LatestOracleReading,
+  OracleReading,
+} from './types'
 
 export type CommutePeriod = 'morning' | 'evening'
+
+/** Everything the detail page needs to render one period of a corridor pair. */
+export interface PeriodBundle {
+  period: CommutePeriod
+  slug: string
+  contract: ContractDetailData
+  corridor: Corridor
+  latestReading: LatestOracleReading | null
+  sparklineReadings: OracleReading[]
+}
 
 /** Morning if the corridor's window starts before noon, else evening. */
 export function getContractPeriod(corridor: Corridor): CommutePeriod {
