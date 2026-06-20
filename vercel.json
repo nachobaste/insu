@@ -5,8 +5,12 @@
       "schedule": "0 0 * * *"
     },
     {
-      "path": "/api/oracle-poll",
+      "path": "/api/oracle-poll?types=weather,fuel",
       "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/oracle-poll?types=urban",
+      "schedule": "*/15 13-15,23,0-1 * * *"
     },
     {
       "path": "/api/payout-process",
