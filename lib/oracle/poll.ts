@@ -105,16 +105,20 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
   return []
 }
 
+/** Trigger types this poller knows how to fetch readings for. */
+export const POLLABLE_TRIGGER_TYPES = ['weather', 'urban', 'fuel'] as const
+
 export async function pollContracts(
   db: DbClient = getClient(),
   readingFetcher: ReadingFetcher = defaultFetcher,
+  triggerTypes: string[] = [...POLLABLE_TRIGGER_TYPES],
 ): Promise<number> {
   const { data: contracts } = await db
     .from('contracts')
     .select('*, corridor:corridors(*)')
     .eq('status', 'active')
     .is('settled_outcome', null)
-    .in('trigger_type', ['weather', 'urban', 'fuel'])
+    .in('trigger_type', triggerTypes)
 
   if (!contracts || contracts.length === 0) return 0
 

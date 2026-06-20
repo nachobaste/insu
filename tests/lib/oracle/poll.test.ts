@@ -42,18 +42,32 @@ function makeDb(opts: {
   const insertMock = vi.fn().mockResolvedValue({
     error: opts.insertError ? new Error('insert failed') : null,
   })
+  const contractsChain = chainable({ data: contracts, error: null })
 
   return {
     from: vi.fn((table: string) => {
-      if (table === 'contracts') return chainable({ data: contracts, error: null })
+      if (table === 'contracts') return contractsChain
       if (table === 'oracle_readings') return { insert: insertMock }
       return {}
     }),
     _insert: insertMock,
+    _in: contractsChain.in,
   }
 }
 
 describe('pollContracts', () => {
+  it('defaults to querying all supported trigger types', async () => {
+    const db = makeDb()
+    await pollContracts(db as never, vi.fn().mockResolvedValue([]))
+    expect(db._in).toHaveBeenCalledWith('trigger_type', ['weather', 'urban', 'fuel'])
+  })
+
+  it('queries only the requested trigger types when given a filter', async () => {
+    const db = makeDb()
+    await pollContracts(db as never, vi.fn().mockResolvedValue([]), ['urban'])
+    expect(db._in).toHaveBeenCalledWith('trigger_type', ['urban'])
+  })
+
   it('writes one oracle_readings row per contract', async () => {
     const db = makeDb()
     const mockFetcher = vi.fn().mockResolvedValue([{
