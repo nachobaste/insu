@@ -33,6 +33,8 @@ export function CorridorMarketView({ bundles, initialPeriod, userId }: Props) {
     const next = bundles.find((b) => b.period === period)
     if (!next) return
     setActivePeriod(period)
+    // replaceState (not router.replace) keeps the swap instant: it syncs the URL
+    // without a server round-trip / RSC refetch, which is the whole point here.
     window.history.replaceState(null, '', `/markets/${next.slug}`)
   }
 
