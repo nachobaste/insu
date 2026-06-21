@@ -5,8 +5,10 @@ import CategoryTabs from '@/components/layout/CategoryTabs'
 import StatsBar from '@/components/contracts/StatsBar'
 import ContractSection from '@/components/contracts/ContractSection'
 import TrendingSection from '@/components/contracts/TrendingSection'
+import RegionToggle from '@/components/contracts/RegionToggle'
 import { useRealtimeContracts } from '@/hooks/useRealtimeContracts'
 import { scoreTrending } from '@/lib/trending'
+import { filterByRegion, type Region } from '@/lib/region'
 import { useSearch } from '@/lib/search-context'
 import type { Category, ContractWithTiers } from '@/lib/types'
 
@@ -23,7 +25,11 @@ interface Props {
 
 export default function BrowseClient({ categories, initialContracts, stats }: Props) {
   const [activeSlug, setActiveSlug] = useState<string>('all')
-  const contracts = useRealtimeContracts(initialContracts)
+  const [region, setRegion] = useState<Region>('MX')
+  const allContracts = useRealtimeContracts(initialContracts)
+  // Scope everything below (trending, category sections, search) to the selected
+  // region. Mexico is the demo focus; International is one click away.
+  const contracts = useMemo(() => filterByRegion(allContracts, region), [allContracts, region])
   const trendingContracts = useMemo(() => scoreTrending(contracts), [contracts])
   const { query } = useSearch()
 
@@ -55,6 +61,10 @@ export default function BrowseClient({ categories, initialContracts, stats }: Pr
       />
 
       <main className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-7 lg:px-8">
+        <div className="mb-5">
+          <RegionToggle region={region} onSelect={setRegion} />
+        </div>
+
         <StatsBar stats={stats} />
 
         {isSearching ? (
