@@ -97,6 +97,29 @@ export async function upsertContract(input: UpsertContractInput): Promise<string
   return contractId
 }
 
+export async function cancelContract(contractId: string, reason?: string): Promise<void> {
+  const { supabase, userId } = await assertAdmin()
+
+  const { data: existing } = await supabase
+    .from('contracts')
+    .select('status')
+    .eq('id', contractId)
+    .single()
+  if (!existing) throw new Error('Contract not found')
+  if (existing.status === 'settled') throw new Error('Cannot cancel a settled contract')
+  if (existing.status === 'cancelled') return
+
+  await supabase.from('contracts').update({ status: 'cancelled' }).eq('id', contractId)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from('admin_audit_log') as any).insert({
+    admin_id: userId,
+    action: 'contract_cancelled',
+    contract_id: contractId,
+    reason: reason ?? null,
+  })
+}
+
 export async function overrideContractTrigger({
   contractId,
   outcome,

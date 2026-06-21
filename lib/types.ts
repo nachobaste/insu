@@ -162,17 +162,17 @@ export interface Payout {
 }
 
 export interface HedgerPositionWithContract extends HedgerPosition {
-  contract: Pick<Contract, 'id' | 'slug' | 'title' | 'trigger_type'>
+  contract: Pick<Contract, 'id' | 'slug' | 'title' | 'trigger_type' | 'status'>
   tier: Pick<CoverageTier, 'name'>
 }
 
 export interface ProviderPositionWithContract extends ProviderPosition {
-  contract: Pick<Contract, 'id' | 'slug' | 'title' | 'trigger_type' | 'trigger_deadline'>
+  contract: Pick<Contract, 'id' | 'slug' | 'title' | 'trigger_type' | 'trigger_deadline' | 'status'>
   tier: Pick<CoverageTier, 'name'>
 }
 
 export interface PayoutWithContract extends Payout {
-  contract: Pick<Contract, 'id' | 'slug' | 'title'>
+  contract: Pick<Contract, 'id' | 'slug' | 'title' | 'status'>
 }
 
 export interface AdminAuditLog {
