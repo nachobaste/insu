@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { upsertContract } from '@/lib/actions/admin'
+import { upsertContract, cancelContract } from '@/lib/actions/admin'
 import { cn } from '@/lib/utils'
 import type { Category, ContractWithTiers, UpsertContractInput } from '@/lib/types'
 
@@ -154,6 +154,26 @@ export function ContractForm({ categories, contract }: Props) {
       }
     })
   }
+
+  function handleCancelMarket() {
+    if (!contract?.id) return
+    if (!window.confirm(
+      'Cancel this market? It will be removed from Browse and hidden from everyone’s dashboard. '
+      + 'Existing positions are NOT refunded. This cannot be undone from here.',
+    )) return
+
+    setError(null)
+    startTransition(async () => {
+      try {
+        await cancelContract(contract.id)
+        router.push('/admin/contracts')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Cancel failed')
+      }
+    })
+  }
+
+  const canCancelMarket = !!contract?.id && contract.status !== 'settled' && contract.status !== 'cancelled'
 
   const inputCls = 'w-full rounded-md border border-white/[0.07] bg-bg px-3 py-2 text-sm text-insu-text placeholder:text-insu-muted focus:border-insu-accent/40 focus:outline-none'
   const labelCls = 'mb-1 block text-[11px] uppercase tracking-wider text-insu-muted'
@@ -402,11 +422,21 @@ export function ContractForm({ categories, contract }: Props) {
         </span>
       </div>
 
-      <div className="flex gap-3 justify-end pt-2">
+      <div className="flex gap-3 items-center pt-2">
+        {canCancelMarket && (
+          <button
+            type="button"
+            onClick={handleCancelMarket}
+            disabled={isPending}
+            className="rounded-md border border-red-500/30 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 disabled:opacity-60"
+          >
+            Cancel market
+          </button>
+        )}
         <button
           type="button"
           onClick={() => router.push('/admin/contracts')}
-          className="rounded-md border border-white/[0.07] px-4 py-2 text-sm text-insu-dim hover:text-insu-text"
+          className="ml-auto rounded-md border border-white/[0.07] px-4 py-2 text-sm text-insu-dim hover:text-insu-text"
         >
           Cancel
         </button>

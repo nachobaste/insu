@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { ContractWithTiers } from '@/lib/types'
+import { CancelMarketButton } from './CancelMarketButton'
 
 const STATUS_STYLES: Record<string, string> = {
   active: 'bg-insu-green/10 text-insu-green',
@@ -64,7 +65,7 @@ export function ContractList({ contracts }: { contracts: ContractWithTiers[] }) 
 
       {/* All contracts table */}
       <div className="overflow-hidden rounded-lg border border-white/[0.07]">
-        <div className="grid grid-cols-[1fr_100px_80px_90px_60px] gap-3 border-b border-white/[0.07] bg-white/[0.02] px-4 py-2.5 text-[11px] uppercase tracking-wider text-insu-muted">
+        <div className="grid grid-cols-[1fr_100px_80px_90px_120px] gap-3 border-b border-white/[0.07] bg-white/[0.02] px-4 py-2.5 text-[11px] uppercase tracking-wider text-insu-muted">
           <span>Title</span><span>Category</span><span>Type</span><span>Status</span><span>Action</span>
         </div>
 
@@ -76,7 +77,7 @@ export function ContractList({ contracts }: { contracts: ContractWithTiers[] }) 
           <div
             key={c.id}
             className={cn(
-              'grid grid-cols-[1fr_100px_80px_90px_60px] gap-3 border-b border-white/[0.04] px-4 py-3 text-sm last:border-0',
+              'grid grid-cols-[1fr_100px_80px_90px_120px] gap-3 border-b border-white/[0.04] px-4 py-3 text-sm last:border-0',
               (c.status === 'settled' || c.status === 'cancelled') && 'opacity-60',
             )}
           >
@@ -91,12 +92,17 @@ export function ContractList({ contracts }: { contracts: ContractWithTiers[] }) 
             <span className={cn('self-center rounded px-2 py-0.5 text-[11px] font-medium w-fit', STATUS_STYLES[c.status] ?? STATUS_STYLES.settled)}>
               {c.status}
             </span>
-            <Link
-              href={`/admin/contracts/${c.id}`}
-              className="self-center text-[13px] text-blue-400 hover:text-blue-300"
-            >
-              {c.status === 'pending' ? 'Review' : 'Edit'}
-            </Link>
+            <div className="flex items-center gap-3 self-center">
+              <Link
+                href={`/admin/contracts/${c.id}`}
+                className="text-[13px] text-blue-400 hover:text-blue-300"
+              >
+                {c.status === 'pending' ? 'Review' : 'Edit'}
+              </Link>
+              {c.status !== 'settled' && c.status !== 'cancelled' && (
+                <CancelMarketButton contractId={c.id} title={c.title} />
+              )}
+            </div>
           </div>
         ))}
       </div>

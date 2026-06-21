@@ -7,7 +7,7 @@ vi.mock('stripe', () => {
   return { default: MockStripe }
 })
 
-import { upsertContract, overrideContractTrigger, retryPayout } from '@/lib/actions/admin'
+import { upsertContract, overrideContractTrigger, retryPayout, cancelContract } from '@/lib/actions/admin'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import Stripe from 'stripe'
 
@@ -262,6 +262,73 @@ describe('overrideContractTrigger', () => {
       },
     } as never)
     await expect(overrideContractTrigger({ contractId: 'c-1', outcome: false, reason: 'test' })).rejects.toThrow('MFA_REQUIRED')
+  })
+})
+
+describe('cancelContract', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.env.STRIPE_SECRET_KEY = 'sk_test_mock_key'
+  })
+
+  it('sets status to cancelled and writes an audit log entry', async () => {
+    const userClientMock = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null }),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({ data: { currentLevel: 'aal2' }, error: null }),
+        },
+      },
+      from: vi.fn(),
+    }
+    const mockSupabase = makeSupabase({
+      tables: {
+        contracts: { data: { status: 'active' }, error: null },
+        admin_audit_log: { data: null, error: null },
+      },
+    })
+    vi.mocked(createClient).mockReturnValue(userClientMock as never)
+    vi.mocked(createServiceClient).mockReturnValue(mockSupabase as never)
+
+    await cancelContract('c-1', 'demo cleanup')
+
+    const fromCalls = mockSupabase.from.mock.calls.map((c: unknown[]) => c[0])
+    expect(fromCalls).toContain('contracts')
+    expect(fromCalls).toContain('admin_audit_log')
+  })
+
+  it('throws when contract is already settled', async () => {
+    const userClientMock = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null }),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({ data: { currentLevel: 'aal2' }, error: null }),
+        },
+      },
+      from: vi.fn(),
+    }
+    const mockSupabase = makeSupabase({
+      tables: { contracts: { data: { status: 'settled' }, error: null } },
+    })
+    vi.mocked(createClient).mockReturnValue(userClientMock as never)
+    vi.mocked(createServiceClient).mockReturnValue(mockSupabase as never)
+
+    await expect(cancelContract('c-1')).rejects.toThrow('Cannot cancel a settled contract')
+  })
+
+  it('throws Forbidden if caller is not admin', async () => {
+    const userClientMock = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({ data: { currentLevel: 'aal2' }, error: null }),
+        },
+      },
+      from: vi.fn(),
+    }
+    vi.mocked(createClient).mockReturnValue(userClientMock as never)
+    vi.mocked(createServiceClient).mockReturnValue(makeSupabase({ role: 'hedger' }) as never)
+    await expect(cancelContract('c-1')).rejects.toThrow('Forbidden')
   })
 })
 

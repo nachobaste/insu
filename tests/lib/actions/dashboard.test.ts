@@ -59,6 +59,27 @@ describe('getDashboardData', () => {
     expect(result.payouts[0]).toMatchObject({ id: 'pay-1', status: 'completed' })
   })
 
+  it('hides positions and payouts whose contract is cancelled', async () => {
+    vi.mocked(createClient).mockReturnValue(makeSupabase({
+      hedgerData: [
+        { id: 'hp-1', status: 'active', contract: { id: 'c-1', status: 'active' } },
+        { id: 'hp-2', status: 'active', contract: { id: 'c-2', status: 'cancelled' } },
+      ],
+      providerData: [
+        { id: 'pp-1', status: 'active', contract: { id: 'c-2', status: 'cancelled' } },
+      ],
+      payoutsData: [
+        { id: 'pay-1', status: 'completed', contract: { id: 'c-1', status: 'active' } },
+        { id: 'pay-2', status: 'completed', contract: { id: 'c-2', status: 'cancelled' } },
+      ],
+    }) as never)
+
+    const result = await getDashboardData('user-1')
+    expect(result.hedgerPositions.map((p) => p.id)).toEqual(['hp-1'])
+    expect(result.providerPositions).toEqual([])
+    expect(result.payouts.map((p) => p.id)).toEqual(['pay-1'])
+  })
+
   it('returns empty arrays when user has no data', async () => {
     vi.mocked(createClient).mockReturnValue(makeSupabase() as never)
 
