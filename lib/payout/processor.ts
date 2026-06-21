@@ -74,7 +74,10 @@ async function settleContract(
     .eq('contract_id', contract.id)
     .eq('status', 'active')
 
-  if (!positions) return 0
+  // No buyers → nothing to pay out. Leave the contract live rather than
+  // auto-settling it (settling a zero-position contract just removes a buyable
+  // market for no reason).
+  if (!positions || positions.length === 0) return 0
 
   // Skip positions whose coverage window closed before the trigger fired
   const eligiblePositions = (positions as HedgerPosition[]).filter((pos) =>

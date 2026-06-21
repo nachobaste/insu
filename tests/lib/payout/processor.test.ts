@@ -212,6 +212,16 @@ describe('processPayouts', () => {
     expect(db._contractUpdateEq).toHaveBeenCalledWith('id', 'c1')
   })
 
+  it('does not settle a triggered contract that has no active hedger positions', async () => {
+    // No buyers → nothing to pay out → the contract must stay live, not settle.
+    const db = makeDb({ hedgerPositions: [] })
+    const stripe = makeStripe()
+    const count = await processPayouts(db as never, stripe as never)
+    expect(count).toBe(0)
+    expect(db._contractUpdateEq).not.toHaveBeenCalled()
+    expect(stripe.customers.createBalanceTransaction).not.toHaveBeenCalled()
+  })
+
   it('credits Stripe Customer Balance with negative cents', async () => {
     const db = makeDb()
     const stripe = makeStripe()
