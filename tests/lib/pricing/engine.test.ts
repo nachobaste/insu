@@ -14,6 +14,7 @@ function makeTier(overrides: Partial<CoverageTier> = {}): CoverageTier {
     max_capacity_usd: 100000,
     current_capacity_usd: 0,
     base_probability: 0.10,
+    max_payouts: 1,
     last_priced_at: null,
     pricing_inputs: null,
     ...overrides,

@@ -41,6 +41,7 @@ function makeContract(overrides: Partial<ContractWithTiers>): ContractWithTiers 
         max_capacity_usd: 100000,
         current_capacity_usd: 50000,
         base_probability: 0.18,
+        max_payouts: 1,
         last_priced_at: null,
         pricing_inputs: null,
       },

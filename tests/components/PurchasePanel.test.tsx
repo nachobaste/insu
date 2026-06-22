@@ -46,8 +46,8 @@ const mockContract: ContractWithTiers = {
   created_at: '2026-01-01T00:00:00Z',
   settled_at: null,
   coverage_tiers: [
-    { id: 'tier-basic', contract_id: 'abc-123', name: 'basic', premium_usd: 12, payout_usd: 500, premium_mxn: 204, payout_mxn: 8500, max_capacity_usd: 100000, current_capacity_usd: 1000, base_probability: 0.1, last_priced_at: null, pricing_inputs: null },
-    { id: 'tier-premium', contract_id: 'abc-123', name: 'premium', premium_usd: 38, payout_usd: 2000, premium_mxn: 646, payout_mxn: 34000, max_capacity_usd: 100000, current_capacity_usd: 5000, base_probability: 0.1, last_priced_at: null, pricing_inputs: null },
+    { id: 'tier-basic', contract_id: 'abc-123', name: 'basic', premium_usd: 12, payout_usd: 500, premium_mxn: 204, payout_mxn: 8500, max_capacity_usd: 100000, current_capacity_usd: 1000, max_payouts: 1, base_probability: 0.1, last_priced_at: null, pricing_inputs: null },
+    { id: 'tier-premium', contract_id: 'abc-123', name: 'premium', premium_usd: 38, payout_usd: 2000, premium_mxn: 646, payout_mxn: 34000, max_capacity_usd: 100000, current_capacity_usd: 5000, max_payouts: 3, base_probability: 0.1, last_priced_at: null, pricing_inputs: null },
   ],
 }
 
