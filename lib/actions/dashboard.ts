@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { dailyHazard, valuePosition } from '@/lib/pricing/derivative'
 import type {
   HedgerPositionWithContract,
   ProviderPositionWithContract,
@@ -25,7 +26,7 @@ export async function getDashboardData(userId?: string): Promise<DashboardData> 
   const [hedgerResult, providerResult, payoutsResult] = await Promise.all([
     supabase
       .from('hedger_positions')
-      .select('*, contract:contracts(id, slug, title, trigger_type, status), tier:coverage_tiers(name)')
+      .select('*, contract:contracts(id, slug, title, trigger_type, status, is_recurring, trigger_condition), tier:coverage_tiers(name, base_probability, max_payouts)')
       .eq('user_id', userId)
       .in('status', ['active', 'paid_out', 'expired']),
     supabase
@@ -50,8 +51,57 @@ export async function getDashboardData(userId?: string): Promise<DashboardData> 
   const notCancelled = (row: { contract?: { status?: string } | null }) =>
     row.contract?.status !== 'cancelled'
 
+  const hedgerPositions = ((hedgerResult.data ?? []) as HedgerPositionWithContract[]).filter(notCancelled)
+
+  // Compute live mark-to-market value for active positions on recurring contracts.
+  try {
+    const activeRecurring = hedgerPositions.filter(
+      p => p.status === 'active' && p.contract?.is_recurring,
+    )
+    if (activeRecurring.length > 0) {
+      const ids = [...new Set(activeRecurring.map(p => p.contract_id))]
+      const { data: readings } = await supabase
+        .from('oracle_readings')
+        .select('contract_id, value, read_at')
+        .in('contract_id', ids)
+        .order('read_at', { ascending: false })
+
+      const latestByContract = new Map<string, { value: Record<string, unknown> }>()
+      for (const row of readings ?? []) {
+        if (!latestByContract.has(row.contract_id)) {
+          latestByContract.set(row.contract_id, { value: row.value as Record<string, unknown> })
+        }
+      }
+
+      for (const pos of activeRecurring) {
+        try {
+          const remainingDays = Math.max(
+            0,
+            (new Date(pos.expires_at).getTime() - Date.now()) / 86_400_000,
+          )
+          const reading = latestByContract.get(pos.contract_id) ?? null
+          const p = dailyHazard(
+            pos.tier.base_probability,
+            reading ? { value: reading.value } : null,
+            pos.contract.trigger_condition as never,
+          )
+          pos.current_value_usd = valuePosition(
+            pos.payout_amount_usd,
+            remainingDays,
+            p,
+            pos.payouts_remaining ?? pos.tier.max_payouts,
+          )
+        } catch {
+          pos.current_value_usd = null
+        }
+      }
+    }
+  } catch {
+    // If oracle fetch fails entirely, positions keep current_value_usd undefined.
+  }
+
   return {
-    hedgerPositions: ((hedgerResult.data ?? []) as HedgerPositionWithContract[]).filter(notCancelled),
+    hedgerPositions,
     providerPositions: ((providerResult.data ?? []) as ProviderPositionWithContract[]).filter(notCancelled),
     payouts: ((payoutsResult.data ?? []) as PayoutWithContract[]).filter(notCancelled),
   }
