@@ -54,6 +54,25 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
     ? quoteTiers(contract.coverage_tiers, selectedPeriodDays, contract.trigger_condition, latestReading)
     : undefined
 
+  // A multi-payout tier (Pro) is meaningless on a 1-day window — only one event can land.
+  const lockedReasonByTier = isRecurring && selectedPeriodDays != null && selectedPeriodDays <= 1
+    ? Object.fromEntries(
+        contract.coverage_tiers
+          .filter((t) => t.max_payouts > 1)
+          .map((t) => [t.id, 'Needs 7+ days']),
+      )
+    : undefined
+
+  function selectPeriod(days: number) {
+    const next = selectedPeriodDays === days ? null : days
+    setSelectedPeriodDays(next)
+    // Drop a Pro selection that just became invalid for a 1-day window.
+    if (next != null && next <= 1) {
+      const current = contract.coverage_tiers.find((t) => t.id === selectedTierId)
+      if (current && current.max_payouts > 1) setSelectedTierId(null)
+    }
+  }
+
   const hasPoolCoverage = sortedTiers.some(t => t.current_capacity_usd >= t.payout_usd)
 
   return (
@@ -108,7 +127,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
                 {PERIOD_OPTIONS.map(({ days, label }) => (
                   <button
                     key={days}
-                    onClick={() => setSelectedPeriodDays(d => d === days ? null : days)}
+                    onClick={() => selectPeriod(days)}
                     className={cn(
                       'flex flex-1 flex-col items-center rounded-lg border py-2.5 text-[11px] font-semibold transition-all',
                       selectedPeriodDays === days
@@ -133,6 +152,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
             onSelect={(id) => setSelectedTierId(prev => prev === id ? null : id)}
             mode="buy"
             priceByTier={priceByTier}
+            lockedReasonByTier={lockedReasonByTier}
           />
 
           <div className="space-y-2 pt-1">

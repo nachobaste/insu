@@ -75,4 +75,41 @@ describe('TierSelector', () => {
     render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={() => {}} priceByTier={{ 'tier-basic': 3.45 }} />)
     expect(screen.getByText('$3')).toBeInTheDocument()
   })
+
+  it('describes the payout count per tier (Basic one-time, Pro up to 3)', () => {
+    render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={vi.fn()} />)
+    expect(screen.getByText('Pays out once')).toBeInTheDocument()
+    expect(screen.getByText('Pays out up to 3 times')).toBeInTheDocument()
+  })
+
+  // Funded tiers so isFull (no-capital) doesn't mask the lock behavior under test.
+  const fundedTiers = tiers.map((t) => ({ ...t, current_capacity_usd: t.payout_usd }))
+
+  it('locks a tier and shows the reason when lockedReasonByTier is provided', () => {
+    render(
+      <TierSelector
+        tiers={fundedTiers}
+        selectedTierId={null}
+        onSelect={vi.fn()}
+        lockedReasonByTier={{ 'tier-premium': 'Needs 7+ days' }}
+      />,
+    )
+    expect(screen.getByText('Needs 7+ days')).toBeInTheDocument()
+    expect(screen.getByText('Pro').closest('button')).toBeDisabled()
+    expect(screen.getByText('Basic').closest('button')).not.toBeDisabled()
+  })
+
+  it('does not select a locked tier when clicked', async () => {
+    const onSelect = vi.fn()
+    render(
+      <TierSelector
+        tiers={fundedTiers}
+        selectedTierId={null}
+        onSelect={onSelect}
+        lockedReasonByTier={{ 'tier-premium': 'Needs 7+ days' }}
+      />,
+    )
+    await userEvent.click(screen.getByText('Pro'))
+    expect(onSelect).not.toHaveBeenCalled()
+  })
 })

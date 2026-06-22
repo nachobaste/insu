@@ -9,6 +9,8 @@ interface Props {
   onSelect: (tierId: string) => void
   mode?: 'buy' | 'provide'
   priceByTier?: Record<string, number>
+  /** Tier ids that can't be chosen for the current selection, mapped to a short reason (e.g. Pro on a 1-day window). */
+  lockedReasonByTier?: Record<string, string>
 }
 
 const TIER_LABELS: Record<CoverageLevel, string> = {
@@ -16,7 +18,12 @@ const TIER_LABELS: Record<CoverageLevel, string> = {
   premium: 'Pro',
 }
 
-export default function TierSelector({ tiers, selectedTierId, onSelect, mode = 'buy', priceByTier }: Props) {
+/** Human description of how many times a tier can pay out before it knocks out. */
+function payoutDescription(maxPayouts: number): string {
+  return maxPayouts > 1 ? `Pays out up to ${maxPayouts} times` : 'Pays out once'
+}
+
+export default function TierSelector({ tiers, selectedTierId, onSelect, mode = 'buy', priceByTier, lockedReasonByTier }: Props) {
   const sorted = [...tiers].sort((a, b) => (a.name === 'basic' ? -1 : b.name === 'basic' ? 1 : 0))
 
   return (
@@ -27,34 +34,39 @@ export default function TierSelector({ tiers, selectedTierId, onSelect, mode = '
         const isFull = mode === 'provide'
           ? remaining <= 0
           : tier.current_capacity_usd < tier.payout_usd
+        const lockedReason = lockedReasonByTier?.[tier.id]
+        const isDisabled = isFull || Boolean(lockedReason)
         const displayPremium = priceByTier?.[tier.id] ?? tier.premium_usd
+        // Right-aligned status note: a lock reason takes precedence over the capacity note.
+        const statusNote = lockedReason ?? (isFull ? (mode === 'provide' ? 'Pool full' : 'No capital yet') : null)
 
         return (
           <button
             key={tier.id}
-            disabled={isFull}
+            disabled={isDisabled}
             onClick={() => onSelect(tier.id)}
             className={cn(
               'w-full rounded-card border p-4 text-left transition-all',
               isSelected
                 ? 'border-insu-accent bg-insu-accent/5'
                 : 'border-white/[0.07] bg-bg-card hover:border-white/15',
-              isFull && 'cursor-not-allowed opacity-40',
+              isDisabled && 'cursor-not-allowed opacity-40',
             )}
           >
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-semibold text-insu-text">
                 {TIER_LABELS[tier.name]}
               </span>
-              {isSelected && (
+              {isSelected ? (
                 <span className="text-[11px] font-bold text-insu-accent">✓ Selected</span>
-              )}
-              {isFull && !isSelected && (
-                <span className="text-[11px] text-insu-muted">
-                  {mode === 'provide' ? 'Pool full' : 'No capital yet'}
-                </span>
-              )}
+              ) : statusNote ? (
+                <span className="text-[11px] text-insu-muted">{statusNote}</span>
+              ) : null}
             </div>
+
+            <p className="mt-0.5 text-[11px] text-insu-muted">
+              {payoutDescription(tier.max_payouts)}
+            </p>
 
             {mode === 'buy' ? (
               <div className="mt-1 flex items-center gap-1 font-mono text-[12px]">

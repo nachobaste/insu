@@ -70,6 +70,25 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
     latestReading,
   )
 
+  // Pro (multi-payout) can't be bought for a 1-day window — only one event can land in a day.
+  const lockedReasonByTier = isRecurring && mode === 'buy' && selectedPeriodDays != null && selectedPeriodDays <= 1
+    ? Object.fromEntries(
+        contract.coverage_tiers
+          .filter((t) => t.max_payouts > 1)
+          .map((t) => [t.id, 'Needs 7+ days']),
+      )
+    : undefined
+
+  const selectedTierLocked = selectedTierId != null && Boolean(lockedReasonByTier?.[selectedTierId])
+
+  function selectPeriod(days: number) {
+    setSelectedPeriodDays(days)
+    if (days <= 1) {
+      const current = contract.coverage_tiers.find((t) => t.id === selectedTierId)
+      if (current && current.max_payouts > 1) setSelectedTierId(null)
+    }
+  }
+
   function switchMode(next: PanelMode) {
     setMode(next)
     setSelectedTierId(next === 'buy' ? (initialTierId ?? null) : null)
@@ -208,7 +227,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                           return (
                             <button
                               key={days}
-                              onClick={() => setSelectedPeriodDays(days)}
+                              onClick={() => selectPeriod(days)}
                               className={cn(
                                 'flex flex-1 flex-col items-center rounded-lg border py-2.5 text-[11px] font-semibold transition-all',
                                 selectedPeriodDays === days
@@ -236,6 +255,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                     onSelect={setSelectedTierId}
                     mode={mode}
                     priceByTier={mode === 'buy' ? priceByTier : undefined}
+                    lockedReasonByTier={lockedReasonByTier}
                   />
 
                   {mode === 'provide' && selectedTierId && (
@@ -269,6 +289,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                     disabled={
                       !selectedTierId ||
                       loading ||
+                      selectedTierLocked ||
                       (isRecurring && mode === 'buy' && selectedPeriodDays === null) ||
                       (mode === 'provide' && (!depositAmount || parseFloat(depositAmount) < 10))
                     }
