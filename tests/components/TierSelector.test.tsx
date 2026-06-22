@@ -67,25 +67,12 @@ describe('TierSelector', () => {
     expect(screen.getByRole('button')).toBeDisabled()
   })
 
-  it('shows raw premium_usd when no periodFactor provided', () => {
-    // formatCurrency rounds to whole dollars: $12 not $12.00
-    render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={vi.fn()} />)
+  it('shows premium_usd sticker when no price map provided', () => {
+    render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={() => {}} />)
     expect(screen.getByText('$12')).toBeInTheDocument()
   })
-
-  it('shows period-scaled premium when periodFactor is provided', () => {
-    // periodFactor = 7/181 ≈ 0.03867 → 12 * 0.03867 ≈ 0.46 → rounds to $0
-    render(
-      <TierSelector
-        tiers={tiers}
-        selectedTierId={null}
-        onSelect={vi.fn()}
-        periodFactor={7 / 181}
-      />,
-    )
-    // Full $12 premium should not appear
-    expect(screen.queryByText('$12')).not.toBeInTheDocument()
-    // Scaled basic (≈$0) and premium (≈$1) should appear instead
-    expect(screen.getByText('$0')).toBeInTheDocument()
+  it('shows the live price from priceByTier when provided', () => {
+    render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={() => {}} priceByTier={{ 'tier-basic': 3.45 }} />)
+    expect(screen.getByText('$3')).toBeInTheDocument()
   })
 })

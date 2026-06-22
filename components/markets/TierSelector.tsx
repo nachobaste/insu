@@ -8,7 +8,7 @@ interface Props {
   selectedTierId: string | null
   onSelect: (tierId: string) => void
   mode?: 'buy' | 'provide'
-  periodFactor?: number
+  priceByTier?: Record<string, number>
 }
 
 const TIER_LABELS: Record<CoverageLevel, string> = {
@@ -16,9 +16,8 @@ const TIER_LABELS: Record<CoverageLevel, string> = {
   premium: 'Pro',
 }
 
-export default function TierSelector({ tiers, selectedTierId, onSelect, mode = 'buy', periodFactor }: Props) {
+export default function TierSelector({ tiers, selectedTierId, onSelect, mode = 'buy', priceByTier }: Props) {
   const sorted = [...tiers].sort((a, b) => (a.name === 'basic' ? -1 : b.name === 'basic' ? 1 : 0))
-  const factor = periodFactor ?? 1.0
 
   return (
     <div className="space-y-2">
@@ -28,7 +27,7 @@ export default function TierSelector({ tiers, selectedTierId, onSelect, mode = '
         const isFull = mode === 'provide'
           ? remaining <= 0
           : tier.current_capacity_usd < tier.payout_usd
-        const displayPremium = Math.round(tier.premium_usd * factor * 100) / 100
+        const displayPremium = priceByTier?.[tier.id] ?? tier.premium_usd
 
         return (
           <button

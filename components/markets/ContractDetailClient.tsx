@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react'
 import { cn, categoryTextClass, countryFlag } from '@/lib/utils'
-import { computePeriodFactor } from '@/lib/pricing/engine'
+import { quoteTiers } from '@/lib/pricing/quote'
 import type { ContractDetailData, LatestOracleReading } from '@/lib/types'
 import type { TriggerCondition } from '@/lib/oracle/trigger'
 import ContractMeta from './ContractMeta'
@@ -30,13 +30,13 @@ interface Props {
 }
 
 export default function ContractDetailClient({ contract, userId, latestReading, periodToggle, evidence }: Props) {
-  const [panelOpen, setPanelOpen] = useState(false)
-  const [panelMode, setPanelMode] = useState<PanelMode>('buy')
-  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(null)
-  const [selectedTierId, setSelectedTierId] = useState<string | null>(null)
-
   const isRecurring =
     contract.trigger_type === 'weather' || contract.trigger_type === 'urban'
+
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [panelMode, setPanelMode] = useState<PanelMode>('buy')
+  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(isRecurring ? 1 : null)
+  const [selectedTierId, setSelectedTierId] = useState<string | null>(null)
 
   const slug = contract.category.slug
   const sortedTiers = [...contract.coverage_tiers].sort((a, b) =>
@@ -51,10 +51,9 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
     setPanelOpen(true)
   }
 
-  const periodFactor =
-    isRecurring && selectedPeriodDays
-      ? computePeriodFactor(selectedPeriodDays, contract)
-      : 1.0
+  const priceByTier = isRecurring && selectedPeriodDays
+    ? quoteTiers(contract.coverage_tiers, selectedPeriodDays, contract.trigger_condition, latestReading)
+    : undefined
 
   const hasPoolCoverage = sortedTiers.some(t => t.current_capacity_usd >= t.payout_usd)
 
@@ -134,7 +133,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
             selectedTierId={selectedTierId}
             onSelect={(id) => setSelectedTierId(prev => prev === id ? null : id)}
             mode="buy"
-            periodFactor={periodFactor}
+            priceByTier={priceByTier}
           />
 
           <div className="space-y-2 pt-1">
@@ -162,6 +161,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
         initialMode={panelMode}
         initialPeriodDays={selectedPeriodDays}
         initialTierId={selectedTierId}
+        latestReading={latestReading}
         onClose={() => setPanelOpen(false)}
       />
     </main>
