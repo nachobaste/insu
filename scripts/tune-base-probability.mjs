@@ -4,15 +4,21 @@
 import { readFileSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 
-// minimal .env.local loader (KEY=VALUE, ignores quotes)
-const env = {}
-for (const line of readFileSync(new URL('../.env.local', import.meta.url), 'utf8').split('\n')) {
-  const m = line.match(/^([A-Z_]+)=(.*)$/)
-  if (m) env[m[1]] = m[2].replace(/^["']|["']$/g, '')
-}
+// Credentials: prefer process.env (CI/cloud), fall back to .env.local (local dev).
+const env = { ...process.env }
+try {
+  for (const line of readFileSync(new URL('../.env.local', import.meta.url), 'utf8').split('\n')) {
+    const m = line.match(/^([A-Z_]+)=(.*)$/)
+    if (m && env[m[1]] === undefined) env[m[1]] = m[2].replace(/^["']|["']$/g, '')
+  }
+} catch { /* no .env.local (e.g. cloud) — rely on process.env */ }
 const url = env.NEXT_PUBLIC_SUPABASE_URL
 const key = env.SUPABASE_SERVICE_ROLE_KEY
-if (!url || !key) throw new Error('Missing SUPABASE url/service key in .env.local')
+if (!url || !key) {
+  console.error('Missing NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY.')
+  console.error('Set them as env vars (cloud/CI) or in .env.local (local dev). Cannot reach staging — aborting.')
+  process.exit(2)
+}
 
 const APPLY = process.argv.includes('--apply')
 const P_MIN = 0.0005
