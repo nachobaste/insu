@@ -47,15 +47,3 @@ export function priceTier(
     inputs: { utilization, daysRemaining, utilizationFactor, timeFactor, loadingFactor, oracleMultiplier: safeMultiplier },
   }
 }
-
-export function computePeriodFactor(
-  periodDays: number,
-  contract: Pick<Contract, 'created_at' | 'trigger_deadline'>,
-): number {
-  const contractDays = contract.trigger_deadline
-    ? (new Date(contract.trigger_deadline).getTime() - new Date(contract.created_at).getTime()) /
-      86_400_000
-    : 30  // recurring contracts: assume 30-day window
-  if (contractDays <= 0) return 1.0
-  return Math.min(1.0, periodDays / contractDays)
-}

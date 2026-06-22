@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn, formatCurrency } from '@/lib/utils'
-import type { ContractWithTiers } from '@/lib/types'
-import { computePeriodFactor } from '@/lib/pricing/engine'
+import type { ContractWithTiers, LatestOracleReading } from '@/lib/types'
+import { quoteTiers } from '@/lib/pricing/quote'
 import TierSelector from './TierSelector'
 import AuthGate from './AuthGate'
 import StripePaymentForm from './StripePaymentForm'
@@ -26,15 +26,18 @@ interface Props {
   initialMode: PanelMode
   initialPeriodDays?: number | null
   initialTierId?: string | null
+  latestReading: LatestOracleReading | null
   onClose: () => void
 }
 
-export default function PurchasePanel({ contract, userId, open, initialMode, initialPeriodDays, initialTierId, onClose }: Props) {
+export default function PurchasePanel({ contract, userId, open, initialMode, initialPeriodDays, initialTierId, latestReading, onClose }: Props) {
   const router = useRouter()
+  const isRecurring = contract.is_recurring
+
   const [mode, setMode] = useState<PanelMode>(initialMode)
   const [step, setStep] = useState<Step>('select')
   const [selectedTierId, setSelectedTierId] = useState<string | null>(initialTierId ?? null)
-  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(initialPeriodDays ?? null)
+  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(initialPeriodDays ?? (isRecurring ? 1 : null))
   const [depositAmount, setDepositAmount] = useState('')
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -51,24 +54,45 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
     setSelectedTierId(initialTierId ?? null)
   }, [initialTierId])
 
-  const isRecurring =
-    contract.trigger_type === 'weather' || contract.trigger_type === 'urban'
-
-  const periodFactor =
-    isRecurring && selectedPeriodDays
-      ? computePeriodFactor(selectedPeriodDays, contract)
-      : 1.0
-
   const basicTier = [...contract.coverage_tiers].sort((a, b) =>
     a.name === 'basic' ? -1 : b.name === 'basic' ? 1 : 0,
   )[0]
 
   const selectedTier = contract.coverage_tiers.find((t) => t.id === selectedTierId)
 
+  const quoteForDays = (days: number) =>
+    quoteTiers(contract.coverage_tiers, days, contract.trigger_condition, latestReading)
+
+  const priceByTier = quoteTiers(
+    contract.coverage_tiers,
+    selectedPeriodDays ?? 1,
+    contract.trigger_condition,
+    latestReading,
+  )
+
+  // Pro (multi-payout) can't be bought for a 1-day window — only one event can land in a day.
+  const lockedReasonByTier = isRecurring && mode === 'buy' && selectedPeriodDays != null && selectedPeriodDays <= 1
+    ? Object.fromEntries(
+        contract.coverage_tiers
+          .filter((t) => t.max_payouts > 1)
+          .map((t) => [t.id, 'Needs 7+ days']),
+      )
+    : undefined
+
+  const selectedTierLocked = selectedTierId != null && Boolean(lockedReasonByTier?.[selectedTierId])
+
+  function selectPeriod(days: number) {
+    setSelectedPeriodDays(days)
+    if (days <= 1) {
+      const current = contract.coverage_tiers.find((t) => t.id === selectedTierId)
+      if (current && current.max_payouts > 1) setSelectedTierId(null)
+    }
+  }
+
   function switchMode(next: PanelMode) {
     setMode(next)
     setSelectedTierId(next === 'buy' ? (initialTierId ?? null) : null)
-    setSelectedPeriodDays(initialPeriodDays ?? null)
+    setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? 1 : null))
     setStep('select')
     setClientSecret(null)
     setError(null)
@@ -77,7 +101,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   function handleClose() {
     setStep('select')
     setSelectedTierId(initialTierId ?? null)
-    setSelectedPeriodDays(initialPeriodDays ?? null)
+    setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? 1 : null))
     setClientSecret(null)
     setError(null)
     onClose()
@@ -196,15 +220,14 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                       </p>
                       <div className="flex gap-2">
                         {PERIOD_OPTIONS.map(({ days, label }) => {
-                          const pf = computePeriodFactor(days, contract)
                           const fromPrice = formatCurrency(
-                            Math.round(basicTier.premium_usd * pf * 100) / 100,
+                            quoteForDays(days)[basicTier.id],
                             'USD',
                           )
                           return (
                             <button
                               key={days}
-                              onClick={() => setSelectedPeriodDays(days)}
+                              onClick={() => selectPeriod(days)}
                               className={cn(
                                 'flex flex-1 flex-col items-center rounded-lg border py-2.5 text-[11px] font-semibold transition-all',
                                 selectedPeriodDays === days
@@ -231,7 +254,8 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                     selectedTierId={selectedTierId}
                     onSelect={setSelectedTierId}
                     mode={mode}
-                    periodFactor={mode === 'buy' ? periodFactor : undefined}
+                    priceByTier={mode === 'buy' ? priceByTier : undefined}
+                    lockedReasonByTier={lockedReasonByTier}
                   />
 
                   {mode === 'provide' && selectedTierId && (
@@ -265,6 +289,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                     disabled={
                       !selectedTierId ||
                       loading ||
+                      selectedTierLocked ||
                       (isRecurring && mode === 'buy' && selectedPeriodDays === null) ||
                       (mode === 'provide' && (!depositAmount || parseFloat(depositAmount) < 10))
                     }
@@ -277,7 +302,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                 <StripePaymentForm
                   clientSecret={clientSecret}
                   amountUsd={mode === 'buy'
-                    ? Math.round(selectedTier.premium_usd * periodFactor * 100) / 100
+                    ? priceByTier[selectedTier.id]
                     : parseFloat(depositAmount)}
                   onSuccess={async () => {
                     try {

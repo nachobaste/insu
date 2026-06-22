@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react'
 import { cn, categoryTextClass, countryFlag } from '@/lib/utils'
-import { computePeriodFactor } from '@/lib/pricing/engine'
+import { quoteTiers } from '@/lib/pricing/quote'
 import type { ContractDetailData, LatestOracleReading } from '@/lib/types'
 import type { TriggerCondition } from '@/lib/oracle/trigger'
 import ContractMeta from './ContractMeta'
@@ -30,13 +30,12 @@ interface Props {
 }
 
 export default function ContractDetailClient({ contract, userId, latestReading, periodToggle, evidence }: Props) {
+  const isRecurring = contract.is_recurring
+
   const [panelOpen, setPanelOpen] = useState(false)
   const [panelMode, setPanelMode] = useState<PanelMode>('buy')
-  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(null)
+  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(isRecurring ? 1 : null)
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null)
-
-  const isRecurring =
-    contract.trigger_type === 'weather' || contract.trigger_type === 'urban'
 
   const slug = contract.category.slug
   const sortedTiers = [...contract.coverage_tiers].sort((a, b) =>
@@ -51,10 +50,28 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
     setPanelOpen(true)
   }
 
-  const periodFactor =
-    isRecurring && selectedPeriodDays
-      ? computePeriodFactor(selectedPeriodDays, contract)
-      : 1.0
+  const priceByTier = isRecurring && selectedPeriodDays
+    ? quoteTiers(contract.coverage_tiers, selectedPeriodDays, contract.trigger_condition, latestReading)
+    : undefined
+
+  // A multi-payout tier (Pro) is meaningless on a 1-day window — only one event can land.
+  const lockedReasonByTier = isRecurring && selectedPeriodDays != null && selectedPeriodDays <= 1
+    ? Object.fromEntries(
+        contract.coverage_tiers
+          .filter((t) => t.max_payouts > 1)
+          .map((t) => [t.id, 'Needs 7+ days']),
+      )
+    : undefined
+
+  function selectPeriod(days: number) {
+    const next = selectedPeriodDays === days ? null : days
+    setSelectedPeriodDays(next)
+    // Drop a Pro selection that just became invalid for a 1-day window.
+    if (next != null && next <= 1) {
+      const current = contract.coverage_tiers.find((t) => t.id === selectedTierId)
+      if (current && current.max_payouts > 1) setSelectedTierId(null)
+    }
+  }
 
   const hasPoolCoverage = sortedTiers.some(t => t.current_capacity_usd >= t.payout_usd)
 
@@ -110,7 +127,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
                 {PERIOD_OPTIONS.map(({ days, label }) => (
                   <button
                     key={days}
-                    onClick={() => setSelectedPeriodDays(d => d === days ? null : days)}
+                    onClick={() => selectPeriod(days)}
                     className={cn(
                       'flex flex-1 flex-col items-center rounded-lg border py-2.5 text-[11px] font-semibold transition-all',
                       selectedPeriodDays === days
@@ -134,7 +151,8 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
             selectedTierId={selectedTierId}
             onSelect={(id) => setSelectedTierId(prev => prev === id ? null : id)}
             mode="buy"
-            periodFactor={periodFactor}
+            priceByTier={priceByTier}
+            lockedReasonByTier={lockedReasonByTier}
           />
 
           <div className="space-y-2 pt-1">
@@ -162,6 +180,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
         initialMode={panelMode}
         initialPeriodDays={selectedPeriodDays}
         initialTierId={selectedTierId}
+        latestReading={latestReading}
         onClose={() => setPanelOpen(false)}
       />
     </main>

@@ -34,13 +34,19 @@ export async function processPayouts(
 
   if (!triggeredReadings || triggeredReadings.length === 0) return 0
 
-  // Build map of contractId → earliest trigger timestamp
+  // Build map of contractId → earliest trigger timestamp (for one-time contracts)
   const triggerMap = new Map<string, string>()
+  // Build map of contractId → Set of YYYY-MM-DD trigger-day strings (for recurring contracts)
+  const triggerDaysByContract = new Map<string, Set<string>>()
   for (const r of triggeredReadings as Array<{ contract_id: string; read_at: string }>) {
     const existing = triggerMap.get(r.contract_id)
     if (!existing || r.read_at < existing) {
       triggerMap.set(r.contract_id, r.read_at)
     }
+    const day = new Date(r.read_at).toISOString().slice(0, 10)
+    const set = triggerDaysByContract.get(r.contract_id) ?? new Set<string>()
+    set.add(day)
+    triggerDaysByContract.set(r.contract_id, set)
   }
 
   const contractIds = Array.from(triggerMap.keys())
@@ -56,8 +62,12 @@ export async function processPayouts(
 
   let total = 0
   for (const contract of contracts as Contract[]) {
-    const triggerReadAt = triggerMap.get(contract.id) ?? new Date().toISOString()
-    total += await settleContract(db, stripe, contract, triggerReadAt)
+    if (contract.is_recurring) {
+      total += await settleRecurring(db, stripe, contract, triggerDaysByContract.get(contract.id) ?? new Set())
+    } else {
+      const triggerReadAt = triggerMap.get(contract.id) ?? new Date().toISOString()
+      total += await settleContract(db, stripe, contract, triggerReadAt)
+    }
   }
   return total
 }
@@ -183,6 +193,133 @@ async function payoutPosition(
     .eq('id', (payout as { id: string }).id)
 
   await db.from('hedger_positions').update({ status: 'paid_out' }).eq('id', position.id)
+  return payoutAmountUsd
+}
+
+async function settleRecurring(
+  db: DbClient,
+  stripe: StripeClient,
+  contract: Contract,
+  triggerDays: Set<string>,
+): Promise<number> {
+  const { data: positions } = await db
+    .from('hedger_positions')
+    .select('*')
+    .eq('contract_id', contract.id)
+    .eq('status', 'active')
+  if (!positions || positions.length === 0) return 0
+
+  const days = [...triggerDays].sort()
+  let paid = 0
+  for (const pos of positions as HedgerPosition[]) {
+    const windowStart = new Date(pos.purchased_at).toISOString().slice(0, 10)
+    const windowEnd = new Date(pos.expires_at).toISOString().slice(0, 10)
+    let remaining = pos.payouts_remaining ?? 1
+    let lastDay = pos.last_payout_date ?? null
+    const startRemaining = remaining
+    for (const day of days) {
+      if (remaining <= 0) break
+      if (day < windowStart || day > windowEnd) continue
+      if (lastDay && day <= lastDay) continue
+      const amount = await payoutOnce(db, stripe, contract.id, pos, day)
+      if (amount > 0) {
+        paid++
+        remaining--
+        lastDay = day
+      }
+    }
+    if (startRemaining !== remaining || pos.status === 'active') {
+      const knockedOut = remaining <= 0
+      await db.from('hedger_positions').update({
+        payouts_remaining: remaining,
+        payouts_made: (pos.payouts_made ?? 0) + (startRemaining - remaining),
+        last_payout_date: lastDay,
+        status: knockedOut ? 'knocked_out' : 'active',
+      }).eq('id', pos.id)
+    }
+  }
+  // Recurring contracts are NEVER settled — the market stays live.
+  return paid
+}
+
+async function payoutOnce(
+  db: DbClient,
+  stripe: StripeClient,
+  contractId: string,
+  position: HedgerPosition,
+  day: string,
+): Promise<number> {
+  // Fetch authoritative payout amount from the tier
+  const { data: tier } = await db
+    .from('coverage_tiers')
+    .select('payout_usd, payout_mxn')
+    .eq('id', position.tier_id)
+    .single()
+  const payoutAmountUsd = tier ? Number((tier as { payout_usd: number }).payout_usd) : position.payout_amount_usd
+  const payoutAmountMxn = tier ? Number((tier as { payout_mxn: number }).payout_mxn) : position.payout_amount_mxn
+
+  // Idempotency: skip if a non-failed payout already exists for this position+day
+  const { data: existing } = await db
+    .from('payouts')
+    .select('id')
+    .eq('hedger_position_id', position.id)
+    .eq('trigger_day', day)
+    .neq('status', 'failed')
+    .maybeSingle()
+  if (existing) return 0
+
+  const { data: profile } = await db
+    .from('profiles')
+    .select('stripe_customer_id')
+    .eq('id', position.user_id)
+    .single()
+
+  let customerId = (profile as { stripe_customer_id: string | null } | null)?.stripe_customer_id
+  if (!customerId) {
+    const customer = await stripe.customers.create({ metadata: { user_id: position.user_id } })
+    customerId = customer.id
+    await db.from('profiles').update({ stripe_customer_id: customerId }).eq('id', position.user_id)
+  }
+
+  const { data: payout } = await db.from('payouts')
+    .insert({
+      contract_id: contractId,
+      hedger_position_id: position.id,
+      trigger_day: day,
+      amount_usd: payoutAmountUsd,
+      amount_mxn: payoutAmountMxn,
+      currency: position.currency,
+      payment_provider: 'stripe',
+      status: 'processing',
+    })
+    .select('id')
+    .single()
+
+  if (!payout) {
+    console.error(`Failed to create payout record for position ${position.id} day ${day}`)
+    return 0
+  }
+
+  let txnId: string
+  try {
+    const txn = await stripe.customers.createBalanceTransaction(customerId, {
+      amount: -Math.round(payoutAmountUsd * 100),
+      currency: 'usd',
+    })
+    txnId = txn.id
+  } catch (err) {
+    console.error(`Stripe balance transaction failed for position ${position.id} day ${day}:`, err)
+    await db.from('payouts')
+      .update({ status: 'failed' })
+      .eq('id', (payout as { id: string }).id)
+    return 0
+  }
+
+  await db.from('payouts')
+    .update({ status: 'completed', transfer_id: txnId, completed_at: new Date().toISOString() })
+    .eq('id', (payout as { id: string }).id)
+
+  // NOTE: position status/remaining is managed by settleRecurring, not here.
   return payoutAmountUsd
 }
 

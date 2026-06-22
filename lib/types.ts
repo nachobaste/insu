@@ -27,6 +27,7 @@ export interface CoverageTier {
   max_capacity_usd: number
   current_capacity_usd: number
   base_probability: number
+  max_payouts: number
   last_priced_at: string | null
   pricing_inputs: Record<string, unknown> | null
 }
@@ -109,6 +110,10 @@ export interface HedgerPosition {
   purchased_at: string
   expires_at: string
   coverage_period_days?: number | null
+  payouts_remaining?: number | null
+  payouts_made?: number
+  last_payout_date?: string | null
+  reserved_usd?: number | null
 }
 
 export interface ProviderPosition {
@@ -162,8 +167,9 @@ export interface Payout {
 }
 
 export interface HedgerPositionWithContract extends HedgerPosition {
-  contract: Pick<Contract, 'id' | 'slug' | 'title' | 'trigger_type' | 'status'>
-  tier: Pick<CoverageTier, 'name'>
+  contract: Pick<Contract, 'id' | 'slug' | 'title' | 'trigger_type' | 'status' | 'is_recurring' | 'trigger_condition'>
+  tier: Pick<CoverageTier, 'name' | 'base_probability' | 'max_payouts'>
+  current_value_usd?: number | null
 }
 
 export interface ProviderPositionWithContract extends ProviderPosition {

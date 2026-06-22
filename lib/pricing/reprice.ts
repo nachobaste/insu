@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { priceTier } from './engine'
+import { dailyHazard, priceTenor, capacityFactor } from '@/lib/pricing/derivative'
 import { computeOracleMultiplier } from '@/lib/oracle/multiplier'
 import type { TriggerCondition } from '@/lib/oracle/trigger'
 import type { CoverageTier, Contract } from '@/lib/types'
@@ -29,13 +30,14 @@ async function fetchLatestReading(
   return data?.[0] ?? null
 }
 
-async function resolveOracleMultiplier(
+async function resolveReadingAndMultiplier(
   db: DbClient,
   contract: { id: string; trigger_condition: unknown },
-): Promise<number> {
+): Promise<{ reading: { value: Record<string, unknown> } | null; multiplier: number }> {
   const reading = await fetchLatestReading(db, contract.id)
   const condition = contract.trigger_condition as unknown as TriggerCondition
-  return reading ? computeOracleMultiplier(reading, condition) : 1.0
+  const multiplier = reading ? computeOracleMultiplier(reading, condition) : 1.0
+  return { reading, multiplier }
 }
 
 async function applyReprice(
@@ -43,9 +45,23 @@ async function applyReprice(
   tier: CoverageTier,
   contract: Contract,
   oracleMultiplier: number,
+  reading: { value: Record<string, unknown> } | null,
 ): Promise<void> {
   const oldPremium = tier.premium_usd
-  const { premiumUsd, inputs } = priceTier(tier, contract, oracleMultiplier)
+  let premiumUsd: number
+  let inputs: Record<string, unknown>
+
+  if (contract.is_recurring) {
+    const p = dailyHazard(tier.base_probability, reading, contract.trigger_condition as never)
+    const cap = capacityFactor(tier.current_capacity_usd, tier.max_capacity_usd)
+    const r = priceTenor(tier.payout_usd, 1, p, tier.max_payouts, { capacityFactor: cap })
+    premiumUsd = r.premiumUsd
+    inputs = { ...r.inputs, oracleMultiplier }
+  } else {
+    const res = priceTier(tier, contract, oracleMultiplier)
+    premiumUsd = res.premiumUsd
+    inputs = res.inputs as unknown as Record<string, unknown>
+  }
 
   await db.from('coverage_tiers')
     .update({
@@ -76,10 +92,10 @@ export async function repriceAll(db: DbClient = getClient()): Promise<number> {
 
   let count = 0
   for (const contract of contracts) {
-    const oracleMultiplier = await resolveOracleMultiplier(db, contract)
+    const { reading, multiplier } = await resolveReadingAndMultiplier(db, contract)
 
     for (const tier of (contract.coverage_tiers ?? []) as CoverageTier[]) {
-      await applyReprice(db, tier, contract as unknown as Contract, oracleMultiplier)
+      await applyReprice(db, tier, contract as unknown as Contract, multiplier, reading)
       count++
     }
   }
@@ -103,7 +119,7 @@ export async function repriceTier(tierId: string, db: DbClient = getClient()): P
 
   if (!contract || contract.status !== 'active') return
 
-  const oracleMultiplier = await resolveOracleMultiplier(db, contract)
+  const { reading, multiplier } = await resolveReadingAndMultiplier(db, contract)
 
-  await applyReprice(db, tier as unknown as CoverageTier, contract as unknown as Contract, oracleMultiplier)
+  await applyReprice(db, tier as unknown as CoverageTier, contract as unknown as Contract, multiplier, reading)
 }

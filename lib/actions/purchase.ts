@@ -4,7 +4,7 @@ import Stripe from 'stripe'
 import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { validateProviderCapacity, validateBuyerCapacity } from '@/lib/utils/capacity'
-import { computePeriodFactor } from '@/lib/pricing/engine'
+import { dailyHazard, priceTenor, capacityFactor } from '@/lib/pricing/derivative'
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY
@@ -40,27 +40,53 @@ export async function createHedgerPaymentIntent(
 
   if (tierError || !tier) return { error: 'Coverage tier not found' }
 
-  const capacityError = validateBuyerCapacity(tier.current_capacity_usd, tier.payout_usd)
+  const capacityError = validateBuyerCapacity(tier.current_capacity_usd, tier.max_payouts * tier.payout_usd)
   if (capacityError) return { error: capacityError }
 
   const { data: contract, error: contractError } = await supabase
     .from('contracts')
-    .select('id, trigger_deadline, created_at')
+    .select('id, is_recurring, trigger_condition, trigger_deadline, created_at')
     .eq('id', tier.contract_id)
     .single()
 
   if (contractError || !contract) return { error: 'Contract not found' }
 
-  const periodFactor = periodDays ? computePeriodFactor(periodDays, contract) : 1.0
-  const periodPremium = Math.round(Number(tier.premium_usd) * periodFactor * 100) / 100
+  const isRecurring = contract.is_recurring
 
-  const coverageEndMs = periodDays
-    ? Math.min(
-        Date.now() + periodDays * 86_400_000,
-        new Date(contract.trigger_deadline!).getTime(),
-      )
-    : new Date(contract.trigger_deadline!).getTime()
-  const expiresAt = new Date(coverageEndMs).toISOString()
+  let periodPremium: number
+  let expiresAt: string
+  let reservedUsd: number
+  let payoutsRemaining: number
+
+  if (isRecurring) {
+    if (!periodDays) return { error: 'Choose a coverage period' }
+    const { data: latest } = await supabase
+      .from('oracle_readings')
+      .select('value')
+      .eq('contract_id', contract.id)
+      .order('read_at', { ascending: false })
+      .limit(1)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const reading = (latest?.[0] ?? null) as any
+    const p = dailyHazard(
+      Number(tier.base_probability),
+      reading,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      contract.trigger_condition as any,
+    )
+    const cap = capacityFactor(tier.current_capacity_usd, tier.max_capacity_usd)
+    periodPremium = priceTenor(tier.payout_usd, periodDays, p, tier.max_payouts, { capacityFactor: cap }).premiumUsd
+    expiresAt = new Date(Date.now() + periodDays * 86_400_000).toISOString()
+    reservedUsd = tier.max_payouts * tier.payout_usd
+    payoutsRemaining = tier.max_payouts
+  } else {
+    periodPremium = Math.round(Number(tier.premium_usd) * 100) / 100
+    expiresAt = new Date(contract.trigger_deadline!).getTime() > Date.now()
+      ? new Date(contract.trigger_deadline!).toISOString()
+      : new Date().toISOString()
+    reservedUsd = tier.payout_usd
+    payoutsRemaining = 1
+  }
 
   const amountCents = Math.max(50, Math.round(periodPremium * 100))
 
@@ -95,7 +121,9 @@ export async function createHedgerPaymentIntent(
       payment_intent_id: paymentIntent.id,
       status: 'pending_payment',
       expires_at: expiresAt,
-      coverage_period_days: periodDays ?? null,
+      coverage_period_days: isRecurring ? periodDays : null,
+      reserved_usd: reservedUsd,
+      payouts_remaining: payoutsRemaining,
     })
     .select('id')
     .single()

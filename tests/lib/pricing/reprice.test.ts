@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, type Mock } from 'vitest'
 import { repriceAll, repriceTier } from '@/lib/pricing/reprice'
+import { dailyHazard, priceTenor, capacityFactor } from '@/lib/pricing/derivative'
 
 interface MockDb {
   from: Mock
@@ -213,5 +214,209 @@ describe('repriceTier', () => {
     await repriceTier('tier-1', db)
     const pricingInputs = db._update.mock.calls[0][0].pricing_inputs
     expect(pricingInputs.oracleMultiplier).toBe(1)
+  })
+})
+
+// ─── Recurring vs one-time routing ───────────────────────────────────────────
+
+const recurringTier = {
+  ...mockTier,
+  id: 'tier-r',
+  base_probability: 0.05,
+  payout_usd: 500,
+  max_payouts: 1,
+  current_capacity_usd: 0,
+  max_capacity_usd: 100000,
+}
+
+const recurringContract = {
+  ...mockContract,
+  id: 'c-r',
+  is_recurring: true,
+  coverage_tiers: [recurringTier],
+  trigger_condition: { metric: 'temp_c', threshold: 25, operator: 'gte' },
+}
+
+const oneTimeContract = {
+  ...mockContract,
+  id: 'c-ot',
+  is_recurring: false,
+  coverage_tiers: [mockTier],
+}
+
+function makeRecurringDb(opts: {
+  reading?: { value: Record<string, unknown> } | null
+} = {}) {
+  const reading = opts.reading !== undefined ? opts.reading : null
+  const updateEq = vi.fn().mockResolvedValue({ error: null })
+  const update = vi.fn().mockReturnValue({ eq: updateEq })
+  const insert = vi.fn().mockResolvedValue({ error: null })
+
+  const db = {
+    from: vi.fn((table: string) => {
+      if (table === 'contracts') {
+        const single = vi.fn().mockResolvedValue({ data: recurringContract, error: null })
+        const eq = vi.fn().mockReturnValue(
+          Object.assign(Promise.resolve({ data: [recurringContract], error: null }), { single }),
+        )
+        return { select: vi.fn().mockReturnValue({ eq }) }
+      }
+      if (table === 'coverage_tiers') {
+        const single = vi.fn().mockResolvedValue({ data: recurringTier, error: null })
+        const eq = vi.fn().mockReturnValue({ single })
+        return { select: vi.fn().mockReturnValue({ eq }), update }
+      }
+      if (table === 'pricing_history') {
+        return { insert }
+      }
+      if (table === 'oracle_readings') {
+        const limit = vi.fn().mockResolvedValue({
+          data: reading ? [{ value: reading.value }] : [],
+          error: null,
+        })
+        const order = vi.fn().mockReturnValue({ limit })
+        const eq = vi.fn().mockReturnValue({ order })
+        return { select: vi.fn().mockReturnValue({ eq }) }
+      }
+      return {}
+    }),
+    _update: update,
+    _updateEq: updateEq,
+    _insert: insert,
+  }
+  return db as MockDb
+}
+
+function makeOneTimeDb() {
+  const updateEq = vi.fn().mockResolvedValue({ error: null })
+  const update = vi.fn().mockReturnValue({ eq: updateEq })
+  const insert = vi.fn().mockResolvedValue({ error: null })
+
+  const db = {
+    from: vi.fn((table: string) => {
+      if (table === 'contracts') {
+        const single = vi.fn().mockResolvedValue({ data: oneTimeContract, error: null })
+        const eq = vi.fn().mockReturnValue(
+          Object.assign(Promise.resolve({ data: [oneTimeContract], error: null }), { single }),
+        )
+        return { select: vi.fn().mockReturnValue({ eq }) }
+      }
+      if (table === 'coverage_tiers') {
+        const single = vi.fn().mockResolvedValue({ data: mockTier, error: null })
+        const eq = vi.fn().mockReturnValue({ single })
+        return { select: vi.fn().mockReturnValue({ eq }), update }
+      }
+      if (table === 'pricing_history') {
+        return { insert }
+      }
+      if (table === 'oracle_readings') {
+        const limit = vi.fn().mockResolvedValue({ data: [], error: null })
+        const order = vi.fn().mockReturnValue({ limit })
+        const eq = vi.fn().mockReturnValue({ order })
+        return { select: vi.fn().mockReturnValue({ eq }) }
+      }
+      return {}
+    }),
+    _update: update,
+    _updateEq: updateEq,
+    _insert: insert,
+  }
+  return db as MockDb
+}
+
+describe('recurring sticker = 1-day engine quote', () => {
+  it('recurring contract: sticker equals priceTenor(1-day) with no oracle reading', async () => {
+    const db = makeRecurringDb()  // no reading → multiplier 1.0
+    await repriceTier('tier-r', db)
+
+    const condition = recurringContract.trigger_condition as never
+    const p = dailyHazard(recurringTier.base_probability, null, condition)
+    const cap = capacityFactor(recurringTier.current_capacity_usd, recurringTier.max_capacity_usd)
+    const expected = priceTenor(recurringTier.payout_usd, 1, p, recurringTier.max_payouts, { capacityFactor: cap }).premiumUsd
+
+    const actualPremium = db._update.mock.calls[0][0].premium_usd
+    expect(actualPremium).toBeCloseTo(expected, 5)
+    expect(actualPremium).toBeGreaterThan(0)
+  })
+
+  it('recurring contract: sticker uses the derivative engine, not legacy priceTier formula', async () => {
+    const db = makeRecurringDb()
+    await repriceTier('tier-r', db)
+
+    // The derivative 1-day engine formula for maxPayouts=1, tenorDays=1:
+    // P(N>=1 | T=1, p) = p, so premium = payout * p * loading * cap
+    // With p=dailyHazard(0.05, null, cond) = clamp(0.05,0.0005,0.95) = 0.05
+    // cap = capacityFactor(0, 100000) = 1.0 (empty pool)
+    // premium = 500 * 0.05 * 1.15 * 1.0 = 28.75
+    const expected = Math.round(500 * 0.05 * 1.15 * 1.0 * 100) / 100  // 28.75
+    const actualPremium = db._update.mock.calls[0][0].premium_usd
+    expect(actualPremium).toBeCloseTo(expected, 2)
+  })
+
+  it('recurring contract: pricing_inputs has derivative engine keys (tenorDays, p, expectedPayouts)', async () => {
+    // This distinguishes the derivative engine from the legacy priceTier engine.
+    // Legacy stores: { utilization, daysRemaining, utilizationFactor, timeFactor, loadingFactor, oracleMultiplier }
+    // Derivative stores: { p, tenorDays, maxPayouts, loading, capacityFactor, expectedPayouts, oracleMultiplier }
+    const db = makeRecurringDb()
+    await repriceTier('tier-r', db)
+    const pricingInputs = db._update.mock.calls[0][0].pricing_inputs
+    expect(pricingInputs).toHaveProperty('tenorDays', 1)
+    expect(pricingInputs).toHaveProperty('maxPayouts', 1)
+    expect(pricingInputs).toHaveProperty('expectedPayouts')
+    expect(pricingInputs).not.toHaveProperty('daysRemaining')
+    expect(pricingInputs).not.toHaveProperty('timeFactor')
+  })
+
+  it('recurring contract: oracleMultiplier is stored in pricing_inputs', async () => {
+    const db = makeRecurringDb()
+    await repriceTier('tier-r', db)
+    const pricingInputs = db._update.mock.calls[0][0].pricing_inputs
+    expect(pricingInputs).toHaveProperty('oracleMultiplier')
+    expect(pricingInputs.oracleMultiplier).toBe(1)
+  })
+
+  it('recurring contract: repriceAll also uses derivative engine (pricing_inputs has tenorDays)', async () => {
+    const db = makeRecurringDb()
+    const count = await repriceAll(db)
+    expect(count).toBe(1)
+
+    const condition = recurringContract.trigger_condition as never
+    const p = dailyHazard(recurringTier.base_probability, null, condition)
+    const cap = capacityFactor(recurringTier.current_capacity_usd, recurringTier.max_capacity_usd)
+    const expected = priceTenor(recurringTier.payout_usd, 1, p, recurringTier.max_payouts, { capacityFactor: cap }).premiumUsd
+
+    const actualPremium = db._update.mock.calls[0][0].premium_usd
+    expect(actualPremium).toBeCloseTo(expected, 5)
+
+    const pricingInputs = db._update.mock.calls[0][0].pricing_inputs
+    expect(pricingInputs).toHaveProperty('tenorDays', 1)
+  })
+})
+
+describe('one-time contract: legacy priceTier path unchanged', () => {
+  it('one-time contract: update is called with a positive premium', async () => {
+    const db = makeOneTimeDb()
+    await repriceTier('tier-1', db)
+    expect(db._update).toHaveBeenCalledTimes(1)
+    const actualPremium = db._update.mock.calls[0][0].premium_usd
+    expect(actualPremium).toBeGreaterThan(0)
+  })
+
+  it('one-time contract: pricing_inputs has legacy engine keys (daysRemaining, timeFactor)', async () => {
+    // Legacy priceTier stores different fields than the derivative engine.
+    const db = makeOneTimeDb()
+    await repriceTier('tier-1', db)
+    const pricingInputs = db._update.mock.calls[0][0].pricing_inputs
+    expect(pricingInputs).toHaveProperty('daysRemaining')
+    expect(pricingInputs).toHaveProperty('timeFactor')
+    expect(pricingInputs).not.toHaveProperty('tenorDays')
+  })
+
+  it('one-time contract: pricing_history insert is called once', async () => {
+    const db = makeOneTimeDb()
+    await repriceTier('tier-1', db)
+    expect(db._insert).toHaveBeenCalledTimes(1)
+    const insertArg = db._insert.mock.calls[0][0]
+    expect(insertArg.premium_usd_after).toBeGreaterThan(0)
   })
 })

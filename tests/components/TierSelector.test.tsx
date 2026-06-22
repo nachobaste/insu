@@ -10,6 +10,7 @@ const tiers: CoverageTier[] = [
     contract_id: 'c1',
     name: 'basic',
     premium_usd: 12,
+    max_payouts: 1,
     payout_usd: 500,
     premium_mxn: 204,
     payout_mxn: 8500,
@@ -24,6 +25,7 @@ const tiers: CoverageTier[] = [
     contract_id: 'c1',
     name: 'premium',
     premium_usd: 38,
+    max_payouts: 3,
     payout_usd: 2000,
     premium_mxn: 646,
     payout_mxn: 34000,
@@ -65,25 +67,49 @@ describe('TierSelector', () => {
     expect(screen.getByRole('button')).toBeDisabled()
   })
 
-  it('shows raw premium_usd when no periodFactor provided', () => {
-    // formatCurrency rounds to whole dollars: $12 not $12.00
-    render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={vi.fn()} />)
+  it('shows premium_usd sticker when no price map provided', () => {
+    render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={() => {}} />)
     expect(screen.getByText('$12')).toBeInTheDocument()
   })
+  it('shows the live price from priceByTier when provided', () => {
+    render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={() => {}} priceByTier={{ 'tier-basic': 3.45 }} />)
+    expect(screen.getByText('$3')).toBeInTheDocument()
+  })
 
-  it('shows period-scaled premium when periodFactor is provided', () => {
-    // periodFactor = 7/181 ≈ 0.03867 → 12 * 0.03867 ≈ 0.46 → rounds to $0
+  it('describes the payout count per tier (Basic one-time, Pro up to 3)', () => {
+    render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={vi.fn()} />)
+    expect(screen.getByText('Pays out once')).toBeInTheDocument()
+    expect(screen.getByText('Pays out up to 3 times')).toBeInTheDocument()
+  })
+
+  // Funded tiers so isFull (no-capital) doesn't mask the lock behavior under test.
+  const fundedTiers = tiers.map((t) => ({ ...t, current_capacity_usd: t.payout_usd }))
+
+  it('locks a tier and shows the reason when lockedReasonByTier is provided', () => {
     render(
       <TierSelector
-        tiers={tiers}
+        tiers={fundedTiers}
         selectedTierId={null}
         onSelect={vi.fn()}
-        periodFactor={7 / 181}
+        lockedReasonByTier={{ 'tier-premium': 'Needs 7+ days' }}
       />,
     )
-    // Full $12 premium should not appear
-    expect(screen.queryByText('$12')).not.toBeInTheDocument()
-    // Scaled basic (≈$0) and premium (≈$1) should appear instead
-    expect(screen.getByText('$0')).toBeInTheDocument()
+    expect(screen.getByText('Needs 7+ days')).toBeInTheDocument()
+    expect(screen.getByText('Pro').closest('button')).toBeDisabled()
+    expect(screen.getByText('Basic').closest('button')).not.toBeDisabled()
+  })
+
+  it('does not select a locked tier when clicked', async () => {
+    const onSelect = vi.fn()
+    render(
+      <TierSelector
+        tiers={fundedTiers}
+        selectedTierId={null}
+        onSelect={onSelect}
+        lockedReasonByTier={{ 'tier-premium': 'Needs 7+ days' }}
+      />,
+    )
+    await userEvent.click(screen.getByText('Pro'))
+    expect(onSelect).not.toHaveBeenCalled()
   })
 })

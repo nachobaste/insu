@@ -86,6 +86,11 @@ export function ProtectionCard({ position }: { position: HedgerPositionWithContr
             <p className="mt-1 font-body text-[10px] text-insu-muted">
               {daysLeft} days of coverage left ({totalDays}-day window)
             </p>
+            {position.current_value_usd != null && (
+              <p className="mt-1 font-body text-[10px] text-insu-muted">
+                Current value: <span className="font-mono text-insu-text">{formatCurrency(position.current_value_usd)}</span>
+              </p>
+            )}
           </div>
         )}
       </div>
