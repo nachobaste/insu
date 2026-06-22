@@ -39,8 +39,9 @@ WHERE ct.contract_id = c.id
 
 -- 5. payouts: one payout per (position, day) for multi-payout Pro positions.
 ALTER TABLE payouts ADD COLUMN IF NOT EXISTS trigger_day date;
--- Drop the old position-level unique constraint (added by 20260525000001_payout_unique_constraint.sql):
-DROP INDEX IF EXISTS payouts_hedger_position_id_unique;
+-- Drop the old position-level unique constraint (added by 20260525000001_payout_unique_constraint.sql).
+-- It's a UNIQUE *constraint*, so it must be dropped as a constraint (DROP INDEX errors with 2BP01);
+-- dropping the constraint also drops its backing index.
 ALTER TABLE payouts DROP CONSTRAINT IF EXISTS payouts_hedger_position_id_unique;
 CREATE UNIQUE INDEX IF NOT EXISTS payouts_position_day_uniq
   ON payouts (hedger_position_id, trigger_day) WHERE status <> 'failed';
