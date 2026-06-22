@@ -233,6 +233,7 @@ export type Database = {
           id: string
           last_priced_at: string | null
           max_capacity_usd: number
+          max_payouts: number
           name: string
           payout_mxn: number
           payout_usd: number
@@ -247,6 +248,7 @@ export type Database = {
           id?: string
           last_priced_at?: string | null
           max_capacity_usd?: number
+          max_payouts?: number
           name: string
           payout_mxn?: number
           payout_usd?: number
@@ -261,6 +263,7 @@ export type Database = {
           id?: string
           last_priced_at?: string | null
           max_capacity_usd?: number
+          max_payouts?: number
           name?: string
           payout_mxn?: number
           payout_usd?: number
@@ -285,6 +288,7 @@ export type Database = {
           currency: string
           expires_at: string
           id: string
+          last_payout_date: string | null
           payment_intent_id: string | null
           payment_provider: string
           payout_amount_mxn: number
@@ -292,6 +296,9 @@ export type Database = {
           premium_paid_mxn: number
           premium_paid_usd: number
           purchased_at: string
+          payouts_made: number
+          payouts_remaining: number | null
+          reserved_usd: number | null
           status: string
           tier_id: string
           user_id: string
@@ -302,6 +309,7 @@ export type Database = {
           currency: string
           expires_at: string
           id?: string
+          last_payout_date?: string | null
           payment_intent_id?: string | null
           payment_provider: string
           payout_amount_mxn?: number
@@ -309,6 +317,9 @@ export type Database = {
           premium_paid_mxn?: number
           premium_paid_usd?: number
           purchased_at?: string
+          payouts_made?: number
+          payouts_remaining?: number | null
+          reserved_usd?: number | null
           status?: string
           tier_id: string
           user_id: string
@@ -319,6 +330,7 @@ export type Database = {
           currency?: string
           expires_at?: string
           id?: string
+          last_payout_date?: string | null
           payment_intent_id?: string | null
           payment_provider?: string
           payout_amount_mxn?: number
@@ -326,6 +338,9 @@ export type Database = {
           premium_paid_mxn?: number
           premium_paid_usd?: number
           purchased_at?: string
+          payouts_made?: number
+          payouts_remaining?: number | null
+          reserved_usd?: number | null
           status?: string
           tier_id?: string
           user_id?: string
