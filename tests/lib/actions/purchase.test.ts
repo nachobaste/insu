@@ -86,6 +86,7 @@ const mockTier = {
 const mockContract = {
   id: 'c1',
   trigger_type: 'events',
+  is_recurring: false,
   trigger_condition: null,
   trigger_deadline: '2026-12-31T23:59:59Z',
   created_at: '2026-01-01T00:00:00Z',
@@ -109,6 +110,7 @@ const mockRecurringTier = {
 const mockRecurringContract = {
   id: 'c2',
   trigger_type: 'urban',
+  is_recurring: true,
   trigger_condition: { metric: 'aqi', threshold: 150, operator: 'gte' },
   trigger_deadline: null,
   created_at: '2026-01-01T00:00:00Z',

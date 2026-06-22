@@ -30,8 +30,7 @@ interface Props {
 }
 
 export default function ContractDetailClient({ contract, userId, latestReading, periodToggle, evidence }: Props) {
-  const isRecurring =
-    contract.trigger_type === 'weather' || contract.trigger_type === 'urban'
+  const isRecurring = contract.is_recurring
 
   const [panelOpen, setPanelOpen] = useState(false)
   const [panelMode, setPanelMode] = useState<PanelMode>('buy')

@@ -22,10 +22,11 @@ FROM coverage_tiers ct
 WHERE hp.tier_id = ct.id
   AND hp.status IN ('active', 'pending_payment');
 
--- 3. Recurring contracts are perpetual: drop the deadline for urban + nature.
+-- 3. Recurring contracts are perpetual: drop the deadline for all recurring
+--    markets (is_recurring = true covers weather + urban).
 UPDATE contracts
 SET trigger_deadline = NULL
-WHERE trigger_type IN ('urban', 'nature');
+WHERE is_recurring = true;
 
 -- 4. Re-baseline base_probability as a DAILY hazard for recurring corridors.
 --    Prior values were full-window probabilities. 0.05 = ~5% of days breach;
@@ -34,7 +35,7 @@ UPDATE coverage_tiers ct
 SET base_probability = 0.05
 FROM contracts c
 WHERE ct.contract_id = c.id
-  AND c.trigger_type IN ('urban', 'nature');
+  AND c.is_recurring = true;
 
 -- 5. payouts: one payout per (position, day) for multi-payout Pro positions.
 ALTER TABLE payouts ADD COLUMN IF NOT EXISTS trigger_day date;

@@ -32,8 +32,7 @@ interface Props {
 
 export default function PurchasePanel({ contract, userId, open, initialMode, initialPeriodDays, initialTierId, latestReading, onClose }: Props) {
   const router = useRouter()
-  const isRecurring =
-    contract.trigger_type === 'weather' || contract.trigger_type === 'urban'
+  const isRecurring = contract.is_recurring
 
   const [mode, setMode] = useState<PanelMode>(initialMode)
   const [step, setStep] = useState<Step>('select')

@@ -58,6 +58,7 @@ const recurringContract: ContractWithTiers = {
   slug: 'heat-wave-cdmx',
   title: 'Heat wave in CDMX?',
   trigger_type: 'weather',
+  is_recurring: true,
 }
 
 describe('PurchasePanel', () => {

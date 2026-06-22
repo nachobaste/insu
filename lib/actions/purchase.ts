@@ -45,13 +45,13 @@ export async function createHedgerPaymentIntent(
 
   const { data: contract, error: contractError } = await supabase
     .from('contracts')
-    .select('id, trigger_type, trigger_condition, trigger_deadline, created_at')
+    .select('id, is_recurring, trigger_condition, trigger_deadline, created_at')
     .eq('id', tier.contract_id)
     .single()
 
   if (contractError || !contract) return { error: 'Contract not found' }
 
-  const isRecurring = contract.trigger_type === 'urban' || contract.trigger_type === 'nature'
+  const isRecurring = contract.is_recurring
 
   let periodPremium: number
   let expiresAt: string
