@@ -459,6 +459,236 @@ function makeExpireDb(opts: {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Recurring settlement helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a db mock tuned for recurring-settlement tests.
+ *
+ * Key differences from makeDb:
+ *  - contracts has is_recurring:true
+ *  - hedger_positions returns the supplied recurring positions
+ *  - payouts idempotency chain is eq().eq().neq().maybeSingle() (position_id + trigger_day)
+ *  - contractUpdateCalls[] accumulates every `.update(data)` arg on contracts so
+ *    we can assert the contract was NEVER settled
+ */
+function makeRecurringDb(opts: {
+  triggeredReadings: Array<{ contract_id: string; read_at: string }>
+  recurringContract: Contract
+  recurringPositions: HedgerPosition[]
+  existingPayout?: { id: string } | null
+}) {
+  const { triggeredReadings, recurringContract, recurringPositions, existingPayout = null } = opts
+
+  const contractUpdateCalls: unknown[] = []
+  const contractUpdateEq = vi.fn().mockResolvedValue({ error: null })
+  const contractUpdate = vi.fn((data: unknown) => {
+    contractUpdateCalls.push(data)
+    return { eq: contractUpdateEq }
+  })
+
+  const hedgerUpdateEq = vi.fn().mockResolvedValue({ error: null })
+  const hedgerUpdate = vi.fn().mockReturnValue({ eq: hedgerUpdateEq })
+
+  const payoutsUpdateEq = vi.fn().mockResolvedValue({ error: null })
+  const payoutsUpdate = vi.fn().mockReturnValue({ eq: payoutsUpdateEq })
+
+  const payoutsInsert = vi.fn().mockReturnValue({
+    select: vi.fn().mockReturnValue({
+      single: vi.fn().mockResolvedValue({ data: { id: 'payout-r1' }, error: null }),
+    }),
+  })
+
+  // payouts idempotency: select().eq(hedger_position_id).eq(trigger_day).neq().maybeSingle()
+  const payoutsMaybeSingle = vi.fn().mockResolvedValue({ data: existingPayout, error: null })
+  const payoutsNeq = vi.fn().mockReturnValue({ maybeSingle: payoutsMaybeSingle })
+  const payoutsEq2 = vi.fn().mockReturnValue({ neq: payoutsNeq })
+  const payoutsEq1 = vi.fn().mockReturnValue({ eq: payoutsEq2 })
+  const payoutsSelect = vi.fn().mockReturnValue({ eq: payoutsEq1 })
+
+  // hedger_positions: chainable select for recurring
+  function makeHedgerChainable() {
+    // Need to support: .select('*').eq('contract_id', ...).eq('status', 'active') → data
+    const resolved = { data: recurringPositions, error: null }
+    const eqInner = vi.fn().mockResolvedValue(resolved)
+    const eqOuter = vi.fn().mockReturnValue({ eq: eqInner })
+    return {
+      select: vi.fn().mockReturnValue({ eq: eqOuter }),
+      update: hedgerUpdate,
+    }
+  }
+
+  return {
+    from: vi.fn((table: string) => {
+      if (table === 'oracle_readings') {
+        return makeChainable({ data: triggeredReadings, error: null })
+      }
+      if (table === 'contracts') {
+        // select chain: .select('*').in(...).eq(...).is(...) → { data: [recurringContract] }
+        return {
+          ...makeChainable({ data: [recurringContract], error: null }),
+          update: contractUpdate,
+        }
+      }
+      if (table === 'hedger_positions') {
+        return makeHedgerChainable()
+      }
+      if (table === 'coverage_tiers') {
+        return makeChainable({ data: { payout_usd: 500, payout_mxn: 8500 }, error: null })
+      }
+      if (table === 'profiles') {
+        return {
+          ...makeChainable({ data: { stripe_customer_id: 'cus_recur' }, error: null }),
+          update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+        }
+      }
+      if (table === 'payouts') {
+        return {
+          insert: payoutsInsert,
+          update: payoutsUpdate,
+          select: payoutsSelect,
+        }
+      }
+      return {}
+    }),
+    _contractUpdateCalls: contractUpdateCalls,
+    _contractUpdateEq: contractUpdateEq,
+    _hedgerUpdate: hedgerUpdate,
+    _hedgerUpdateEq: hedgerUpdateEq,
+    _payoutsInsert: payoutsInsert,
+    _payoutsUpdate: payoutsUpdate,
+  }
+}
+
+describe('recurring settlement', () => {
+  // A recurring contract that stays live forever
+  const recurringContract: Contract = {
+    ...mockContract,
+    id: 'rc-1',
+    slug: 'rain-cdmx-recurring',
+    is_recurring: true,
+    settled_outcome: null,
+    status: 'active',
+  }
+
+  // Dates used across tests — all in the past week so window math is easy
+  const day1 = '2026-06-15'
+  const day2 = '2026-06-16'
+  const day3 = '2026-06-17'
+  const day4 = '2026-06-18'
+
+  // Position whose window brackets day1..day4
+  const windowStart = '2026-06-14T00:00:00.000Z' // day before day1
+  const windowEnd   = '2026-06-19T23:59:59.000Z' // day after day4
+
+  function makeReading(day: string): { contract_id: string; read_at: string } {
+    return { contract_id: 'rc-1', read_at: `${day}T12:00:00.000Z` }
+  }
+
+  function makeRecurringPosition(overrides: Partial<HedgerPosition> = {}): HedgerPosition {
+    return {
+      ...mockHedgerPosition,
+      id: 'rpos-1',
+      contract_id: 'rc-1',
+      purchased_at: windowStart,
+      expires_at: windowEnd,
+      payouts_remaining: 1,
+      payouts_made: 0,
+      last_payout_date: null,
+      ...overrides,
+    }
+  }
+
+  it('basic position (payouts_remaining 1) pays once; position becomes knocked_out; contracts never settled', async () => {
+    const position = makeRecurringPosition({ payouts_remaining: 1 })
+    const db = makeRecurringDb({
+      triggeredReadings: [makeReading(day1)],
+      recurringContract,
+      recurringPositions: [position],
+    })
+    const stripe = makeStripe()
+
+    const count = await processPayouts(db as never, stripe as never)
+
+    // Exactly one payout issued
+    expect(count).toBe(1)
+    expect(stripe.customers.createBalanceTransaction).toHaveBeenCalledTimes(1)
+
+    // hedger_positions updated to knocked_out with payouts_remaining: 0
+    expect(db._hedgerUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'knocked_out', payouts_remaining: 0 }),
+    )
+    expect(db._hedgerUpdateEq).toHaveBeenCalledWith('id', 'rpos-1')
+
+    // contracts table must NEVER receive a settled_outcome or status:'settled' update
+    const settledCall = db._contractUpdateCalls.find(
+      (c) => (c as Record<string, unknown>).settled_outcome !== undefined ||
+              (c as Record<string, unknown>).status === 'settled',
+    )
+    expect(settledCall).toBeUndefined()
+  })
+
+  it('pro position (payouts_remaining 3) + 4 distinct in-window trigger-days → exactly 3 payouts; knocked_out', async () => {
+    const position = makeRecurringPosition({ id: 'rpos-pro', payouts_remaining: 3 })
+    const db = makeRecurringDb({
+      triggeredReadings: [makeReading(day1), makeReading(day2), makeReading(day3), makeReading(day4)],
+      recurringContract,
+      recurringPositions: [position],
+    })
+    const stripe = makeStripe()
+
+    const count = await processPayouts(db as never, stripe as never)
+
+    expect(count).toBe(3)
+    expect(stripe.customers.createBalanceTransaction).toHaveBeenCalledTimes(3)
+
+    expect(db._hedgerUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'knocked_out', payouts_remaining: 0 }),
+    )
+  })
+
+  it('same calendar day appearing twice in readings → only ONE payout', async () => {
+    const position = makeRecurringPosition({ payouts_remaining: 3 })
+    // Two readings on the same day — should collapse to one trigger-day
+    const db = makeRecurringDb({
+      triggeredReadings: [
+        { contract_id: 'rc-1', read_at: `${day1}T08:00:00.000Z` },
+        { contract_id: 'rc-1', read_at: `${day1}T20:00:00.000Z` },
+      ],
+      recurringContract,
+      recurringPositions: [position],
+    })
+    const stripe = makeStripe()
+
+    const count = await processPayouts(db as never, stripe as never)
+
+    expect(count).toBe(1)
+    expect(stripe.customers.createBalanceTransaction).toHaveBeenCalledTimes(1)
+  })
+
+  it('trigger-day outside the position window → no payout', async () => {
+    // Position window: day1..day2; trigger is day4 (after windowEnd)
+    const narrowWindowEnd = '2026-06-16T23:59:59.000Z' // ends on day2
+    const position = makeRecurringPosition({
+      purchased_at: windowStart,
+      expires_at: narrowWindowEnd,
+      payouts_remaining: 3,
+    })
+    const db = makeRecurringDb({
+      triggeredReadings: [makeReading(day4)], // day4 = 2026-06-18, outside window
+      recurringContract,
+      recurringPositions: [position],
+    })
+    const stripe = makeStripe()
+
+    const count = await processPayouts(db as never, stripe as never)
+
+    expect(count).toBe(0)
+    expect(stripe.customers.createBalanceTransaction).not.toHaveBeenCalled()
+  })
+})
+
 describe('expireContracts', () => {
   it('returns 0 when no one-time contracts have passed deadline', async () => {
     const db = makeExpireDb({ expiredContracts: [] })
