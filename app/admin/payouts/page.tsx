@@ -1,8 +1,27 @@
-import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { PayoutQueue } from '@/components/admin/payouts/PayoutQueue'
 
 export default async function AdminPayoutsPage() {
-  const supabase = await createClient()
+  // The admin layout already enforces admin + AAL2 MFA, but this page reads with
+  // the service-role client (which bypasses RLS), so re-verify the caller is an
+  // admin here too — defense in depth against the page rendering outside its
+  // layout.
+  const userClient = await createClient()
+  const { data: { user } } = await userClient.auth.getUser()
+  if (!user) redirect('/auth/login')
+  const { data: profile } = await userClient
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  if ((profile as { role: string } | null)?.role !== 'admin') redirect('/')
+
+  // The "Own payouts" RLS policy only exposes a buyer's own payouts, so a
+  // user-scoped read returns nothing for an admin viewing the queue. The joins
+  // into hedger_positions/profiles are own-only too. Read via the service client
+  // so admins see every payout (and the buyer's name) regardless of ownership.
+  const supabase = createServiceClient()
 
   const { data } = await supabase
     .from('payouts')
