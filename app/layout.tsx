@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Bebas_Neue, JetBrains_Mono, Outfit } from 'next/font/google'
 import './globals.css'
+import { SearchProvider } from '@/lib/search-context'
 
 const bebasNeue = Bebas_Neue({
   weight: '400',
@@ -36,7 +37,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${bebasNeue.variable} ${jetBrainsMono.variable} ${outfit.variable}`}>
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        <SearchProvider>{children}</SearchProvider>
+      </body>
     </html>
   )
 }
