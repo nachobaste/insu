@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { TriggerOverride } from '@/components/admin/trigger/TriggerOverride'
 import type { Contract, HedgerPosition } from '@/lib/types'
 
@@ -8,7 +9,25 @@ export default async function AdminTriggerPage({
   searchParams: Promise<{ contract?: string }>
 }) {
   const { contract: contractSlug } = await searchParams
-  const supabase = await createClient()
+
+  // The admin layout already enforces admin + AAL2 MFA, but the reads below use
+  // the service-role client (which bypasses RLS), so re-verify the caller is an
+  // admin here too — defense in depth against the page rendering outside its
+  // layout.
+  const userClient = await createClient()
+  const { data: { user } } = await userClient.auth.getUser()
+  if (!user) redirect('/auth/login')
+  const { data: profile } = await userClient
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  if ((profile as { role: string } | null)?.role !== 'admin') redirect('/')
+
+  // hedger_positions is own-only under RLS, so a user-scoped read would surface
+  // only the admin's own positions and under-count buyer exposure on the override
+  // summary. Read via the service client so counts reflect every hedger.
+  const supabase = createServiceClient()
 
   const { data: contracts } = await supabase
     .from('contracts')
