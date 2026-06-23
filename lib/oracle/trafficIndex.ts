@@ -9,6 +9,9 @@ export const TRAFFIC_INDEX_MAX = 100
  * `baselineS` is the corridor's typical in-window duration. Callers pass Google's
  * free-flow `staticDuration` as a fallback until a typical baseline exists, which
  * reproduces the historical behavior exactly.
+ *
+ * Non-positive or NaN `durationS` floors to 0 via the clamp; the result is
+ * rounded to the nearest integer.
  */
 export function trafficIndex(durationS: number, baselineS: number): number {
   if (!baselineS || baselineS <= 0) return 0

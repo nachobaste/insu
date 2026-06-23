@@ -22,6 +22,14 @@ describe('trafficIndex', () => {
     expect(trafficIndex(1333, 1000)).toBe(33)
   })
 
+  it('rounds up when the fraction exceeds a half', () => {
+    expect(trafficIndex(1376, 1000)).toBe(38) // 37.6 -> 38
+  })
+
+  it('floors a zero or negative duration to 0', () => {
+    expect(trafficIndex(0, 1000)).toBe(0)
+  })
+
   it('returns 0 for a zero or missing baseline (guard)', () => {
     expect(trafficIndex(1500, 0)).toBe(0)
   })
