@@ -50,6 +50,7 @@ export interface Corridor {
   dest_lng: number
   window_start: string  // 'HH:MM:SS' from PostgreSQL TIME
   window_end: string
+  baseline_duration_s: number | null  // typical in-window seconds; NULL = no baseline yet
   created_at: string
 }
 

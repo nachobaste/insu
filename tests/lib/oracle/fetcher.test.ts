@@ -157,3 +157,38 @@ describe('fetchGoogleMapsReading', () => {
     ).rejects.toThrow('no routes returned')
   })
 })
+
+function mockRoute(durationS: number, staticS: number) {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: () => Promise.resolve({ routes: [{ duration: `${durationS}s`, staticDuration: `${staticS}s` }] }),
+  })
+}
+
+describe('fetchGoogleMapsReading baseline', () => {
+  beforeEach(() => mockFetch.mockReset())
+
+  it('computes traffic_index against the provided baseline', async () => {
+    // staticDuration (300) is ignored here because a baseline is supplied:
+    // index = (1500/1000 - 1) * 100 = 50.
+    mockRoute(1500, 300)
+    const r = await fetchGoogleMapsReading(0, 0, 0, 0, 'k', 1000)
+    expect((r.value as Record<string, number>).traffic_index).toBe(50)
+    expect((r.value as Record<string, number>).baseline_duration_s).toBe(1000)
+  })
+
+  it('falls back to free-flow staticDuration when baseline is null', async () => {
+    mockRoute(1500, 1000) // 50% slower than free-flow (legacy behavior)
+    const r = await fetchGoogleMapsReading(0, 0, 0, 0, 'k', null)
+    expect((r.value as Record<string, number>).traffic_index).toBe(50)
+    expect((r.value as Record<string, number>).baseline_duration_s).toBe(1000) // == staticDuration
+  })
+
+  it('falls back to free-flow staticDuration when baseline is 0', async () => {
+    // A 0 baseline (e.g. an unset column coerced to 0) must fall back, not divide by 0.
+    mockRoute(1500, 1000)
+    const r = await fetchGoogleMapsReading(0, 0, 0, 0, 'k', 0)
+    expect((r.value as Record<string, number>).traffic_index).toBe(50)
+    expect((r.value as Record<string, number>).baseline_duration_s).toBe(1000)
+  })
+})

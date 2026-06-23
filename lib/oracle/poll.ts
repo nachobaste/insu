@@ -78,6 +78,7 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
         corridor.origin_lat, corridor.origin_lng,
         corridor.dest_lat, corridor.dest_lng,
         apiKey,
+        corridor.baseline_duration_s,
       )]
     } catch (err) {
       console.error(`Google Maps fetch error for contract ${contract.id}:`, err)

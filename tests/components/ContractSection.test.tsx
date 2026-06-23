@@ -16,6 +16,7 @@ function makeCorridor(overrides: Partial<Corridor> = {}): Corridor {
     dest_lng: -99.1452,
     window_start: '07:00:00',
     window_end: '10:00:00',
+    baseline_duration_s: null,
     created_at: new Date().toISOString(),
     ...overrides,
   }

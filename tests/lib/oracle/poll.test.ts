@@ -151,7 +151,7 @@ describe('pollContracts', () => {
         id: 'cor1', slug: 'viaducto-am', name: 'Viaducto AM', road: 'Viaducto',
         origin_lat: 19.3983, origin_lng: -99.1918,
         dest_lat: 19.4147, dest_lng: -99.0790,
-        window_start: '07:00:00', window_end: '10:00:00', created_at: '',
+        window_start: '07:00:00', window_end: '10:00:00', baseline_duration_s: null, created_at: '',
       },
     }
     const db = makeDb({ contracts: [urbanContract] })
@@ -178,7 +178,7 @@ describe('pollContracts', () => {
         id: 'cor2', slug: 'viaducto-am', name: 'Viaducto AM', road: 'Viaducto',
         origin_lat: 19.3983, origin_lng: -99.1918,
         dest_lat: 19.4147, dest_lng: -99.0790,
-        window_start: '07:00:00', window_end: '10:00:00', created_at: '',
+        window_start: '07:00:00', window_end: '10:00:00', baseline_duration_s: null, created_at: '',
       },
     }
     const db = makeDb({ contracts: [urbanContract] })

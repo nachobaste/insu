@@ -1,4 +1,5 @@
 import type { OracleReading } from '@/lib/types'
+import { trafficIndex } from './trafficIndex'
 
 type FetchedReading = Pick<OracleReading, 'source' | 'reading_type' | 'value'>
 
@@ -49,6 +50,7 @@ export async function fetchGoogleMapsReading(
   destLat: number,
   destLng: number,
   apiKey: string,
+  baselineDurationS: number | null = null,
 ): Promise<FetchedReading> {
   const res = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
     method: 'POST',
@@ -79,15 +81,17 @@ export async function fetchGoogleMapsReading(
 
   const durationS = parseInt(route.duration.replace('s', ''), 10)
   const staticDurationS = parseInt(route.staticDuration.replace('s', ''), 10)
-
   if (!staticDurationS) throw new Error('Google Maps Routes API: zero static duration')
 
-  const rawIndex = ((durationS / staticDurationS) - 1) * 100
-  const traffic_index = Math.min(100, Math.max(0, Math.round(rawIndex)))
+  // Measure against the corridor's TYPICAL in-window duration so we trigger on
+  // extraordinary traffic, not predictable rush hour. Fall back to free-flow
+  // (legacy behavior) until a baseline has been computed from history.
+  const baselineS = baselineDurationS && baselineDurationS > 0 ? baselineDurationS : staticDurationS
+  const traffic_index = trafficIndex(durationS, baselineS)
 
   return {
     source: 'google_maps',
     reading_type: 'traffic',
-    value: { traffic_index, duration_s: durationS, static_duration_s: staticDurationS },
+    value: { traffic_index, duration_s: durationS, static_duration_s: staticDurationS, baseline_duration_s: baselineS },
   }
 }
