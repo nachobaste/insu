@@ -1,13 +1,13 @@
-// middleware.ts
+// proxy.ts
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   // Skip Supabase session refresh if env vars are not configured (e.g. during e2e tests)
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.warn('[middleware] Supabase env vars not configured — skipping session refresh')
+    console.warn('[proxy] Supabase env vars not configured — skipping session refresh')
     return NextResponse.next({ request })
   }
 
