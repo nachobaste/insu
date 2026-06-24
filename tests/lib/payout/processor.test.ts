@@ -123,7 +123,9 @@ function makeDb(opts: {
     }),
   })
 
-  return {
+  const notificationsInsert = vi.fn().mockResolvedValue({ error: null })
+
+  const db = {
     from: vi.fn((table: string) => {
       if (table === 'oracle_readings') {
         return makeChainable({ data: triggeredReadings, error: null })
@@ -148,9 +150,12 @@ function makeDb(opts: {
       }
       if (table === 'profiles') {
         return {
-          ...makeChainable({ data: { stripe_customer_id: profileStripeId }, error: null }),
+          ...makeChainable({ data: { stripe_customer_id: profileStripeId, notification_prefs: null }, error: null }),
           update: vi.fn().mockReturnValue({ eq: profileUpdateEq }),
         }
+      }
+      if (table === 'notifications') {
+        return { insert: notificationsInsert }
       }
       if (table === 'payouts') {
         return {
@@ -178,7 +183,10 @@ function makeDb(opts: {
     _payoutsInsert: payoutsInsert,
     _payoutsUpdate: payoutsUpdate,
     _payoutsUpdateEq: payoutsUpdateEq,
+    _notificationsInsert: notificationsInsert,
   }
+
+  return db
 }
 
 function makeStripe(opts: { newCustomerId?: string } = {}) {
@@ -395,18 +403,37 @@ describe('processPayouts', () => {
     expect(payoutsInsertIdx).toBeGreaterThanOrEqual(0)
     expect(contractsUpdateIdx).toBeGreaterThan(payoutsInsertIdx)
   })
+
+  it('emits a coverage_paid notification when a hedger position pays out', async () => {
+    const db = makeDb()
+    await processPayouts(db as never, makeStripe() as never)
+    expect(db._notificationsInsert).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'coverage_paid' }),
+    )
+  })
+
+  it('emits a provider_settled notification when a provider position is settled', async () => {
+    const db = makeDb()
+    await processPayouts(db as never, makeStripe() as never)
+    expect(db._notificationsInsert).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'provider_settled' }),
+    )
+  })
 })
 
 function makeExpireDb(opts: {
   expiredContracts?: Contract[]
   providerPositions?: ProviderPosition[]
+  activeHedgerPositions?: Array<{ id: string; user_id: string }>
 } = {}) {
   const expiredContracts = opts.expiredContracts ?? [expiredOneTimeContract]
   const providerPositions = opts.providerPositions ?? []
+  const activeHedgerPositions = opts.activeHedgerPositions ?? []
 
   const contractUpdateEq = vi.fn().mockResolvedValue({ error: null })
   const providerUpdateEq = vi.fn().mockResolvedValue({ error: null })
   const providerUpdate = vi.fn().mockReturnValue({ eq: providerUpdateEq })
+  const notificationsInsert = vi.fn().mockResolvedValue({ error: null })
 
   // A fully chainable stub for tables we don't assert on
   function chainable(resolved: unknown) {
@@ -438,7 +465,33 @@ function makeExpireDb(opts: {
         }
       }
       if (table === 'hedger_positions') {
-        return chainable({ data: [], error: null })
+        return {
+          // select('id, user_id').eq('contract_id', ...).eq('status', 'active') → active positions
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ data: activeHedgerPositions, error: null }),
+            }),
+          }),
+          // bulk update to 'expired': update().eq().eq()  AND  update().eq().lt()
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ error: null }),
+              lt: vi.fn().mockResolvedValue({ error: null }),
+            }),
+          }),
+        }
+      }
+      if (table === 'profiles') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: { notification_prefs: null }, error: null }),
+            }),
+          }),
+        }
+      }
+      if (table === 'notifications') {
+        return { insert: notificationsInsert }
       }
       if (table === 'provider_positions') {
         return {
@@ -456,6 +509,7 @@ function makeExpireDb(opts: {
     _contractUpdateEq: contractUpdateEq,
     _providerUpdate: providerUpdate,
     _providerUpdateEq: providerUpdateEq,
+    _notificationsInsert: notificationsInsert,
   }
 }
 
@@ -721,5 +775,15 @@ describe('expireContracts', () => {
       expect.objectContaining({ status: 'settled', actual_return_usd: 5000 }),
     )
     expect(db._providerUpdateEq).toHaveBeenCalledWith('id', 'pp-event')
+  })
+
+  it('emits a coverage_expired notification for each active hedger position on an expired one-time contract', async () => {
+    const db = makeExpireDb({
+      activeHedgerPositions: [{ id: 'hp-1', user_id: 'user-1' }],
+    })
+    await expireContracts(db as never)
+    expect(db._notificationsInsert).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'coverage_expired' }),
+    )
   })
 })
