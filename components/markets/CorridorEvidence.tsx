@@ -30,6 +30,7 @@ export function CorridorEvidence({ corridor, readings, triggerCondition }: Props
           destLat={corridor.dest_lat}
           destLng={corridor.dest_lng}
           corridorName={corridor.name}
+          pathPolyline={corridor.path_polyline}
         />
       </div>
       <TrafficPulseBarRefresher />

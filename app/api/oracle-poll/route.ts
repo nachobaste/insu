@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateCronRequest } from '@/lib/auth/cronAuth'
-import { pollContracts, POLLABLE_TRIGGER_TYPES } from '@/lib/oracle/poll'
+import { pollContracts, ensureCorridorPolylines, POLLABLE_TRIGGER_TYPES } from '@/lib/oracle/poll'
 
 /**
  * Optional `?types=urban,weather` scopes the poll to specific trigger types so
@@ -21,6 +21,12 @@ function parseTypes(req: NextRequest): string[] | undefined {
 async function handlePoll(req: NextRequest) {
   const authError = validateCronRequest(req)
   if (authError) return authError
+  // `?backfill=polylines` fills missing corridor road geometry (one-off / on demand),
+  // independent of the commute-window-gated traffic poll.
+  if (req.nextUrl.searchParams.get('backfill') === 'polylines') {
+    const filled = await ensureCorridorPolylines()
+    return NextResponse.json({ polylines_filled: filled })
+  }
   const count = await pollContracts(undefined, undefined, parseTypes(req))
   return NextResponse.json({ readings: count })
 }

@@ -51,6 +51,7 @@ export interface Corridor {
   window_start: string  // 'HH:MM:SS' from PostgreSQL TIME
   window_end: string
   baseline_duration_s: number | null  // typical in-window seconds; NULL = no baseline yet
+  path_polyline: string | null  // encoded road-route polyline; NULL = not backfilled yet
   created_at: string
 }
 

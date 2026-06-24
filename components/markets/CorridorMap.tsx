@@ -30,12 +30,14 @@ export function CorridorMap({
   destLat,
   destLng,
   corridorName,
+  pathPolyline,
 }: {
   originLat: number
   originLng: number
   destLat: number
   destLng: number
   corridorName: string
+  pathPolyline?: string | null
 }) {
   const mapRef = useRef<HTMLDivElement>(null)
   const [mapState, setMapState] = useState<MapState>('loading')
@@ -67,12 +69,14 @@ export function CorridorMap({
       importLibrary('maps'),
       importLibrary('marker'),
       importLibrary('core'),
-    ]).then(([mapsLib, markerLib, coreLib]) => {
+      importLibrary('geometry'),
+    ]).then(([mapsLib, markerLib, coreLib, geometryLib]) => {
       if (cancelled || !mapRef.current) return
 
-      const { Map, TrafficLayer } = mapsLib as google.maps.MapsLibrary
+      const { Map, TrafficLayer, Polyline } = mapsLib as google.maps.MapsLibrary
       const { Marker } = markerLib as google.maps.MarkerLibrary
-      const { SymbolPath } = coreLib as google.maps.CoreLibrary
+      const { SymbolPath, LatLngBounds } = coreLib as google.maps.CoreLibrary
+      const { encoding } = geometryLib as google.maps.GeometryLibrary
 
       const midLat = (originLat + destLat) / 2
       const midLng = (originLng + destLng) / 2
@@ -128,6 +132,22 @@ export function CorridorMap({
           strokeWeight: 2,
         },
       })
+
+      // Draw the actual road route when we have its geometry, and frame the map
+      // to it. Without a polyline the two endpoint markers convey the corridor.
+      if (pathPolyline) {
+        const path = encoding.decodePath(pathPolyline)
+        new Polyline({
+          path,
+          map,
+          strokeColor: '#f5a623',
+          strokeOpacity: 0.9,
+          strokeWeight: 4,
+        })
+        const bounds = new LatLngBounds()
+        path.forEach((point) => bounds.extend(point))
+        map.fitBounds(bounds, 28)
+      }
     }).catch(() => {
       if (!cancelled) setMapState('error')
     })
@@ -137,7 +157,7 @@ export function CorridorMap({
       clearTimeout(timer)
       window.gm_authFailure = prevAuthFailure
     }
-  }, [originLat, originLng, destLat, destLng])
+  }, [originLat, originLng, destLat, destLng, pathPolyline])
 
   const mapsUrl = `https://www.google.com/maps/dir/${originLat},${originLng}/${destLat},${destLng}`
 

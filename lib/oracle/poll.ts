@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { evaluateTrigger, type TriggerCondition } from './trigger'
-import { fetchWeatherReading, fetchTomorrowReading, fetchGoogleMapsReading } from './fetcher'
+import { fetchWeatherReading, fetchTomorrowReading, fetchGoogleMapsReading, fetchCorridorPolyline } from './fetcher'
 import { fetchGasPrice } from './gasFetcher'
 import type { Contract, Corridor } from '@/lib/types'
 
@@ -108,6 +108,50 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
 
 /** Trigger types this poller knows how to fetch readings for. */
 export const POLLABLE_TRIGGER_TYPES = ['weather', 'urban', 'fuel'] as const
+
+interface CorridorGeo {
+  id: string
+  origin_lat: number
+  origin_lng: number
+  dest_lat: number
+  dest_lng: number
+}
+type PolylineFetcher = (c: CorridorGeo) => Promise<string>
+
+async function defaultPolylineFetcher(c: CorridorGeo): Promise<string> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY ?? ''
+  if (!apiKey) throw new Error('GOOGLE_MAPS_API_KEY not set')
+  return fetchCorridorPolyline(c.origin_lat, c.origin_lng, c.dest_lat, c.dest_lng, apiKey)
+}
+
+/**
+ * Backfill the static road-route polyline for any corridor missing one. Not
+ * window-gated (geometry doesn't change with time of day) and idempotent — only
+ * fills NULLs, so it's a cheap no-op once populated. Returns rows filled.
+ */
+export async function ensureCorridorPolylines(
+  db: DbClient = getClient(),
+  fetcher: PolylineFetcher = defaultPolylineFetcher,
+): Promise<number> {
+  const { data: corridors } = await db
+    .from('corridors')
+    .select('id, origin_lat, origin_lng, dest_lat, dest_lng')
+    .is('path_polyline', null)
+
+  if (!corridors || corridors.length === 0) return 0
+
+  let count = 0
+  for (const c of corridors as CorridorGeo[]) {
+    try {
+      const encoded = await fetcher(c)
+      await db.from('corridors').update({ path_polyline: encoded }).eq('id', c.id)
+      count++
+    } catch (err) {
+      console.error(`Polyline backfill error for corridor ${c.id}:`, err)
+    }
+  }
+  return count
+}
 
 export async function pollContracts(
   db: DbClient = getClient(),

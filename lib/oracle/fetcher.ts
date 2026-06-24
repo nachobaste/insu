@@ -95,3 +95,41 @@ export async function fetchGoogleMapsReading(
     value: { traffic_index, duration_s: durationS, static_duration_s: staticDurationS, baseline_duration_s: baselineS },
   }
 }
+
+/**
+ * Fetch the encoded road-route polyline for a corridor. Road geometry is static,
+ * so this is captured once and stored on the corridor (corridors.path_polyline)
+ * for the contract map to draw — separate from the per-poll traffic reading.
+ */
+export async function fetchCorridorPolyline(
+  originLat: number,
+  originLng: number,
+  destLat: number,
+  destLng: number,
+  apiKey: string,
+): Promise<string> {
+  const res = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': apiKey,
+      'X-Goog-FieldMask': 'routes.polyline.encodedPolyline',
+    },
+    body: JSON.stringify({
+      origin: { location: { latLng: { latitude: originLat, longitude: originLng } } },
+      destination: { location: { latLng: { latitude: destLat, longitude: destLng } } },
+      travelMode: 'DRIVE',
+      routingPreference: 'TRAFFIC_AWARE',
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Google Maps Routes API error: ${res.status} ${body}`.trim())
+  }
+
+  const data = await res.json()
+  const encoded = (data.routes as Array<{ polyline?: { encodedPolyline?: string } }>)?.[0]?.polyline?.encodedPolyline
+  if (!encoded) throw new Error('Google Maps Routes API: no polyline returned')
+  return encoded
+}

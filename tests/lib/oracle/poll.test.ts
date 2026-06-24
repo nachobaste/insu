@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { pollContracts } from '@/lib/oracle/poll'
+import { pollContracts, ensureCorridorPolylines } from '@/lib/oracle/poll'
 import type { Contract } from '@/lib/types'
 
 const mockContract: Contract = {
@@ -151,7 +151,7 @@ describe('pollContracts', () => {
         id: 'cor1', slug: 'viaducto-am', name: 'Viaducto AM', road: 'Viaducto',
         origin_lat: 19.3983, origin_lng: -99.1918,
         dest_lat: 19.4147, dest_lng: -99.0790,
-        window_start: '07:00:00', window_end: '10:00:00', baseline_duration_s: null, created_at: '',
+        window_start: '07:00:00', window_end: '10:00:00', baseline_duration_s: null, path_polyline: null, created_at: '',
       },
     }
     const db = makeDb({ contracts: [urbanContract] })
@@ -178,7 +178,7 @@ describe('pollContracts', () => {
         id: 'cor2', slug: 'viaducto-am', name: 'Viaducto AM', road: 'Viaducto',
         origin_lat: 19.3983, origin_lng: -99.1918,
         dest_lat: 19.4147, dest_lng: -99.0790,
-        window_start: '07:00:00', window_end: '10:00:00', baseline_duration_s: null, created_at: '',
+        window_start: '07:00:00', window_end: '10:00:00', baseline_duration_s: null, path_polyline: null, created_at: '',
       },
     }
     const db = makeDb({ contracts: [urbanContract] })
@@ -227,5 +227,51 @@ describe('pollContracts', () => {
       source: 'cre_datos_gob',
       trigger_met: true, // 26.49 > 25.0
     })
+  })
+})
+
+describe('ensureCorridorPolylines', () => {
+  function makeCorridorDb(corridors: unknown[]) {
+    const updateEq = vi.fn().mockResolvedValue({ error: null })
+    const updateMock = vi.fn().mockReturnValue({ eq: updateEq })
+    const selectChain = chainable({ data: corridors, error: null })
+    return {
+      from: vi.fn((t: string) =>
+        t === 'corridors' ? { ...selectChain, update: updateMock } : {},
+      ),
+      _update: updateMock,
+      _updateEq: updateEq,
+    }
+  }
+
+  const geo = (id: string) => ({ id, origin_lat: 1, origin_lng: 2, dest_lat: 3, dest_lng: 4 })
+
+  it('fills path_polyline for each corridor missing one', async () => {
+    const db = makeCorridorDb([geo('cor-1'), geo('cor-2')])
+    const fetcher = vi.fn().mockResolvedValue('encoded_poly')
+    const count = await ensureCorridorPolylines(db as never, fetcher)
+    expect(count).toBe(2)
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    expect(db._update).toHaveBeenCalledWith({ path_polyline: 'encoded_poly' })
+    expect(db._updateEq).toHaveBeenCalledWith('id', 'cor-2')
+  })
+
+  it('returns 0 and fetches nothing when none are missing', async () => {
+    const db = makeCorridorDb([])
+    const fetcher = vi.fn()
+    expect(await ensureCorridorPolylines(db as never, fetcher)).toBe(0)
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('continues past a fetch failure and still fills the rest', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const db = makeCorridorDb([geo('cor-1'), geo('cor-2')])
+    const fetcher = vi.fn()
+      .mockRejectedValueOnce(new Error('routes 500'))
+      .mockResolvedValueOnce('poly-2')
+    const count = await ensureCorridorPolylines(db as never, fetcher)
+    expect(count).toBe(1)
+    expect(db._updateEq).toHaveBeenCalledWith('id', 'cor-2')
+    errSpy.mockRestore()
   })
 })
