@@ -3,10 +3,13 @@ import { createClient } from '@/lib/supabase/server'
 import SearchInput from './SearchInput'
 import LogoutButton from './LogoutButton'
 import MobileMenu from './MobileMenu'
+import NotificationBell from './NotificationBell'
+import { getUnreadCount } from '@/lib/actions/notifications'
 
 export default async function Header() {
   let userId: string | null = null
   let isAdmin = false
+  let unread = 0
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -18,6 +21,7 @@ export default async function Header() {
         .eq('id', userId)
         .single()
       isAdmin = (profile as { role: string } | null)?.role === 'admin'
+      unread = await getUnreadCount()
     }
   } catch {
     // Supabase not configured — render unauthenticated header
@@ -57,6 +61,12 @@ export default async function Header() {
         How it works
       </Link>
 
+      {userId && (
+        <div className="flex-shrink-0">
+          <NotificationBell initialUnread={unread} />
+        </div>
+      )}
+
       {/* Auth / nav buttons — desktop only; phones use the menu below */}
       <div className="hidden items-center gap-3 sm:flex">
         {userId ? (
@@ -74,6 +84,12 @@ export default async function Header() {
               className="rounded-lg border border-white/[0.07] px-3 py-1.5 sm:px-4 text-[13px] font-semibold text-insu-dim transition-colors hover:border-white/15 hover:text-insu-text"
             >
               Portfolio
+            </Link>
+            <Link
+              href="/profile"
+              className="rounded-lg border border-white/[0.07] px-3 py-1.5 sm:px-4 text-[13px] font-semibold text-insu-dim transition-colors hover:border-white/15 hover:text-insu-text"
+            >
+              Profile
             </Link>
             <LogoutButton />
           </>
