@@ -94,7 +94,7 @@ export default function PriceChart({ history, tiers }: Props) {
 
   return (
     <div className="rounded-card border border-white/[0.07] bg-bg-card p-5">
-      <p className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-insu-muted">
+      <p className="mb-4 text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
         Price history
       </p>
       <ResponsiveContainer width="100%" height={160}>

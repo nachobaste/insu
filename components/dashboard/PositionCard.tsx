@@ -70,12 +70,12 @@ export function PositionCard({ position }: { position: ProviderPositionWithContr
         <div className="mb-3 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate font-body text-sm font-bold text-insu-text">{contract.title}</p>
-            <p className="mt-0.5 font-body text-[11px] capitalize text-insu-muted">
+            <p className="mt-0.5 font-body text-[12px] capitalize text-insu-muted">
               {tier.name} tier · {contract.trigger_type}
             </p>
           </div>
           <span className={cn(
-            'shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] ring-1',
+            'shrink-0 rounded-full px-2 py-0.5 font-mono text-[11px] ring-1',
             badge.bg, badge.text, badge.ring,
           )}>
             {badge.label}
@@ -85,17 +85,17 @@ export function PositionCard({ position }: { position: ProviderPositionWithContr
         {/* numbers */}
         <div className="grid grid-cols-3 gap-2">
           <div className="text-center">
-            <p className="font-body text-[10px] uppercase tracking-wide text-insu-muted">Capital</p>
+            <p className="font-body text-[11px] uppercase tracking-wide text-insu-muted">Capital</p>
             <p className="mt-0.5 font-mono text-sm text-insu-text">{formatCurrency(capital_deposited_usd)}</p>
           </div>
           <div className="text-center">
-            <p className="font-body text-[10px] uppercase tracking-wide text-insu-muted">
+            <p className="font-body text-[11px] uppercase tracking-wide text-insu-muted">
               {isSettled ? realizedLabel : `Yield +${yieldPct}%`}
             </p>
             <p className={cn('mt-0.5 font-mono text-sm', returnColor)}>{returnValue}</p>
           </div>
           <div className="text-center">
-            <p className="font-body text-[10px] uppercase tracking-wide text-insu-muted">Settles</p>
+            <p className="font-body text-[11px] uppercase tracking-wide text-insu-muted">Settles</p>
             <p className="mt-0.5 font-body text-sm text-insu-text">{settlesStr}</p>
           </div>
         </div>

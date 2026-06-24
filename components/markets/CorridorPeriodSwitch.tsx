@@ -42,7 +42,7 @@ export function CorridorPeriodSwitch({ active, options, onSelect }: Props) {
             onClick={() => onSelect(opt.period)}
             aria-current={isActive ? 'true' : undefined}
             className={cn(
-              'flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.07em] transition-colors',
+              'flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-bold uppercase tracking-[0.07em] transition-colors',
               isActive
                 ? 'border-category-urban/30 bg-category-urban/10 text-category-urban'
                 : 'border-white/10 text-insu-muted hover:border-white/20 hover:text-insu-text',

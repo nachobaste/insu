@@ -69,11 +69,11 @@ describe('TierSelector', () => {
 
   it('shows premium_usd sticker when no price map provided', () => {
     render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={() => {}} />)
-    expect(screen.getByText('$12')).toBeInTheDocument()
+    expect(screen.getByText('$12 USD')).toBeInTheDocument()
   })
   it('shows the live price from priceByTier when provided', () => {
     render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={() => {}} priceByTier={{ 'tier-basic': 3.45 }} />)
-    expect(screen.getByText('$3')).toBeInTheDocument()
+    expect(screen.getByText('$3 USD')).toBeInTheDocument()
   })
 
   it('describes the payout count per tier (Basic one-time, Pro up to 3)', () => {

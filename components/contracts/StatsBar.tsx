@@ -52,7 +52,7 @@ export default function StatsBar({ stats }: Props) {
           <span className={`font-mono text-[20px] font-bold tracking-tight ${item.className}`}>
             {item.format(stats[item.key])}
           </span>
-          <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-insu-muted">
+          <span className="mt-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-insu-muted">
             {item.label}
           </span>
         </div>
@@ -63,7 +63,7 @@ export default function StatsBar({ stats }: Props) {
         <span className="font-mono text-[20px] font-bold tracking-tight text-insu-green">
           100%
         </span>
-        <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-insu-muted">
+        <span className="mt-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-insu-muted">
           Auto-Settled
         </span>
       </div>

@@ -29,7 +29,7 @@ const SECTION_ICONS: Record<string, string> = {
   events:      '🎤',
 }
 
-const CHIP_BASE = 'rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.08em] transition-colors'
+const CHIP_BASE = 'rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] transition-colors'
 const CHIP_ACTIVE = 'border-category-urban/30 bg-category-urban/10 text-category-urban'
 const CHIP_INACTIVE = 'border-white/10 text-insu-muted hover:text-insu-text hover:border-white/20'
 
@@ -89,7 +89,7 @@ export default function ContractSection({
         >
           {SECTION_ICONS[categorySlug]} {categoryName}
         </h2>
-        <p className="text-[12px] font-medium tracking-[0.05em] text-insu-muted">
+        <p className="text-[13px] font-medium tracking-[0.05em] text-insu-muted">
           {SECTION_DESCRIPTIONS[categorySlug]}
         </p>
         <div className="h-px flex-1 bg-white/[0.07]" />

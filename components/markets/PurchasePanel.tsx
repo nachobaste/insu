@@ -181,7 +181,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                 <p className="text-[13px] text-insu-muted">
                   You&apos;re covered up to{' '}
                   <span className="font-semibold text-insu-green">
-                    ${selectedTier.payout_usd.toLocaleString()}
+                    ${selectedTier.payout_usd.toLocaleString()} USD
                   </span>
                 </p>
               )}
@@ -215,7 +215,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                   {/* Period selector — recurring buy only */}
                   {isRecurring && mode === 'buy' && (
                     <div className="mb-5">
-                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-insu-muted">
+                      <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
                         Coverage period
                       </p>
                       <div className="flex gap-2">
@@ -229,14 +229,14 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                               key={days}
                               onClick={() => selectPeriod(days)}
                               className={cn(
-                                'flex flex-1 flex-col items-center rounded-lg border py-2.5 text-[11px] font-semibold transition-all',
+                                'flex flex-1 flex-col items-center rounded-lg border py-2.5 text-[12px] font-semibold transition-all',
                                 selectedPeriodDays === days
                                   ? 'border-insu-accent/50 bg-insu-accent/5 text-insu-accent'
                                   : 'border-white/[0.07] bg-bg-card text-insu-muted hover:border-white/15',
                               )}
                             >
                               {label}
-                              <span className="mt-0.5 font-mono text-[9px] font-normal opacity-70">
+                              <span className="mt-0.5 font-mono text-[10px] font-normal opacity-70">
                                 from {fromPrice}
                               </span>
                             </button>
@@ -246,7 +246,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                     </div>
                   )}
 
-                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-insu-muted">
+                  <p className="mb-3 text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
                     Select tier
                   </p>
                   <TierSelector
@@ -262,7 +262,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                     <div className="mt-4">
                       <label
                         htmlFor="deposit-amount"
-                        className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-insu-muted"
+                        className="mb-1.5 block text-[13px] font-semibold uppercase tracking-wider text-insu-muted"
                       >
                         Deposit amount (USD)
                       </label>

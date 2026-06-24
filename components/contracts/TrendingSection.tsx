@@ -30,7 +30,7 @@ export default function TrendingSection({ contracts, currency }: Props) {
       <div className="mb-4 flex items-center gap-2.5">
         <span aria-hidden="true">🔥</span>
         <h2 className="text-[13px] font-bold tracking-[0.01em] text-insu-text">Trending Now</h2>
-        <span className="animate-pulse rounded px-[7px] py-[3px] text-[9px] font-bold uppercase tracking-[0.08em] bg-insu-accent/15 text-insu-accent border border-insu-accent/25">
+        <span className="animate-pulse rounded px-[7px] py-[3px] text-[10px] font-bold uppercase tracking-[0.08em] bg-insu-accent/15 text-insu-accent border border-insu-accent/25">
           Live
         </span>
       </div>
@@ -69,17 +69,17 @@ export default function TrendingSection({ contracts, currency }: Props) {
               <p className="mb-1 text-[13px] font-semibold leading-[1.4] text-insu-text">
                 {contract.title}
               </p>
-              <p className="mb-2 flex items-center gap-0.5 text-[12px] text-insu-muted">
+              <p className="mb-2 flex items-center gap-0.5 text-[13px] text-insu-muted">
                 <span aria-hidden="true">{countryFlag(contract.location?.country ?? 'MX')}</span>
                 <span>{contract.location?.city ?? ''}</span>
               </p>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-insu-muted">from</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-insu-muted">from</p>
                   <p className={cn('text-[14px] font-bold', styles.text)}>{fromPrice}</p>
                 </div>
-                <span className={cn('rounded px-[6px] py-[2px] text-[10px] font-bold uppercase tracking-[0.06em]', styles.pill)}>
+                <span className={cn('rounded px-[6px] py-[2px] text-[11px] font-bold uppercase tracking-[0.06em]', styles.pill)}>
                   {contract.category?.name ?? slug}
                 </span>
               </div>

@@ -68,7 +68,7 @@ describe('TrendingSection', () => {
 
   it('renders the cheapest tier premium as the "from" price in USD', () => {
     render(<TrendingSection contracts={[makeContract({})]} currency="USD" />)
-    expect(screen.getByText('$100')).toBeInTheDocument()
+    expect(screen.getByText('$100 USD')).toBeInTheDocument()
   })
 
   it('renders nothing when contracts array is empty', () => {
@@ -78,6 +78,6 @@ describe('TrendingSection', () => {
 
   it('renders the cheapest tier premium as the "from" price in MXN', () => {
     render(<TrendingSection contracts={[makeContract({})]} currency="MXN" />)
-    expect(screen.getByText('MX$1,700')).toBeInTheDocument()
+    expect(screen.getByText('MX$1,700 MXN')).toBeInTheDocument()
   })
 })

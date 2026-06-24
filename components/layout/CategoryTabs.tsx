@@ -60,7 +60,7 @@ export default function CategoryTabs({ categories, activeSlug, onSelect }: Props
         {['Trending', 'Ending Soon', 'New'].map((label) => (
           <button
             key={label}
-            className="flex h-[46px] items-center px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-insu-muted transition-colors hover:text-insu-text"
+            className="flex h-[46px] items-center px-4 text-[12px] font-semibold uppercase tracking-[0.12em] text-insu-muted transition-colors hover:text-insu-text"
           >
             {label}
           </button>

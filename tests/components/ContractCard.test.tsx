@@ -79,14 +79,14 @@ describe('ContractCard', () => {
 
   it('renders basic tier premium and payout', () => {
     render(<ContractCard contract={mockContract} currency="USD" />)
-    expect(screen.getByText('$100')).toBeInTheDocument()
-    expect(screen.getByText('$500')).toBeInTheDocument()
+    expect(screen.getByText('$100 USD')).toBeInTheDocument()
+    expect(screen.getByText('$500 USD')).toBeInTheDocument()
   })
 
   it('renders premium tier premium and payout', () => {
     render(<ContractCard contract={mockContract} currency="USD" />)
-    expect(screen.getByText('$600')).toBeInTheDocument()
-    expect(screen.getByText('$1,700')).toBeInTheDocument()
+    expect(screen.getByText('$600 USD')).toBeInTheDocument()
+    expect(screen.getByText('$1,700 USD')).toBeInTheDocument()
   })
 
   it('renders volume', () => {

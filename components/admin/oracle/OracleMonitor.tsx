@@ -84,7 +84,7 @@ export function OracleMonitor({ items }: { items: ContractWithLatestReading[] })
     <div className="flex h-[calc(100vh-140px)] gap-0 overflow-hidden rounded-lg border border-white/[0.07]">
       {/* Left: contract list */}
       <div className="w-52 flex-shrink-0 overflow-y-auto border-r border-white/[0.07] p-3">
-        <p className="mb-2 px-1 text-[10px] uppercase tracking-wider text-insu-muted">
+        <p className="mb-2 px-1 text-[11px] uppercase tracking-wider text-insu-muted">
           {items.length} Active Contracts
         </p>
         <div className="flex flex-col gap-2">
@@ -106,9 +106,9 @@ export function OracleMonitor({ items }: { items: ContractWithLatestReading[] })
                 )}
               >
                 <div className="mb-2 flex items-center justify-between gap-1">
-                  <span className="text-[12px] font-medium text-insu-text truncate">{item.contract.title}</span>
+                  <span className="text-[13px] font-medium text-insu-text truncate">{item.contract.title}</span>
                   <span className={cn(
-                    'flex-shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase',
+                    'flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase',
                     status === 'triggered' ? 'bg-red-500 text-white'
                       : status === 'stale' ? 'bg-insu-accent/20 text-insu-accent'
                         : 'bg-white/5 text-insu-muted',
@@ -128,8 +128,8 @@ export function OracleMonitor({ items }: { items: ContractWithLatestReading[] })
                     ['Threshold', parseThreshold(item.contract)],
                   ].map(([k, v]) => (
                     <div key={k}>
-                      <p className="text-[9px] uppercase tracking-wider text-insu-muted">{k}</p>
-                      <p className={cn('text-[11px]',
+                      <p className="text-[10px] uppercase tracking-wider text-insu-muted">{k}</p>
+                      <p className={cn('text-[12px]',
                         k === 'Last read' && status === 'stale' ? 'text-insu-accent' : 'text-insu-dim'
                       )}>{v}</p>
                     </div>
@@ -147,13 +147,13 @@ export function OracleMonitor({ items }: { items: ContractWithLatestReading[] })
           <div className="mb-5 flex items-start justify-between">
             <div>
               <h2 className="text-lg font-semibold text-insu-text">{selected.contract.title}</h2>
-              <p className="mt-0.5 text-[12px] text-insu-muted">
+              <p className="mt-0.5 text-[13px] text-insu-muted">
                 {selected.contract.trigger_type} · {parseThreshold(selected.contract)} · Deadline {selected.contract.trigger_deadline ? new Date(selected.contract.trigger_deadline).toLocaleDateString() : '—'}
               </p>
             </div>
             {selected.latest && (
               <span className={cn(
-                'rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide',
+                'rounded px-2 py-1 text-[12px] font-bold uppercase tracking-wide',
                 selected.latest.trigger_met ? 'bg-red-500/20 text-red-400' : 'bg-white/5 text-insu-muted',
               )}>
                 {selected.latest.trigger_met ? '⚡ TRIGGERED' : 'NO TRIGGER'}
@@ -183,7 +183,7 @@ export function OracleMonitor({ items }: { items: ContractWithLatestReading[] })
                 )
               })}
             </div>
-            <div className="mt-2 flex justify-between text-[10px] text-insu-muted">
+            <div className="mt-2 flex justify-between text-[11px] text-insu-muted">
               <span>{selected.readings[Math.min(8, selected.readings.length - 1)] ? timeAgo(selected.readings[Math.min(8, selected.readings.length - 1)].read_at) : ''}</span>
               {threshold > 0 && <span className="text-insu-accent">— threshold {threshold}</span>}
               <span className="text-blue-400">now: {selected.latest ? parseValue(selected.latest) : '—'}</span>
@@ -191,15 +191,15 @@ export function OracleMonitor({ items }: { items: ContractWithLatestReading[] })
           </div>
 
           {/* Reading log */}
-          <p className="mb-2 text-[10px] uppercase tracking-wider text-insu-muted">Reading Log</p>
+          <p className="mb-2 text-[11px] uppercase tracking-wider text-insu-muted">Reading Log</p>
           <div className="rounded-lg border border-white/[0.07] overflow-hidden">
-            <div className="grid grid-cols-[80px_1fr_80px_60px] border-b border-white/[0.07] bg-white/[0.02] px-3 py-2 text-[10px] uppercase tracking-wider text-insu-muted">
+            <div className="grid grid-cols-[80px_1fr_80px_60px] border-b border-white/[0.07] bg-white/[0.02] px-3 py-2 text-[11px] uppercase tracking-wider text-insu-muted">
               <span>Time</span><span>Raw value</span><span>Parsed</span><span>Trigger</span>
             </div>
             {selected.readings.slice(0, 20).map((r) => (
-              <div key={r.id} className="grid grid-cols-[80px_1fr_80px_60px] border-b border-white/[0.04] px-3 py-2 text-[12px] last:border-0">
+              <div key={r.id} className="grid grid-cols-[80px_1fr_80px_60px] border-b border-white/[0.04] px-3 py-2 text-[13px] last:border-0">
                 <span className="text-insu-muted">{timeAgo(r.read_at)}</span>
-                <span className="truncate font-mono text-[11px] text-insu-muted">{JSON.stringify(r.value)}</span>
+                <span className="truncate font-mono text-[12px] text-insu-muted">{JSON.stringify(r.value)}</span>
                 <span className="font-mono text-blue-400">{parseValue(r)}</span>
                 <span className={r.trigger_met ? 'font-bold text-red-400' : 'text-insu-muted'}>
                   {r.trigger_met ? 'YES' : 'NO'}

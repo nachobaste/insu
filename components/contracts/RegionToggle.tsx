@@ -33,7 +33,7 @@ export default function RegionToggle({ region, onSelect }: Props) {
             aria-selected={active}
             onClick={() => onSelect(o.value)}
             className={cn(
-              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold transition-colors',
+              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-semibold transition-colors',
               active ? 'bg-insu-accent text-bg' : 'text-insu-muted hover:text-insu-text',
             )}
           >

@@ -71,7 +71,7 @@ export default function SignupForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="signup-name" className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
+          <label htmlFor="signup-name" className="mb-1.5 block text-[13px] font-semibold uppercase tracking-wider text-insu-muted">
             Full Name
           </label>
           <input
@@ -85,7 +85,7 @@ export default function SignupForm() {
         </div>
 
         <div>
-          <label htmlFor="signup-email" className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
+          <label htmlFor="signup-email" className="mb-1.5 block text-[13px] font-semibold uppercase tracking-wider text-insu-muted">
             Email
           </label>
           <input
@@ -99,7 +99,7 @@ export default function SignupForm() {
         </div>
 
         <div>
-          <label htmlFor="signup-password" className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
+          <label htmlFor="signup-password" className="mb-1.5 block text-[13px] font-semibold uppercase tracking-wider text-insu-muted">
             Password
           </label>
           <input

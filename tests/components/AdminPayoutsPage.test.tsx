@@ -64,6 +64,6 @@ describe('AdminPayoutsPage', () => {
     render(await AdminPayoutsPage())
     expect(screen.getByText('Mexico City Rain')).toBeInTheDocument()
     expect(screen.getByText('Jane Buyer')).toBeInTheDocument()
-    expect(screen.getByText('$250')).toBeInTheDocument()
+    expect(screen.getByText('$250 USD')).toBeInTheDocument()
   })
 })

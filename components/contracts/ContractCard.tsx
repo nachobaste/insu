@@ -58,7 +58,7 @@ export default function ContractCard({ contract, currency, badge }: Props) {
       {badge && (
         <span
           className={cn(
-            'absolute right-3.5 top-3.5 rounded px-[7px] py-[3px] text-[9px] font-bold uppercase tracking-[0.1em]',
+            'absolute right-3.5 top-3.5 rounded px-[7px] py-[3px] text-[10px] font-bold uppercase tracking-[0.1em]',
             BADGE_STYLES[badge]
           )}
         >
@@ -90,7 +90,7 @@ export default function ContractCard({ contract, currency, badge }: Props) {
       </p>
 
       {/* Location */}
-      <p className="mb-3 flex items-center gap-1 text-[11px] text-insu-muted">
+      <p className="mb-3 flex items-center gap-1 text-[12px] text-insu-muted">
         <span aria-hidden="true">{countryFlag(contract.location?.country ?? 'MX')}</span>
         <span>{contract.location?.city ?? ''}</span>
       </p>
@@ -102,10 +102,10 @@ export default function ContractCard({ contract, currency, badge }: Props) {
             key={tier.id}
             className="flex items-center justify-between border-b border-white/[0.04] py-1.5 last:border-none"
           >
-            <span className="text-[11px] font-medium text-insu-muted">
+            <span className="text-[12px] font-medium text-insu-muted">
               {TIER_LABELS[tier.name]}
             </span>
-            <span className="font-mono text-[12px] font-bold text-insu-text">
+            <span className="font-mono text-[13px] font-bold text-insu-text">
               {formatCurrency(currency === 'USD' ? tier.premium_usd : tier.premium_mxn, currency)}
               <span className="mx-1 font-normal text-insu-muted">/</span>
               <span className="text-insu-green">
@@ -118,7 +118,7 @@ export default function ContractCard({ contract, currency, badge }: Props) {
 
       {/* Footer */}
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 font-mono text-[10px] font-medium text-insu-muted">
+        <span className="flex items-center gap-1.5 font-mono text-[11px] font-medium text-insu-muted">
           <span aria-hidden="true" className="inline-block h-[5px] w-[5px] rounded-full bg-insu-green vol-dot-pulse" />
           {formatVolume(contract.total_volume_usd)} Vol.
         </span>
@@ -127,7 +127,7 @@ export default function ContractCard({ contract, currency, badge }: Props) {
             e.stopPropagation()
             router.push(`/markets/${contract.slug}`)
           }}
-          className="rounded-lg bg-insu-text px-3.5 py-1.5 text-[12px] font-bold text-bg transition-all hover:scale-105 hover:bg-insu-accent"
+          className="rounded-lg bg-insu-text px-3.5 py-1.5 text-[13px] font-bold text-bg transition-all hover:scale-105 hover:bg-insu-accent"
         >
           Buy now
         </button>

@@ -12,7 +12,7 @@ interface Props {
 
 const inputCls =
   'w-full rounded-md border border-white/[0.07] bg-bg px-3 py-2 text-sm text-insu-text focus:border-insu-accent/40 focus:outline-none'
-const labelCls = 'mb-1 block text-[11px] uppercase tracking-wider text-insu-muted'
+const labelCls = 'mb-1 block text-[12px] uppercase tracking-wider text-insu-muted'
 
 function operatorSymbol(op: string) {
   return op === 'gte' ? '≥' : op === 'lte' ? '≤' : op === 'gt' ? '>' : '<'
@@ -137,7 +137,7 @@ export function ScenarioPanel({ contracts }: Props) {
 
       {result && (
         <div className="mt-6 space-y-3 rounded-lg border border-white/[0.07] bg-white/[0.02] p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-insu-muted">
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
             ✓ Reading written
           </p>
 

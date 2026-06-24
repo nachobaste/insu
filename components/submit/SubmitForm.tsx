@@ -53,7 +53,7 @@ export default function SubmitForm({ categories }: Props) {
   }
 
   const input = 'w-full rounded-lg border border-white/[0.07] bg-bg px-4 py-2.5 text-[14px] text-insu-text placeholder:text-insu-muted/60 focus:border-insu-accent/40 focus:outline-none transition-colors'
-  const label = 'mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-insu-muted'
+  const label = 'mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-insu-muted'
 
   if (submitted) {
     return (
@@ -138,7 +138,7 @@ export default function SubmitForm({ categories }: Props) {
               />
               <div>
                 <p className="text-[13px] font-semibold text-insu-text">{t.label}</p>
-                <p className="text-[11px] text-insu-muted">{t.example}</p>
+                <p className="text-[12px] text-insu-muted">{t.example}</p>
               </div>
             </label>
           ))}
@@ -156,7 +156,7 @@ export default function SubmitForm({ categories }: Props) {
           onChange={(e) => setTriggerDescription(e.target.value)}
           required
         />
-        <p className="mt-1.5 text-[11px] text-insu-muted">
+        <p className="mt-1.5 text-[12px] text-insu-muted">
           Our team will translate this into a precise oracle condition.
         </p>
       </div>
@@ -211,7 +211,7 @@ export default function SubmitForm({ categories }: Props) {
             onChange={(e) => setProposedPayout(e.target.value)}
           />
         </div>
-        <p className="mt-1.5 text-[11px] text-insu-muted">
+        <p className="mt-1.5 text-[12px] text-insu-muted">
           Insu sets final pricing actuarially — this is your reference, not a commitment.
         </p>
       </div>

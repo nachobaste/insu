@@ -6,7 +6,7 @@ export function validateProviderCapacity(
 ): string | null {
   const remaining = maxCapacity - currentCapacity
   if (remaining <= 0) return 'This tier is at capacity'
-  if (depositAmount > remaining) return `Maximum available: $${remaining.toLocaleString()}`
+  if (depositAmount > remaining) return `Maximum available: $${remaining.toLocaleString()} USD`
   return null
 }
 

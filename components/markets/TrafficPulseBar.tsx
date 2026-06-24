@@ -66,17 +66,17 @@ export function TrafficPulseBar({
     <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-insu-muted">Tráfico en vivo</p>
-          <p className="mt-0.5 text-[12px] text-insu-dim">{triggerDescription}</p>
+          <p className="text-[11px] uppercase tracking-wider text-insu-muted">Tráfico en vivo</p>
+          <p className="mt-0.5 text-[13px] text-insu-dim">{triggerDescription}</p>
         </div>
         <div className="flex items-center gap-2">
           {isTriggered && (
-            <span className="rounded bg-red-500/20 px-2 py-0.5 text-[10px] font-bold uppercase text-red-400">
+            <span className="rounded bg-red-500/20 px-2 py-0.5 text-[11px] font-bold uppercase text-red-400">
               ⚡ TRIGGER ACTIVE
             </span>
           )}
           {latest && (
-            <span className="text-[10px] text-insu-muted">{timeAgo(latest.read_at)}</span>
+            <span className="text-[11px] text-insu-muted">{timeAgo(latest.read_at)}</span>
           )}
         </div>
       </div>
@@ -95,7 +95,7 @@ export function TrafficPulseBar({
         />
       </div>
 
-      <div className="mb-3 flex items-center justify-between text-[10px]">
+      <div className="mb-3 flex items-center justify-between text-[11px]">
         <span className="text-insu-muted">0</span>
         <span className={cn('font-semibold tabular-nums', isTriggered ? 'text-red-400' : 'text-insu-text')}>
           {displayIndex !== null
@@ -131,7 +131,7 @@ export function TrafficPulseBar({
       )}
 
       {!inWindow && (
-        <p className="mt-2 text-center text-[10px] text-insu-muted">
+        <p className="mt-2 text-center text-[11px] text-insu-muted">
           {nextWindowLabel(windowStart)}
         </p>
       )}

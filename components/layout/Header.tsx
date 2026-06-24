@@ -39,7 +39,7 @@ export default async function Header() {
           INSU
         </span>
         <div className="mx-1 hidden h-5 w-px bg-white/[0.07] lg:block" />
-        <span className="hidden text-[10px] font-medium uppercase leading-tight tracking-wide text-insu-muted lg:block">
+        <span className="hidden text-[11px] font-medium uppercase leading-tight tracking-wide text-insu-muted lg:block">
           Everyday Risk,
           <br />
           Instantly Covered

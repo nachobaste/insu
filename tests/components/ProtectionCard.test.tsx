@@ -46,8 +46,8 @@ describe('ProtectionCard', () => {
     const position = makePosition({ current_value_usd: 204.76 })
     render(<ProtectionCard position={position} />)
 
-    // formatCurrency uses maximumFractionDigits: 0, so 204.76 → $205
-    expect(screen.getByText('$205')).toBeInTheDocument()
+    // formatCurrency uses maximumFractionDigits: 0 and appends the code, so 204.76 → $205 USD
+    expect(screen.getByText('$205 USD')).toBeInTheDocument()
     expect(screen.getByText(/Current value:/)).toBeInTheDocument()
   })
 

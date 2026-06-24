@@ -20,7 +20,7 @@ export default async function SubmitPage() {
       <main className="mx-auto max-w-[680px] px-6 py-14">
         {/* Header */}
         <div className="mb-10">
-          <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-insu-accent">
+          <p className="mb-2 font-mono text-[12px] font-semibold uppercase tracking-[0.2em] text-insu-accent">
             Submit your own program
           </p>
           <h1 className="mb-3 font-display text-[40px] leading-tight tracking-wide sm:text-[52px] text-insu-text">
@@ -40,7 +40,7 @@ export default async function SubmitPage() {
           ].map((step) => (
             <div key={step.n} className="rounded-lg border border-white/[0.07] bg-bg-card p-4 text-center">
               <div className="mb-2 font-display text-[28px] text-insu-accent">{step.n}</div>
-              <p className="text-[12px] leading-snug text-insu-muted">{step.label}</p>
+              <p className="text-[13px] leading-snug text-insu-muted">{step.label}</p>
             </div>
           ))}
         </div>

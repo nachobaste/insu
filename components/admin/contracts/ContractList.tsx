@@ -20,7 +20,7 @@ export function ContractList({ contracts }: { contracts: ContractWithTiers[] }) 
         <div className="flex items-center gap-3">
           <h1 className="font-display text-2xl tracking-wide text-insu-text">Contracts</h1>
           {pending.length > 0 && (
-            <span className="rounded-full bg-insu-accent/15 px-2.5 py-0.5 text-[12px] font-semibold text-insu-accent">
+            <span className="rounded-full bg-insu-accent/15 px-2.5 py-0.5 text-[13px] font-semibold text-insu-accent">
               {pending.length} pending review
             </span>
           )}
@@ -36,7 +36,7 @@ export function ContractList({ contracts }: { contracts: ContractWithTiers[] }) 
       {/* Pending submissions section */}
       {pending.length > 0 && (
         <div className="mb-6 rounded-lg border border-insu-accent/20 bg-insu-accent/[0.03] p-4">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-insu-accent">
+          <p className="mb-3 text-[12px] font-semibold uppercase tracking-wider text-insu-accent">
             User submissions — awaiting review
           </p>
           <div className="space-y-2">
@@ -47,13 +47,13 @@ export function ContractList({ contracts }: { contracts: ContractWithTiers[] }) 
               >
                 <div>
                   <p className="text-[14px] font-medium text-insu-text">{c.title}</p>
-                  <p className="mt-0.5 text-[11px] text-insu-muted">
+                  <p className="mt-0.5 text-[12px] text-insu-muted">
                     {c.category?.name} · {c.trigger_type} · submitted {new Date(c.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <Link
                   href={`/admin/contracts/${c.id}`}
-                  className="rounded-md bg-insu-accent px-3 py-1.5 text-[12px] font-bold text-bg hover:bg-[#f7b84a]"
+                  className="rounded-md bg-insu-accent px-3 py-1.5 text-[13px] font-bold text-bg hover:bg-[#f7b84a]"
                 >
                   Review →
                 </Link>
@@ -65,7 +65,7 @@ export function ContractList({ contracts }: { contracts: ContractWithTiers[] }) 
 
       {/* All contracts table */}
       <div className="overflow-hidden rounded-lg border border-white/[0.07]">
-        <div className="grid grid-cols-[1fr_100px_80px_90px_120px] gap-3 border-b border-white/[0.07] bg-white/[0.02] px-4 py-2.5 text-[11px] uppercase tracking-wider text-insu-muted">
+        <div className="grid grid-cols-[1fr_100px_80px_90px_120px] gap-3 border-b border-white/[0.07] bg-white/[0.02] px-4 py-2.5 text-[12px] uppercase tracking-wider text-insu-muted">
           <span>Title</span><span>Category</span><span>Type</span><span>Status</span><span>Action</span>
         </div>
 
@@ -83,13 +83,13 @@ export function ContractList({ contracts }: { contracts: ContractWithTiers[] }) 
           >
             <div>
               <p className="font-medium text-insu-text">{c.title}</p>
-              <p className="mt-0.5 text-[11px] text-insu-muted">
+              <p className="mt-0.5 text-[12px] text-insu-muted">
                 Deadline {c.trigger_deadline ? new Date(c.trigger_deadline).toLocaleDateString() : '—'}
               </p>
             </div>
             <span className="self-center text-insu-dim capitalize">{c.category?.name ?? '—'}</span>
             <span className="self-center text-insu-dim">{c.trigger_type}</span>
-            <span className={cn('self-center rounded px-2 py-0.5 text-[11px] font-medium w-fit', STATUS_STYLES[c.status] ?? STATUS_STYLES.settled)}>
+            <span className={cn('self-center rounded px-2 py-0.5 text-[12px] font-medium w-fit', STATUS_STYLES[c.status] ?? STATUS_STYLES.settled)}>
               {c.status}
             </span>
             <div className="flex items-center gap-3 self-center">

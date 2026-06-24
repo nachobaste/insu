@@ -23,7 +23,7 @@ const PREF_LABELS: Record<keyof NotificationPrefs, string> = {
 
 const fieldCls =
   'w-full rounded-lg border border-white/[0.07] bg-bg-card px-4 py-2.5 text-[14px] text-insu-text outline-none transition-colors focus:border-insu-accent/40'
-const labelCls = 'mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-insu-muted'
+const labelCls = 'mb-1.5 block text-[13px] font-semibold uppercase tracking-wider text-insu-muted'
 const cardCls = 'rounded-xl border border-white/[0.07] bg-bg-card/40 p-5'
 
 export default function ProfileForm(props: Props) {

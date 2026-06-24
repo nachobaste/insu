@@ -85,10 +85,10 @@ export default function OracleConditions({ reading, triggerCondition, oracleMult
   return (
     <div className={`rounded-[10px] border bg-bg-card p-[14px_16px] ${cfg.border}`}>
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-insu-muted">
+        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-insu-muted">
           Current conditions
         </span>
-        <span className="text-[9px] text-insu-muted/60">
+        <span className="text-[10px] text-insu-muted/60">
           {sourceName} · {formatAge(reading.read_at)}
         </span>
       </div>
@@ -101,7 +101,7 @@ export default function OracleConditions({ reading, triggerCondition, oracleMult
           {unit && (
             <div className={`text-[13px] font-semibold leading-none ${cfg.text}`}>{unit}</div>
           )}
-          <div className="text-[10px] text-insu-muted">
+          <div className="text-[11px] text-insu-muted">
             Triggers at {operatorLabel} {triggerCondition.threshold}
             {unit ? ` ${unit}` : ''}
           </div>
@@ -109,7 +109,7 @@ export default function OracleConditions({ reading, triggerCondition, oracleMult
       </div>
 
       <div className="mb-2.5">
-        <div className="mb-1 flex justify-between text-[9px] text-insu-muted">
+        <div className="mb-1 flex justify-between text-[10px] text-insu-muted">
           <span>Conditions now</span>
           <span className={cfg.text}>
             {state === 'met' ? '⚡ Trigger threshold crossed' : `${displayPct}% to trigger`}
@@ -127,9 +127,9 @@ export default function OracleConditions({ reading, triggerCondition, oracleMult
         <div className="flex items-center justify-between border-t border-white/5 pt-2.5">
           <div className="flex items-center gap-1.5">
             <div className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-            <span className="text-[10px] text-insu-muted">{cfg.label}</span>
+            <span className="text-[11px] text-insu-muted">{cfg.label}</span>
           </div>
-          <span className={`font-mono text-[12px] font-bold ${cfg.text}`}>
+          <span className={`font-mono text-[13px] font-bold ${cfg.text}`}>
             {impactPct > 0 ? '+' : ''}
             {impactPct}% vs baseline
           </span>

@@ -48,7 +48,7 @@ export default function NotificationBell({ initialUnread }: Props) {
       >
         <Bell size={18} />
         {unread > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-insu-accent px-1 text-[10px] font-bold text-bg">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-insu-accent px-1 text-[11px] font-bold text-bg">
             {unread > 9 ? '9+' : unread}
           </span>
         )}
@@ -73,9 +73,9 @@ export default function NotificationBell({ initialUnread }: Props) {
                   <div className="flex flex-col gap-0.5 rounded-md px-3 py-2.5 transition-colors hover:bg-white/[0.06]">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[13px] font-semibold text-insu-text">{n.title}</span>
-                      <span className="flex-shrink-0 text-[11px] text-insu-muted">{timeAgo(n.created_at)}</span>
+                      <span className="flex-shrink-0 text-[12px] text-insu-muted">{timeAgo(n.created_at)}</span>
                     </div>
-                    <span className="text-[12px] text-insu-dim">{n.body}</span>
+                    <span className="text-[13px] text-insu-dim">{n.body}</span>
                   </div>
                 )
                 return n.contract?.slug ? (

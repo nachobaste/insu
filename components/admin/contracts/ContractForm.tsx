@@ -176,7 +176,7 @@ export function ContractForm({ categories, contract }: Props) {
   const canCancelMarket = !!contract?.id && contract.status !== 'settled' && contract.status !== 'cancelled'
 
   const inputCls = 'w-full rounded-md border border-white/[0.07] bg-bg px-3 py-2 text-sm text-insu-text placeholder:text-insu-muted focus:border-insu-accent/40 focus:outline-none'
-  const labelCls = 'mb-1 block text-[11px] uppercase tracking-wider text-insu-muted'
+  const labelCls = 'mb-1 block text-[12px] uppercase tracking-wider text-insu-muted'
   const selectCls = inputCls + ' cursor-pointer'
 
   const isUserSubmission = contract?.status === 'pending'
@@ -195,12 +195,12 @@ export function ContractForm({ categories, contract }: Props) {
             This contract was submitted by a user. Review the pitch below, fill in the trigger condition and coverage tiers, then set status to <strong className="text-insu-text">active</strong> to publish it.
           </p>
           {!!(contract?.trigger_condition as Record<string, unknown>)?.description && (
-            <p className="mt-2 rounded bg-black/20 px-3 py-2 font-mono text-[12px] text-insu-muted">
+            <p className="mt-2 rounded bg-black/20 px-3 py-2 font-mono text-[13px] text-insu-muted">
               Pitch: &quot;{String((contract.trigger_condition as Record<string, unknown>).description)}&quot;
             </p>
           )}
           {!!(contract?.trigger_condition as Record<string, unknown>)?.proposed_payout && (
-            <p className="mt-1 font-mono text-[12px] text-insu-muted">
+            <p className="mt-1 font-mono text-[13px] text-insu-muted">
               Proposed payout: ${String((contract.trigger_condition as Record<string, unknown>).proposed_payout)}
             </p>
           )}
@@ -259,7 +259,7 @@ export function ContractForm({ categories, contract }: Props) {
 
       {/* Trigger condition block */}
       <div className="rounded-lg border border-insu-accent/20 bg-insu-accent/[0.03] p-4">
-        <p className="mb-3 text-[11px] uppercase tracking-wider text-insu-accent">
+        <p className="mb-3 text-[12px] uppercase tracking-wider text-insu-accent">
           Trigger Condition — {triggerType}
         </p>
 
@@ -372,12 +372,12 @@ export function ContractForm({ categories, contract }: Props) {
 
       {/* Coverage tiers */}
       <div className="rounded-lg border border-white/[0.07] p-4">
-        <p className="mb-3 text-[11px] uppercase tracking-wider text-insu-muted">Coverage Tiers (USD)</p>
+        <p className="mb-3 text-[12px] uppercase tracking-wider text-insu-muted">Coverage Tiers (USD)</p>
         <div className="grid grid-cols-[60px_1fr_1fr_1fr] gap-3 mb-2">
           <div />
-          <span className="text-[11px] uppercase tracking-wider text-insu-muted">Premium</span>
-          <span className="text-[11px] uppercase tracking-wider text-insu-muted">Payout</span>
-          <span className="text-[11px] uppercase tracking-wider text-insu-muted">Max Capacity</span>
+          <span className="text-[12px] uppercase tracking-wider text-insu-muted">Premium</span>
+          <span className="text-[12px] uppercase tracking-wider text-insu-muted">Payout</span>
+          <span className="text-[12px] uppercase tracking-wider text-insu-muted">Max Capacity</span>
         </div>
         <div className="grid grid-cols-[60px_1fr_1fr_1fr] gap-3 mb-2 items-center">
           <span className="text-sm text-insu-dim">Basic</span>
@@ -417,7 +417,7 @@ export function ContractForm({ categories, contract }: Props) {
             )}
           />
         </button>
-        <span className="text-[12px] text-insu-muted">
+        <span className="text-[13px] text-insu-muted">
           {isRecurring ? 'Rolls over (no deadline)' : 'One-time event (expires at deadline)'}
         </span>
       </div>

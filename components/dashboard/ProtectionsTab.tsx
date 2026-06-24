@@ -23,7 +23,7 @@ export function ProtectionsTab({ positions }: { positions: HedgerPositionWithCon
     <div className="space-y-6">
       {active.length > 0 && (
         <div>
-          <p className="mb-3 font-body text-[10px] uppercase tracking-wide text-insu-muted">
+          <p className="mb-3 font-body text-[11px] uppercase tracking-wide text-insu-muted">
             Active ({active.length})
           </p>
           <div className="space-y-3">
@@ -33,7 +33,7 @@ export function ProtectionsTab({ positions }: { positions: HedgerPositionWithCon
       )}
       {history.length > 0 && (
         <div>
-          <p className="mb-3 font-body text-[10px] uppercase tracking-wide text-insu-muted">
+          <p className="mb-3 font-body text-[11px] uppercase tracking-wide text-insu-muted">
             Expired / Paid out ({history.length})
           </p>
           <div className="space-y-3">

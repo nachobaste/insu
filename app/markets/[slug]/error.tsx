@@ -21,7 +21,7 @@ export default function MarketError({
         {process.env.NODE_ENV === 'development' ? error.message : 'Unable to load this market.'}
       </p>
       {process.env.NODE_ENV === 'development' && error.stack && (
-        <pre className="max-w-xl overflow-auto rounded bg-white/5 p-4 text-left text-[11px] text-red-400">
+        <pre className="max-w-xl overflow-auto rounded bg-white/5 p-4 text-left text-[12px] text-red-400">
           {error.stack}
         </pre>
       )}

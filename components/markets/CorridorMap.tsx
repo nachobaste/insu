@@ -143,14 +143,14 @@ export function CorridorMap({
 
   const header = (
     <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-2">
-      <p className="text-[11px] text-insu-muted">
+      <p className="text-[12px] text-insu-muted">
         <span className="mr-1">📍</span>{corridorName} — tráfico en tiempo real
       </p>
       <a
         href={mapsUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-[10px] text-insu-accent hover:underline"
+        className="text-[11px] text-insu-accent hover:underline"
       >
         Abrir en Google Maps ↗
       </a>

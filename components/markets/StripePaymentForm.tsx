@@ -53,7 +53,7 @@ function CardPaymentForm({ clientSecret, amountUsd, onSuccess, onError }: FormPr
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
+        <label className="mb-1.5 block text-[13px] font-semibold uppercase tracking-wider text-insu-muted">
           Card details
         </label>
         <div className="rounded-lg border border-white/[0.07] bg-bg px-4 py-3">
@@ -65,7 +65,7 @@ function CardPaymentForm({ clientSecret, amountUsd, onSuccess, onError }: FormPr
         disabled={!stripe || loading}
         className="w-full rounded-lg bg-insu-accent py-3 text-[14px] font-bold text-bg transition-all hover:bg-[#f7b84a] disabled:opacity-40"
       >
-        {loading ? 'Processing…' : `Pay $${amountUsd.toLocaleString()}`}
+        {loading ? 'Processing…' : `Pay $${amountUsd.toLocaleString()} USD`}
       </button>
     </form>
   )

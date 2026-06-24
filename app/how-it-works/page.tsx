@@ -52,7 +52,7 @@ const SIDES = [
     color: '#f5a623',
     tagline: 'Buy certainty against disruption',
     description: 'Runners buying marathon rain cover. Vendors protecting their festival weekend. Businesses guarding against traffic-triggered revenue loss. Hedgers pay a fixed premium and receive a fixed payout if the trigger fires — regardless of their actual loss.',
-    items: ['Fixed premium, known upfront', 'Payout in minutes, not months', 'No claim forms, no receipts', 'Coverage from $18/event'],
+    items: ['Fixed premium, known upfront', 'Payout in minutes, not months', 'No claim forms, no receipts', 'Coverage from $18 USD/event'],
   },
   {
     role: 'Provider',
@@ -81,7 +81,7 @@ export default function HowItWorksPage() {
         <div className="pointer-events-none absolute left-1/2 top-0 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-insu-accent/[0.05] blur-[120px]" />
 
         <div className="relative mx-auto max-w-[1100px]">
-          <p className="mb-4 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-insu-accent">
+          <p className="mb-4 font-mono text-[12px] font-semibold uppercase tracking-[0.2em] text-insu-accent">
             How Insu works
           </p>
           <h1 className="font-display text-[clamp(56px,9vw,108px)] leading-[0.92] tracking-[2px] text-insu-text">
@@ -117,7 +117,7 @@ export default function HowItWorksPage() {
           {STATS.map((s) => (
             <div key={s.label} className="px-8 py-6">
               <div className="font-display text-[36px] tracking-wide text-insu-accent">{s.value}</div>
-              <div className="mt-0.5 text-[12px] font-medium uppercase tracking-wider text-insu-muted">{s.label}</div>
+              <div className="mt-0.5 text-[13px] font-medium uppercase tracking-wider text-insu-muted">{s.label}</div>
             </div>
           ))}
         </div>
@@ -126,7 +126,7 @@ export default function HowItWorksPage() {
       {/* ── HOW IT WORKS — 4 STEPS ───────────────────────────────── */}
       <section className="border-b border-white/[0.06] px-8 py-20">
         <div className="mx-auto max-w-[1100px]">
-          <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-insu-muted">
+          <p className="mb-2 font-mono text-[12px] font-semibold uppercase tracking-[0.2em] text-insu-muted">
             The mechanism
           </p>
           <h2 className="mb-16 font-display text-[clamp(36px,5vw,64px)] leading-tight tracking-[1px] text-insu-text">
@@ -145,14 +145,14 @@ export default function HowItWorksPage() {
                   {/* Step number */}
                   <div className="relative flex-shrink-0">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full border border-insu-accent/30 bg-bg-card">
-                      <span className="font-mono text-[11px] font-bold text-insu-accent">{i + 1}</span>
+                      <span className="font-mono text-[12px] font-bold text-insu-accent">{i + 1}</span>
                     </div>
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 rounded-[14px] border border-white/[0.07] bg-bg-card p-7 transition-colors hover:border-white/[0.12]">
                     <div className="mb-3 flex items-center gap-3">
-                      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-insu-accent/70">
+                      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-insu-accent/70">
                         {step.tag}
                       </span>
                     </div>
@@ -169,7 +169,7 @@ export default function HowItWorksPage() {
       {/* ── THE PROBLEM ──────────────────────────────────────────── */}
       <section className="border-b border-white/[0.06] px-8 py-20">
         <div className="mx-auto max-w-[1100px]">
-          <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-insu-muted">
+          <p className="mb-2 font-mono text-[12px] font-semibold uppercase tracking-[0.2em] text-insu-muted">
             The problem
           </p>
           <h2 className="mb-12 font-display text-[clamp(36px,5vw,64px)] leading-tight tracking-[1px] text-insu-text">
@@ -195,7 +195,7 @@ export default function HowItWorksPage() {
       {/* ── TWO SIDES ────────────────────────────────────────────── */}
       <section className="border-b border-white/[0.06] px-8 py-20">
         <div className="mx-auto max-w-[1100px]">
-          <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-insu-muted">
+          <p className="mb-2 font-mono text-[12px] font-semibold uppercase tracking-[0.2em] text-insu-muted">
             Two-sided marketplace
           </p>
           <h2 className="mb-12 font-display text-[clamp(36px,5vw,64px)] leading-tight tracking-[1px] text-insu-text">
@@ -211,7 +211,7 @@ export default function HowItWorksPage() {
                 className="rounded-[14px] border border-white/[0.07] bg-bg-card p-8 transition-colors hover:border-white/[0.12]"
               >
                 <div
-                  className="mb-1 font-mono text-[11px] font-semibold uppercase tracking-[0.18em]"
+                  className="mb-1 font-mono text-[12px] font-semibold uppercase tracking-[0.18em]"
                   style={{ color: side.color }}
                 >
                   {side.role}
@@ -237,7 +237,7 @@ export default function HowItWorksPage() {
       {/* ── TECH PIPELINE ────────────────────────────────────────── */}
       <section className="border-b border-white/[0.06] px-8 py-20">
         <div className="mx-auto max-w-[1100px]">
-          <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-insu-muted">
+          <p className="mb-2 font-mono text-[12px] font-semibold uppercase tracking-[0.2em] text-insu-muted">
             Under the hood
           </p>
           <h2 className="mb-12 font-display text-[clamp(36px,5vw,64px)] leading-tight tracking-[1px] text-insu-text">
@@ -281,7 +281,7 @@ export default function HowItWorksPage() {
                     style={{ background: node.bg }}
                   >
                     <div
-                      className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.18em]"
+                      className="mb-4 font-mono text-[11px] font-bold uppercase tracking-[0.18em]"
                       style={{ color: node.color }}
                     >
                       {node.label}
@@ -305,7 +305,7 @@ export default function HowItWorksPage() {
           </div>
 
           <div className="mt-8 rounded-[14px] border border-white/[0.07] bg-bg-card px-7 py-5">
-            <p className="font-mono text-[12px] leading-relaxed text-insu-muted">
+            <p className="font-mono text-[13px] leading-relaxed text-insu-muted">
               <span className="text-insu-accent">{'// Repricing'}</span>{' runs on a 6-hour cron cycle using an actuarial formula that accounts for base probability, capacity utilization, and time-to-deadline decay. Premiums adjust automatically — no manual intervention required.'}
             </p>
           </div>

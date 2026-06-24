@@ -48,7 +48,7 @@ export function TriggerOverride({ contracts, summaries, initialContractId }: Pro
   }
 
   const inputCls = 'w-full rounded-md border border-white/[0.07] bg-bg px-3 py-2 text-sm text-insu-text focus:border-insu-accent/40 focus:outline-none'
-  const labelCls = 'mb-1 block text-[11px] uppercase tracking-wider text-insu-muted'
+  const labelCls = 'mb-1 block text-[12px] uppercase tracking-wider text-insu-muted'
 
   return (
     <div className="max-w-lg">
@@ -124,7 +124,7 @@ export function TriggerOverride({ contracts, summaries, initialContractId }: Pro
               )}
             >
               <p className="mb-1 text-sm font-bold text-insu-green">⚡ TRIGGER FIRED</p>
-              <p className="text-[12px] text-insu-muted">Hedgers receive payouts. Settles as outcome = true.</p>
+              <p className="text-[13px] text-insu-muted">Hedgers receive payouts. Settles as outcome = true.</p>
             </button>
             <button
               type="button"
@@ -137,7 +137,7 @@ export function TriggerOverride({ contracts, summaries, initialContractId }: Pro
               )}
             >
               <p className="mb-1 text-sm font-bold text-insu-dim">✕ NO TRIGGER</p>
-              <p className="text-[12px] text-insu-muted">No payouts. Providers keep yield. outcome = false.</p>
+              <p className="text-[13px] text-insu-muted">No payouts. Providers keep yield. outcome = false.</p>
             </button>
           </div>
         </div>
@@ -167,7 +167,7 @@ export function TriggerOverride({ contracts, summaries, initialContractId }: Pro
         </button>
 
         {contractId && outcome !== null && (
-          <p className="text-center text-[12px] text-insu-muted">
+          <p className="text-center text-[13px] text-insu-muted">
             This will immediately settle the contract{outcome ? ` and queue Stripe payouts for ${summary?.hedgerCount ?? '?'} hedgers` : ''}.
           </p>
         )}

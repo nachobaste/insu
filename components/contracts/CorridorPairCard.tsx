@@ -68,7 +68,7 @@ export default function CorridorPairCard({ morning, evening, currency }: Props) 
       )}
     >
       {isRecommended && (
-        <span className="absolute right-3.5 top-3.5 rounded px-[7px] py-[3px] text-[9px] font-bold uppercase tracking-[0.1em] bg-blue-400/15 text-blue-400 border border-blue-400/25">
+        <span className="absolute right-3.5 top-3.5 rounded px-[7px] py-[3px] text-[10px] font-bold uppercase tracking-[0.1em] bg-blue-400/15 text-blue-400 border border-blue-400/25">
           recommended
         </span>
       )}
@@ -92,7 +92,7 @@ export default function CorridorPairCard({ morning, evening, currency }: Props) 
       </p>
 
       {/* Location */}
-      <p className="mb-3 flex items-center gap-1 text-[11px] text-insu-muted">
+      <p className="mb-3 flex items-center gap-1 text-[12px] text-insu-muted">
         <span aria-hidden="true">{countryFlag(active.location?.country ?? 'MX')}</span>
         <span>{active.location?.city ?? ''}</span>
       </p>
@@ -103,7 +103,7 @@ export default function CorridorPairCard({ morning, evening, currency }: Props) 
           <button
             onClick={(e) => handleToggle(e, 'morning')}
             className={cn(
-              'flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.07em] transition-colors',
+              'flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.07em] transition-colors',
               activePeriod === 'morning'
                 ? 'border-category-urban/30 bg-category-urban/10 text-category-urban'
                 : 'border-white/10 text-insu-muted hover:border-white/20 hover:text-insu-text'
@@ -118,7 +118,7 @@ export default function CorridorPairCard({ morning, evening, currency }: Props) 
           <button
             onClick={(e) => handleToggle(e, 'evening')}
             className={cn(
-              'flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.07em] transition-colors',
+              'flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.07em] transition-colors',
               activePeriod === 'evening'
                 ? 'border-category-urban/30 bg-category-urban/10 text-category-urban'
                 : 'border-white/10 text-insu-muted hover:border-white/20 hover:text-insu-text'
@@ -140,10 +140,10 @@ export default function CorridorPairCard({ morning, evening, currency }: Props) 
             key={tier.id}
             className="flex items-center justify-between border-b border-white/[0.04] py-1.5 last:border-none"
           >
-            <span className="text-[11px] font-medium text-insu-muted">
+            <span className="text-[12px] font-medium text-insu-muted">
               {TIER_LABELS[tier.name]}
             </span>
-            <span className="font-mono text-[12px] font-bold text-insu-text">
+            <span className="font-mono text-[13px] font-bold text-insu-text">
               {formatCurrency(currency === 'USD' ? tier.premium_usd : tier.premium_mxn, currency)}
               <span className="mx-1 font-normal text-insu-muted">/</span>
               <span className="text-insu-green">
@@ -156,7 +156,7 @@ export default function CorridorPairCard({ morning, evening, currency }: Props) 
 
       {/* Footer */}
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 font-mono text-[10px] font-medium text-insu-muted">
+        <span className="flex items-center gap-1.5 font-mono text-[11px] font-medium text-insu-muted">
           <span aria-hidden="true" className="inline-block h-[5px] w-[5px] rounded-full bg-insu-green vol-dot-pulse" />
           {formatVolume(active.total_volume_usd)} Vol.
         </span>
@@ -165,7 +165,7 @@ export default function CorridorPairCard({ morning, evening, currency }: Props) 
             e.stopPropagation()
             router.push(`/markets/${active.slug}`)
           }}
-          className="rounded-lg bg-insu-text px-3.5 py-1.5 text-[12px] font-bold text-bg transition-all hover:scale-105 hover:bg-insu-accent"
+          className="rounded-lg bg-insu-text px-3.5 py-1.5 text-[13px] font-bold text-bg transition-all hover:scale-105 hover:bg-insu-accent"
         >
           Buy now
         </button>

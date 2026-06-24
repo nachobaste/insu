@@ -22,12 +22,12 @@ export function PayoutRow({ payout }: { payout: PayoutWithContract }) {
       <div className="flex items-center justify-between border-b border-white/[0.07] py-3 transition-colors hover:bg-bg-card-hover px-1">
         <div className="min-w-0 flex-1">
           <p className="truncate font-body text-sm text-insu-text">{contract.title}</p>
-          <p className="mt-0.5 font-body text-[11px] text-insu-muted">{dateStr}</p>
+          <p className="mt-0.5 font-body text-[12px] text-insu-muted">{dateStr}</p>
         </div>
         <div className="ml-4 flex items-center gap-3">
           <p className="font-mono text-sm text-insu-green">{formatCurrency(amount_usd)}</p>
           <span className={cn(
-            'shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px]',
+            'shrink-0 rounded-full px-2 py-0.5 font-mono text-[11px]',
             badge.bg, badge.text,
           )}>
             {badge.label}

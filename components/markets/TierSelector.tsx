@@ -58,25 +58,25 @@ export default function TierSelector({ tiers, selectedTierId, onSelect, mode = '
                 {TIER_LABELS[tier.name]}
               </span>
               {isSelected ? (
-                <span className="text-[11px] font-bold text-insu-accent">✓ Selected</span>
+                <span className="text-[12px] font-bold text-insu-accent">✓ Selected</span>
               ) : statusNote ? (
-                <span className="text-[11px] text-insu-muted">{statusNote}</span>
+                <span className="text-[12px] text-insu-muted">{statusNote}</span>
               ) : null}
             </div>
 
-            <p className="mt-0.5 text-[11px] text-insu-muted">
+            <p className="mt-0.5 text-[12px] text-insu-muted">
               {payoutDescription(tier.max_payouts)}
             </p>
 
             {mode === 'buy' ? (
-              <div className="mt-1 flex items-center gap-1 font-mono text-[12px]">
+              <div className="mt-1 flex items-center gap-1 font-mono text-[13px]">
                 <span className="text-insu-text">{formatCurrency(displayPremium, 'USD')}</span>
                 <span className="text-insu-muted">premium →</span>
                 <span className="text-insu-green">{formatCurrency(tier.payout_usd, 'USD')}</span>
                 <span className="text-insu-muted">payout</span>
               </div>
             ) : (
-              <p className="mt-1 font-mono text-[12px] text-insu-muted">
+              <p className="mt-1 font-mono text-[13px] text-insu-muted">
                 {formatCurrency(remaining, 'USD')} capacity remaining
               </p>
             )}

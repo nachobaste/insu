@@ -82,14 +82,14 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
         <div className="space-y-5">
           {periodToggle}
           <div>
-            <span className={cn('text-[11px] font-bold uppercase tracking-[0.12em]', categoryTextClass(slug))}>
+            <span className={cn('text-[12px] font-bold uppercase tracking-[0.12em]', categoryTextClass(slug))}>
               {contract.category.name}
             </span>
             <h1 className="mt-1 text-[24px] font-semibold leading-snug text-insu-text">
               {contract.title}
             </h1>
             {contract.location?.city && (
-              <p className="mt-1.5 flex items-center gap-1.5 text-[12px] text-insu-muted">
+              <p className="mt-1.5 flex items-center gap-1.5 text-[13px] text-insu-muted">
                 <span aria-hidden="true">{countryFlag(contract.location?.country ?? 'MX')}</span>
                 <span>{contract.location.city}</span>
               </p>
@@ -120,7 +120,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
           {/* Period selector — oracle-driven contracts only */}
           {isRecurring && (
             <div>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-insu-muted">
+              <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
                 Coverage period
               </p>
               <div className="flex gap-2">
@@ -129,7 +129,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
                     key={days}
                     onClick={() => selectPeriod(days)}
                     className={cn(
-                      'flex flex-1 flex-col items-center rounded-lg border py-2.5 text-[11px] font-semibold transition-all',
+                      'flex flex-1 flex-col items-center rounded-lg border py-2.5 text-[12px] font-semibold transition-all',
                       selectedPeriodDays === days
                         ? 'border-insu-accent/50 bg-insu-accent/5 text-insu-accent'
                         : 'border-white/[0.07] bg-bg-card text-insu-muted hover:border-white/15',
@@ -142,7 +142,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
             </div>
           )}
 
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-insu-muted">
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
             Select tier
           </p>
 

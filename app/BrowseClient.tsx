@@ -69,7 +69,7 @@ export default function BrowseClient({ categories, initialContracts, stats }: Pr
 
         {isSearching ? (
           <>
-            <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.08em] text-insu-muted">
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-insu-muted">
               {searchResults.length === 0
                 ? `No results for "${query}"`
                 : `${searchResults.length} result${searchResults.length === 1 ? '' : 's'} for "${query}"`}
@@ -101,7 +101,7 @@ export default function BrowseClient({ categories, initialContracts, stats }: Pr
             )}
 
             {activeSlug === 'all' && trendingContracts.length >= 2 && (
-              <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.08em] text-insu-muted">
+              <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-insu-muted">
                 All contracts
               </p>
             )}

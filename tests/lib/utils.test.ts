@@ -3,13 +3,14 @@ import { describe, it, expect } from 'vitest'
 import { formatCurrency, formatVolume, categoryColorClass } from '@/lib/utils'
 
 describe('formatCurrency', () => {
-  it('formats USD amounts', () => {
-    expect(formatCurrency(500, 'USD')).toBe('$500')
-    expect(formatCurrency(1700, 'USD')).toBe('$1,700')
+  it('formats USD amounts with an explicit currency code', () => {
+    expect(formatCurrency(500, 'USD')).toBe('$500 USD')
+    expect(formatCurrency(1700, 'USD')).toBe('$1,700 USD')
   })
 
-  it('formats MXN amounts', () => {
+  it('formats MXN amounts with an explicit currency code', () => {
     expect(formatCurrency(9500, 'MXN')).toContain('9,500')
+    expect(formatCurrency(9500, 'MXN')).toContain('MXN')
   })
 })
 

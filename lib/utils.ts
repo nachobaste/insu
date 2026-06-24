@@ -8,12 +8,15 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number, currency: Currency = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
+  const formatted = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount)
+  // Append the ISO code so the currency is unambiguous (e.g. "$1,234 USD"),
+  // important in MX where a bare "$" can read as pesos.
+  return `${formatted} ${currency}`
 }
 
 export function formatVolume(usd: number): string {
