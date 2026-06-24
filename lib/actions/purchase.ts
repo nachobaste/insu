@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { validateProviderCapacity, validateBuyerCapacity } from '@/lib/utils/capacity'
 import { dailyHazard, priceTenor, capacityFactor } from '@/lib/pricing/derivative'
+import { createNotification } from '@/lib/notifications/create'
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY
@@ -250,6 +251,14 @@ export async function activatePositionByPaymentIntent(
     await (db.rpc as any)('increment_contract_volume', {
       p_contract_id: position.contract_id,
       p_amount: position.premium_paid_usd,
+    })
+
+    await createNotification(db, {
+      userId: user.id,
+      type: 'protection_purchased',
+      title: 'Protection active',
+      body: 'Your protection is now active and covering you.',
+      contractId: position.contract_id,
     })
   } else {
     const { data: providerPosition, error: providerError } = await db

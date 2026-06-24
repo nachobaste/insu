@@ -57,6 +57,9 @@ export default function MobileMenu({ userId, isAdmin }: Props) {
                 <Link href="/dashboard" onClick={close} className={itemCls}>
                   Portfolio
                 </Link>
+                <Link href="/profile" onClick={close} className={itemCls}>
+                  Profile
+                </Link>
                 <div
                   onClick={close}
                   className="mt-1 border-t border-white/[0.06] pt-1.5 [&>button]:w-full [&>button]:border-0 [&>button]:text-left"

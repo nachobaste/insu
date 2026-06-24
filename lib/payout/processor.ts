@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Contract, HedgerPosition, ProviderPosition } from '@/lib/types'
+import { createNotification } from '@/lib/notifications/create'
 
 interface DbClient {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,6 +103,13 @@ async function settleContract(
     if (amountPaid > 0) {
       paid++
       totalHedgerPayout += amountPaid
+      await createNotification(db, {
+        userId: position.user_id,
+        type: 'coverage_paid',
+        title: 'Payout sent',
+        body: `Your protection on "${contract.title}" triggered and a payout was sent.`,
+        contractId: contract.id,
+      })
     }
   }
 
@@ -113,7 +121,7 @@ async function settleContract(
     .eq('id', contract.id)
   if (settleError) throw new Error(`Failed to settle contract ${contract.id}: ${settleError.message}`)
 
-  await settleProviderPositions(db, contract.id, totalHedgerPayout)
+  await settleProviderPositions(db, contract.id, contract.title, totalHedgerPayout)
 
   return paid
 }
@@ -226,6 +234,13 @@ async function settleRecurring(
         paid++
         remaining--
         lastDay = day
+        await createNotification(db, {
+          userId: pos.user_id,
+          type: 'coverage_paid',
+          title: 'Payout sent',
+          body: `Your protection on "${contract.title}" triggered and a payout was sent.`,
+          contractId: contract.id,
+        })
       }
     }
     if (startRemaining !== remaining || pos.status === 'active') {
@@ -326,6 +341,7 @@ async function payoutOnce(
 async function settleProviderPositions(
   db: DbClient,
   contractId: string,
+  contractTitle: string,
   totalHedgerPayout: number,
 ): Promise<void> {
   const { data: positions } = await db
@@ -348,6 +364,14 @@ async function settleProviderPositions(
     await db.from('provider_positions')
       .update({ status: 'settled', actual_return_usd: actualReturn, settled_at: new Date().toISOString() })
       .eq('id', position.id)
+
+    await createNotification(db, {
+      userId: position.user_id,
+      type: 'provider_settled',
+      title: 'Capital settled',
+      body: `Your provided capital on "${contractTitle}" has been settled.`,
+      contractId,
+    })
   }
 }
 
@@ -369,10 +393,26 @@ export async function expireContracts(db: DbClient = getClient()): Promise<numbe
       .update({ status: 'settled', settled_outcome: false, settled_at: now })
       .eq('id', contract.id)
 
+    const { data: expiringPositions } = await db
+      .from('hedger_positions')
+      .select('id, user_id')
+      .eq('contract_id', contract.id)
+      .eq('status', 'active')
+
     await db.from('hedger_positions')
       .update({ status: 'expired' })
       .eq('contract_id', contract.id)
       .eq('status', 'active')
+
+    for (const pos of (expiringPositions ?? []) as Array<{ id: string; user_id: string }>) {
+      await createNotification(db, {
+        userId: pos.user_id,
+        type: 'coverage_expired',
+        title: 'Protection expired',
+        body: 'Your protection reached its deadline without triggering and has expired.',
+        contractId: contract.id,
+      })
+    }
 
     const { data: providerPositions } = await db
       .from('provider_positions')

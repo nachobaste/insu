@@ -209,3 +209,36 @@ export interface UpsertContractInput {
   basic_tier: { premium_usd: number; payout_usd: number; max_capacity_usd: number }
   premium_tier: { premium_usd: number; payout_usd: number; max_capacity_usd: number }
 }
+
+export type NotificationType =
+  | 'coverage_paid'
+  | 'coverage_expired'
+  | 'protection_purchased'
+  | 'provider_settled'
+
+export interface NotificationPrefs {
+  coverage_paid: boolean
+  coverage_expired: boolean
+  protection_purchased: boolean
+  provider_settled: boolean
+}
+
+export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
+  coverage_paid: true,
+  coverage_expired: true,
+  protection_purchased: true,
+  provider_settled: true,
+}
+
+export interface Notification {
+  id: string
+  user_id: string
+  type: NotificationType
+  title: string
+  body: string
+  contract_id: string | null
+  read_at: string | null
+  created_at: string
+  // Optional joined contract for deep-linking from the bell dropdown
+  contract?: { slug: string } | null
+}
