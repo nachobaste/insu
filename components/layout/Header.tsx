@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import SearchInput from './SearchInput'
 import LogoutButton from './LogoutButton'
+import MobileMenu from './MobileMenu'
 
 export default async function Header() {
   let userId: string | null = null
@@ -56,40 +57,46 @@ export default async function Header() {
         How it works
       </Link>
 
-      {userId ? (
-        <>
-          {isAdmin && (
+      {/* Auth / nav buttons — desktop only; phones use the menu below */}
+      <div className="hidden items-center gap-3 sm:flex">
+        {userId ? (
+          <>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="rounded-lg border border-insu-accent/30 px-3 py-1.5 sm:px-4 text-[13px] font-semibold text-insu-accent transition-colors hover:border-insu-accent/60 hover:bg-insu-accent/5"
+              >
+                Admin
+              </Link>
+            )}
             <Link
-              href="/admin"
-              className="rounded-lg border border-insu-accent/30 px-3 py-1.5 sm:px-4 text-[13px] font-semibold text-insu-accent transition-colors hover:border-insu-accent/60 hover:bg-insu-accent/5"
+              href="/dashboard"
+              className="rounded-lg border border-white/[0.07] px-3 py-1.5 sm:px-4 text-[13px] font-semibold text-insu-dim transition-colors hover:border-white/15 hover:text-insu-text"
             >
-              Admin
+              Portfolio
             </Link>
-          )}
-          <Link
-            href="/dashboard"
-            className="rounded-lg border border-white/[0.07] px-3 py-1.5 sm:px-4 text-[13px] font-semibold text-insu-dim transition-colors hover:border-white/15 hover:text-insu-text"
-          >
-            Portfolio
-          </Link>
-          <LogoutButton />
-        </>
-      ) : (
-        <>
-          <Link
-            href="/auth/login"
-            className="rounded-lg border border-white/[0.07] px-3 py-1.5 sm:px-4 text-[13px] font-semibold text-insu-dim transition-colors hover:border-white/15 hover:text-insu-text"
-          >
-            Log In
-          </Link>
-          <Link
-            href="/auth/signup"
-            className="rounded-lg bg-insu-accent px-3 py-1.5 sm:px-4 text-[13px] font-bold text-bg transition-all hover:-translate-y-px hover:bg-[#f7b84a] hover:shadow-[0_4px_16px_rgba(245,166,35,0.3)]"
-          >
-            Sign Up
-          </Link>
-        </>
-      )}
+            <LogoutButton />
+          </>
+        ) : (
+          <>
+            <Link
+              href="/auth/login"
+              className="rounded-lg border border-white/[0.07] px-3 py-1.5 sm:px-4 text-[13px] font-semibold text-insu-dim transition-colors hover:border-white/15 hover:text-insu-text"
+            >
+              Log In
+            </Link>
+            <Link
+              href="/auth/signup"
+              className="rounded-lg bg-insu-accent px-3 py-1.5 sm:px-4 text-[13px] font-bold text-bg transition-all hover:-translate-y-px hover:bg-[#f7b84a] hover:shadow-[0_4px_16px_rgba(245,166,35,0.3)]"
+            >
+              Sign Up
+            </Link>
+          </>
+        )}
+      </div>
+
+      {/* Mobile hamburger menu (phones only) */}
+      <MobileMenu userId={userId} isAdmin={isAdmin} />
     </header>
   )
 }
