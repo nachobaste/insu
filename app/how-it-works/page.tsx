@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import Header from '@/components/layout/Header'
 
 const STEPS = [
@@ -64,76 +63,6 @@ const SIDES = [
   },
 ]
 
-const SHOWCASE = [
-  {
-    photo: 'https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?auto=format&fit=crop&w=900&q=80',
-    alt: 'Heavy rain flooding a city street',
-    category: 'Nature',
-    categoryColor: '#34d399',
-    contract: 'Guadalajara Flash Flood',
-    trigger: 'Rain > 40 mm in 24 h',
-    premium: '$39',
-    payout: '$800',
-  },
-  {
-    photo: 'https://images.unsplash.com/photo-1470093851219-69951fcbb533?auto=format&fit=crop&w=900&q=80',
-    alt: 'City highway traffic jam at dawn',
-    category: 'Urban',
-    categoryColor: '#94a3b8',
-    contract: 'CDMX Morning Traffic Delay',
-    trigger: 'Traffic index > 85 (7–10 AM)',
-    premium: '$29',
-    payout: '$500',
-  },
-  {
-    photo: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=900&q=80',
-    alt: 'Marathon runners on a city street',
-    category: 'Experiences',
-    categoryColor: '#fb923c',
-    contract: 'CDMX Marathon Rain Cover',
-    trigger: 'Rain > 20 mm race morning',
-    premium: '$24',
-    payout: '$450',
-  },
-  {
-    photo: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=80',
-    alt: 'Colorful outdoor street food market',
-    category: 'Experiences',
-    categoryColor: '#fb923c',
-    contract: 'Oaxaca Street Food Festival',
-    trigger: 'Rain > 25 mm on event day',
-    premium: '$18',
-    payout: '$350',
-  },
-  {
-    photo: '/showcase/fuel.jpg',
-    alt: 'Gas station fuel pumps lit up at night',
-    category: 'Fuel',
-    categoryColor: '#f5a623',
-    contract: 'CDMX Magna Price Surge',
-    trigger: 'Magna > $26.50 / L',
-    premium: '$22',
-    payout: '$400',
-  },
-]
-
-const SCREENSHOTS = [
-  {
-    src: '/screenshots/marketplace.png',
-    width: 2560,
-    height: 1440,
-    alt: 'Insu marketplace showing live parametric protection contracts',
-    label: 'Live marketplace — browse and filter active contracts',
-  },
-  {
-    src: '/screenshots/price-history.png',
-    width: 1636,
-    height: 478,
-    alt: 'Premium price-history chart with Basic and Pro tiers',
-    label: 'Live pricing — premiums move as risk and capacity shift',
-  },
-]
-
 const STATS = [
   { value: '$103K+', label: 'Total volume protected' },
   { value: '< 10 min', label: 'Average payout time' },
@@ -194,119 +123,6 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* ── SHOWCASE ─────────────────────────────────────────────── */}
-      <section className="border-b border-white/[0.06] px-8 py-20">
-        <div className="mx-auto max-w-[1100px]">
-          <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-insu-muted">
-            Real events
-          </p>
-          <h2 className="mb-12 font-display text-[clamp(36px,5vw,64px)] leading-tight tracking-[1px] text-insu-text">
-            Risks people face
-            <br />
-            <span className="text-insu-accent">every day.</span>
-          </h2>
-
-          {/* Event photo grid */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {SHOWCASE.map((item) => (
-              <div
-                key={item.contract}
-                className="group relative overflow-hidden rounded-[14px] border border-white/[0.07]"
-                style={{ aspectRatio: '3/4' }}
-              >
-                {/* Photo */}
-                <Image
-                  src={item.photo}
-                  alt={item.alt}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 20vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/60 to-transparent" />
-
-                {/* Content */}
-                <div className="absolute inset-x-0 bottom-0 p-5">
-                  <span
-                    className="mb-2 inline-block font-mono text-[9px] font-bold uppercase tracking-[0.18em]"
-                    style={{ color: item.categoryColor }}
-                  >
-                    {item.category}
-                  </span>
-                  <p className="mb-3 text-[13px] font-semibold leading-snug text-insu-text">
-                    {item.contract}
-                  </p>
-                  <p className="mb-3 font-mono text-[10px] text-insu-muted">{item.trigger}</p>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-md bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-insu-dim">
-                      {item.premium} premium
-                    </span>
-                    <span className="text-insu-muted">→</span>
-                    <span className="rounded-md bg-insu-accent/10 px-2.5 py-1 text-[11px] font-semibold text-insu-accent">
-                      {item.payout} payout
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* App screenshot strip */}
-          <div className="mt-8 grid items-start gap-4 md:grid-cols-2">
-            {SCREENSHOTS.map((s) => (
-              <div key={s.label} className="overflow-hidden rounded-[14px] border border-white/[0.07]">
-                {/* Browser chrome */}
-                <div className="flex items-center gap-1.5 border-b border-white/[0.07] bg-bg-card px-4 py-2.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                  <span className="ml-2 flex-1 rounded bg-white/[0.05] px-3 py-0.5 font-mono text-[10px] text-insu-muted">
-                    insu-theta.vercel.app
-                  </span>
-                </div>
-                <Image
-                  src={s.src}
-                  alt={s.alt}
-                  width={s.width}
-                  height={s.height}
-                  sizes="(max-width: 768px) 100vw, 550px"
-                  className="h-auto w-full"
-                />
-                <div className="border-t border-white/[0.07] bg-bg-card px-4 py-3">
-                  <p className="text-[12px] text-insu-muted">{s.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── THE PROBLEM ──────────────────────────────────────────── */}
-      <section className="border-b border-white/[0.06] px-8 py-20">
-        <div className="mx-auto max-w-[1100px]">
-          <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-insu-muted">
-            The problem
-          </p>
-          <h2 className="mb-12 font-display text-[clamp(36px,5vw,64px)] leading-tight tracking-[1px] text-insu-text">
-            Traditional insurance fails
-            <br />
-            <span className="text-insu-muted">when you need it most.</span>
-          </h2>
-          <div className="grid gap-5 md:grid-cols-3">
-            {PROBLEMS.map((p) => (
-              <div
-                key={p.title}
-                className="rounded-[14px] border border-white/[0.07] bg-bg-card p-7 transition-colors hover:border-white/[0.12]"
-              >
-                <div className="mb-4 text-3xl">{p.icon}</div>
-                <h3 className="mb-2 text-[16px] font-semibold text-insu-text">{p.title}</h3>
-                <p className="text-[13.5px] leading-relaxed text-insu-muted">{p.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── HOW IT WORKS — 4 STEPS ───────────────────────────────── */}
       <section className="border-b border-white/[0.06] px-8 py-20">
         <div className="mx-auto max-w-[1100px]">
@@ -346,6 +162,32 @@ export default function HowItWorksPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── THE PROBLEM ──────────────────────────────────────────── */}
+      <section className="border-b border-white/[0.06] px-8 py-20">
+        <div className="mx-auto max-w-[1100px]">
+          <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-insu-muted">
+            The problem
+          </p>
+          <h2 className="mb-12 font-display text-[clamp(36px,5vw,64px)] leading-tight tracking-[1px] text-insu-text">
+            Traditional insurance fails
+            <br />
+            <span className="text-insu-muted">when you need it most.</span>
+          </h2>
+          <div className="grid gap-5 md:grid-cols-3">
+            {PROBLEMS.map((p) => (
+              <div
+                key={p.title}
+                className="rounded-[14px] border border-white/[0.07] bg-bg-card p-7 transition-colors hover:border-white/[0.12]"
+              >
+                <div className="mb-4 text-3xl">{p.icon}</div>
+                <h3 className="mb-2 text-[16px] font-semibold text-insu-text">{p.title}</h3>
+                <p className="text-[13.5px] leading-relaxed text-insu-muted">{p.body}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
