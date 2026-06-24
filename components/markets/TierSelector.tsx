@@ -73,7 +73,7 @@ export default function TierSelector({ tiers, selectedTierId, onSelect, mode = '
                 <span className="text-insu-text">{formatCurrency(displayPremium, 'USD')}</span>
                 <span className="text-insu-muted">premium →</span>
                 <span className="text-insu-green">{formatCurrency(tier.payout_usd, 'USD')}</span>
-                <span className="text-insu-muted">payout</span>
+                <span className="text-insu-muted">{tier.max_payouts > 1 ? 'payout/event' : 'payout'}</span>
               </div>
             ) : (
               <p className="mt-1 font-mono text-[13px] text-insu-muted">

@@ -82,6 +82,14 @@ describe('TierSelector', () => {
     expect(screen.getByText('Pays out up to 3 times')).toBeInTheDocument()
   })
 
+  it('labels the payout "per event" only on multi-payout tiers', () => {
+    render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={vi.fn()} />)
+    // Pro pays out up to 3 times, so each payout is per-event.
+    expect(screen.getByText('payout/event')).toBeInTheDocument()
+    // Basic pays once, so it stays a plain "payout".
+    expect(screen.getByText('payout')).toBeInTheDocument()
+  })
+
   // Funded tiers so isFull (no-capital) doesn't mask the lock behavior under test.
   const fundedTiers = tiers.map((t) => ({ ...t, current_capacity_usd: t.payout_usd }))
 
