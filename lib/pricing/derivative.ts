@@ -4,6 +4,13 @@ import type { TriggerCondition } from '@/lib/oracle/trigger'
 export const P_MIN = 0.0005
 export const P_MAX = 0.95
 export const LOADING_FACTOR = 1.15
+/**
+ * A premium is never quoted above this fraction of the position's MAX possible
+ * payout (payout × maxPayouts). Keeps long tenors coherent: without it, a
+ * non-trivial daily hazard over 30 days pushes the fair premium toward — and
+ * past — the payout itself, which no rational hedger would buy.
+ */
+export const MAX_PREMIUM_FRACTION = 0.70
 
 /**
  * P(N >= k) where N ~ Binomial(T, p) — probability of at least k trigger-days
@@ -72,7 +79,9 @@ export function priceTenor(
   for (let k = 1; k <= maxPayouts; k++) {
     expectedPayouts += probAtLeastK(tenorDays, p, k)
   }
-  const premiumUsd = Math.round(payoutUsd * expectedPayouts * loading * cap * 100) / 100
+  const rawPremiumUsd = payoutUsd * expectedPayouts * loading * cap
+  const maxPremiumUsd = payoutUsd * maxPayouts * MAX_PREMIUM_FRACTION
+  const premiumUsd = Math.round(Math.min(rawPremiumUsd, maxPremiumUsd) * 100) / 100
   return { premiumUsd, inputs: { p, tenorDays, maxPayouts, loading, capacityFactor: cap, expectedPayouts } }
 }
 

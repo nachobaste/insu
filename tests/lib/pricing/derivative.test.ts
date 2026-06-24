@@ -7,6 +7,7 @@ import {
   valuePosition,
   P_MIN,
   P_MAX,
+  MAX_PREMIUM_FRACTION,
 } from '@/lib/pricing/derivative'
 import type { TriggerCondition } from '@/lib/oracle/trigger'
 
@@ -111,10 +112,26 @@ describe('priceTenor', () => {
     expect(p30.premiumUsd).toBeGreaterThan(p7.premiumUsd)
   })
 
-  it('capacity factor 1.5 scales premium ~1.5x vs 1.0', () => {
-    const low = priceTenor(500, 7, 0.1, 1, { loading: 1.15, capacityFactor: 1.0 })
-    const high = priceTenor(500, 7, 0.1, 1, { loading: 1.15, capacityFactor: 1.5 })
+  it('capacity factor 1.5 scales premium ~1.5x vs 1.0 (below the premium cap)', () => {
+    // p=0.02 keeps both quotes well under MAX_PREMIUM_FRACTION so the linear
+    // capacity scaling is observable (at p=0.1 the 1.5x quote would be capped).
+    const low = priceTenor(500, 7, 0.02, 1, { loading: 1.15, capacityFactor: 1.0 })
+    const high = priceTenor(500, 7, 0.02, 1, { loading: 1.15, capacityFactor: 1.5 })
     expect(high.premiumUsd / low.premiumUsd).toBeCloseTo(1.5, 1)
+  })
+
+  it('premium is capped at MAX_PREMIUM_FRACTION of max payout (Basic, long tenor)', () => {
+    // 30 days at p=0.1 -> raw premium would exceed the $500 payout; cap pins it.
+    const { premiumUsd } = priceTenor(500, 30, 0.1, 1, { loading: 1.15, capacityFactor: 1.0 })
+    expect(premiumUsd).toBe(500 * 1 * MAX_PREMIUM_FRACTION) // 350
+    expect(premiumUsd).toBeLessThan(500)
+  })
+
+  it('premium cap scales with maxPayouts (Pro caps higher than Basic)', () => {
+    const basic = priceTenor(500, 30, 0.2, 1, { loading: 1.15, capacityFactor: 1.5 })
+    const pro = priceTenor(500, 30, 0.2, 3, { loading: 1.15, capacityFactor: 1.5 })
+    expect(basic.premiumUsd).toBe(500 * 1 * MAX_PREMIUM_FRACTION) // 350
+    expect(pro.premiumUsd).toBe(500 * 3 * MAX_PREMIUM_FRACTION)   // 1050
   })
 })
 
