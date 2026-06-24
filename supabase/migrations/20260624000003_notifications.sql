@@ -1,7 +1,7 @@
 -- In-app notifications for the coverage lifecycle.
 
 CREATE TABLE notifications (
-  id           uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id      uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   type         text NOT NULL
                  CHECK (type IN ('coverage_paid','coverage_expired','protection_purchased','provider_settled')),
