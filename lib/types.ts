@@ -209,6 +209,15 @@ export interface UpsertContractInput {
   is_featured: boolean
   basic_tier: { premium_usd: number; payout_usd: number; max_capacity_usd: number }
   premium_tier: { premium_usd: number; payout_usd: number; max_capacity_usd: number }
+  // For corridor (urban) contracts: edit the linked corridor's route endpoints.
+  // Saving re-fetches the road polyline so the map redraws the corrected route.
+  corridor?: {
+    id: string
+    origin_lat: number
+    origin_lng: number
+    dest_lat: number
+    dest_lng: number
+  }
 }
 
 export type NotificationType =

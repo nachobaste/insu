@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn(), createServiceClient: vi.fn() }))
+vi.mock('@/lib/oracle/fetcher', () => ({ fetchCorridorPolyline: vi.fn().mockResolvedValue('new_encoded_poly') }))
 vi.mock('stripe', () => {
   const MockStripe = vi.fn(function (this: unknown) { return this })
   return { default: MockStripe }
@@ -9,6 +10,7 @@ vi.mock('stripe', () => {
 
 import { upsertContract, overrideContractTrigger, retryPayout, cancelContract } from '@/lib/actions/admin'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { fetchCorridorPolyline } from '@/lib/oracle/fetcher'
 import Stripe from 'stripe'
 
 function makeChainable(result: unknown) {
@@ -97,6 +99,46 @@ describe('upsertContract', () => {
 
     const id = await upsertContract({ ...baseInput, id: 'contract-existing' })
     expect(id).toBe('contract-existing')
+  })
+
+  it('updates corridor endpoints and refreshes its polyline when corridor is provided', async () => {
+    process.env.GOOGLE_MAPS_API_KEY = 'test-key'
+    const mockSb = makeSupabase({
+      tables: {
+        contracts: { data: null, error: null },
+        coverage_tiers: { data: [{ id: 'tier-basic', name: 'basic' }, { id: 'tier-prem', name: 'premium' }], error: null },
+        corridors: { data: null, error: null },
+      },
+    })
+    vi.mocked(createClient).mockReturnValue(mockSb as never)
+    vi.mocked(createServiceClient).mockReturnValue(mockSb as never)
+
+    const id = await upsertContract({
+      ...baseInput,
+      id: 'contract-existing',
+      trigger_type: 'urban',
+      corridor: { id: 'cor-1', origin_lat: 19.5, origin_lng: -99.2, dest_lat: 19.4, dest_lng: -99.1 },
+    })
+
+    expect(id).toBe('contract-existing')
+    expect(fetchCorridorPolyline).toHaveBeenCalledWith(19.5, -99.2, 19.4, -99.1, 'test-key')
+    const fromCalls = mockSb.from.mock.calls.map((c: unknown[]) => c[0])
+    expect(fromCalls).toContain('corridors')
+  })
+
+  it('does not touch corridors when no corridor is provided', async () => {
+    const mockSb = makeSupabase({
+      tables: {
+        contracts: { data: null, error: null },
+        coverage_tiers: { data: [{ id: 'tier-basic', name: 'basic' }, { id: 'tier-prem', name: 'premium' }], error: null },
+      },
+    })
+    vi.mocked(createClient).mockReturnValue(mockSb as never)
+    vi.mocked(createServiceClient).mockReturnValue(mockSb as never)
+
+    await upsertContract({ ...baseInput, id: 'contract-existing' })
+    const fromCalls = mockSb.from.mock.calls.map((c: unknown[]) => c[0])
+    expect(fromCalls).not.toContain('corridors')
   })
 
   it('throws if deadline is in the past', async () => {

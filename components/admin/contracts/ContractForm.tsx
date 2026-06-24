@@ -103,6 +103,13 @@ export function ContractForm({ categories, contract }: Props) {
   const [isFeatured, setIsFeatured] = useState(contract?.is_featured ?? false)
   const [isRecurring, setIsRecurring] = useState(contract?.is_recurring ?? false)
 
+  // Corridor (urban) route endpoints live on the linked corridor row.
+  const corridor = contract?.corridor ?? null
+  const [originLat, setOriginLat] = useState(String(corridor?.origin_lat ?? ''))
+  const [originLng, setOriginLng] = useState(String(corridor?.origin_lng ?? ''))
+  const [destLat, setDestLat] = useState(String(corridor?.dest_lat ?? ''))
+  const [destLng, setDestLng] = useState(String(corridor?.dest_lng ?? ''))
+
   const [condState, setCondState] = useState(() =>
     parseTriggerCondition(contract?.trigger_type ?? 'weather', (contract?.trigger_condition as Record<string, unknown>) ?? {}),
   )
@@ -143,6 +150,13 @@ export function ContractForm({ categories, contract }: Props) {
       is_featured: isFeatured,
       basic_tier: { premium_usd: Number(basicPremium), payout_usd: Number(basicPayout), max_capacity_usd: Number(basicCapacity) },
       premium_tier: { premium_usd: Number(premPremium), payout_usd: Number(premPayout), max_capacity_usd: Number(premCapacity) },
+      ...(corridor ? {
+        corridor: {
+          id: corridor.id,
+          origin_lat: Number(originLat), origin_lng: Number(originLng),
+          dest_lat: Number(destLat), dest_lng: Number(destLng),
+        },
+      } : {}),
     }
 
     startTransition(async () => {
@@ -363,6 +377,35 @@ export function ContractForm({ categories, contract }: Props) {
           <input className={inputCls} type="number" step="any" value={locationLng} onChange={(e) => setLocationLng(e.target.value)} required />
         </div>
       </div>
+
+      {/* Corridor route endpoints (urban contracts only) */}
+      {corridor && (
+        <div className="rounded-lg border border-white/[0.07] p-4">
+          <p className="mb-1 text-[12px] uppercase tracking-wider text-insu-muted">Corridor route</p>
+          <p className="mb-3 text-[11px] text-insu-dim">
+            Origin &amp; destination define the route drawn on the map and measured for traffic.
+            Tip: right-click a point in Google Maps to copy its lat, lng. Saving re-fetches the road path.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Origin latitude</label>
+              <input className={inputCls} type="number" step="any" value={originLat} onChange={(e) => setOriginLat(e.target.value)} />
+            </div>
+            <div>
+              <label className={labelCls}>Origin longitude</label>
+              <input className={inputCls} type="number" step="any" value={originLng} onChange={(e) => setOriginLng(e.target.value)} />
+            </div>
+            <div>
+              <label className={labelCls}>Destination latitude</label>
+              <input className={inputCls} type="number" step="any" value={destLat} onChange={(e) => setDestLat(e.target.value)} />
+            </div>
+            <div>
+              <label className={labelCls}>Destination longitude</label>
+              <input className={inputCls} type="number" step="any" value={destLng} onChange={(e) => setDestLng(e.target.value)} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Icon URL */}
       <div>

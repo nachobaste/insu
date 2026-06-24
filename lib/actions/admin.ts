@@ -2,6 +2,7 @@
 
 import Stripe from 'stripe'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { fetchCorridorPolyline } from '@/lib/oracle/fetcher'
 import type { UpsertContractInput } from '@/lib/types'
 
 function getStripe() {
@@ -72,6 +73,26 @@ export async function upsertContract(input: UpsertContractInput): Promise<string
         payout_usd: vals.payout_usd,
         max_capacity_usd: vals.max_capacity_usd,
       }).eq('id', tier.id)
+    }
+
+    // Corridor (urban) contracts: persist edited route endpoints and refresh the
+    // stored road polyline so the map redraws. If the Routes fetch fails we store
+    // null (map falls back to endpoint markers) rather than keep stale geometry.
+    if (input.corridor) {
+      const { id: corridorId, origin_lat, origin_lng, dest_lat, dest_lng } = input.corridor
+      let path_polyline: string | null = null
+      try {
+        const apiKey = process.env.GOOGLE_MAPS_API_KEY ?? ''
+        if (apiKey) {
+          path_polyline = await fetchCorridorPolyline(origin_lat, origin_lng, dest_lat, dest_lng, apiKey)
+        }
+      } catch (err) {
+        console.error(`Polyline refresh failed for corridor ${corridorId}:`, err)
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await supabase.from('corridors').update({
+        origin_lat, origin_lng, dest_lat, dest_lng, path_polyline,
+      } as any).eq('id', corridorId)
     }
 
     return input.id

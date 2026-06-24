@@ -14,7 +14,7 @@ export default async function EditContractPage({
   const categoriesResult = await supabase.from('categories').select('*').order('display_order')
   const contractResult = await supabase
     .from('contracts')
-    .select('*, category:categories(*), coverage_tiers(*)')
+    .select('*, category:categories(*), coverage_tiers(*), corridor:corridors(*)')
     .eq('id', id)
     .single()
 
