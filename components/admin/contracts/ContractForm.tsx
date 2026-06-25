@@ -128,9 +128,35 @@ export function ContractForm({ categories, contract }: Props) {
     setCondState({ metric: '', comparator: '>', threshold: '', unit: '', description: '', fuel_type: newType === 'fuel' ? 'magna' : '' })
   }
 
+  // Validate on the client so the admin sees the real reason. Server-thrown
+  // errors are redacted to an opaque digest in production builds, so a bare
+  // throw in upsertContract() surfaces here as an unhelpful generic message.
+  function validate(): string | null {
+    const tierFields: Array<[string, string]> = [
+      ['Basic premium', basicPremium], ['Basic payout', basicPayout], ['Basic max capacity', basicCapacity],
+      ['Pro premium', premPremium], ['Pro payout', premPayout], ['Pro max capacity', premCapacity],
+    ]
+    for (const [label, raw] of tierFields) {
+      if (raw.trim() === '' || Number.isNaN(Number(raw))) return `${label} must be a number`
+    }
+    if (Number(basicPayout) <= Number(basicPremium)) return 'Basic payout must exceed its premium'
+    if (Number(premPayout) <= Number(premPremium)) return 'Pro payout must exceed its premium'
+    if (!isRecurring) {
+      if (!deadline) return 'Set a deadline, or mark the contract recurring'
+      if (new Date(deadline).getTime() <= Date.now()) return 'Deadline must be in the future'
+    }
+    return null
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    const validationError = validate()
+    if (validationError) {
+      setError(validationError)
+      return
+    }
 
     const input: UpsertContractInput = {
       ...(contract?.id ? { id: contract.id } : {}),
@@ -424,15 +450,15 @@ export function ContractForm({ categories, contract }: Props) {
         </div>
         <div className="grid grid-cols-[60px_1fr_1fr_1fr] gap-3 mb-2 items-center">
           <span className="text-sm text-insu-dim">Basic</span>
-          <input className={inputCls} type="number" min="0" step="0.01" value={basicPremium} onChange={(e) => setBasicPremium(e.target.value)} required />
-          <input className={inputCls} type="number" min="0" step="0.01" value={basicPayout} onChange={(e) => setBasicPayout(e.target.value)} required />
-          <input className={inputCls} type="number" min="0" value={basicCapacity} onChange={(e) => setBasicCapacity(e.target.value)} required />
+          <input aria-label="Basic premium" className={inputCls} type="number" min="0" step="0.01" value={basicPremium} onChange={(e) => setBasicPremium(e.target.value)} required />
+          <input aria-label="Basic payout" className={inputCls} type="number" min="0" step="0.01" value={basicPayout} onChange={(e) => setBasicPayout(e.target.value)} required />
+          <input aria-label="Basic max capacity" className={inputCls} type="number" min="0" value={basicCapacity} onChange={(e) => setBasicCapacity(e.target.value)} required />
         </div>
         <div className="grid grid-cols-[60px_1fr_1fr_1fr] gap-3 items-center">
           <span className="text-sm text-insu-dim">Premium</span>
-          <input className={inputCls} type="number" min="0" step="0.01" value={premPremium} onChange={(e) => setPremPremium(e.target.value)} required />
-          <input className={inputCls} type="number" min="0" step="0.01" value={premPayout} onChange={(e) => setPremPayout(e.target.value)} required />
-          <input className={inputCls} type="number" min="0" value={premCapacity} onChange={(e) => setPremCapacity(e.target.value)} required />
+          <input aria-label="Pro premium" className={inputCls} type="number" min="0" step="0.01" value={premPremium} onChange={(e) => setPremPremium(e.target.value)} required />
+          <input aria-label="Pro payout" className={inputCls} type="number" min="0" step="0.01" value={premPayout} onChange={(e) => setPremPayout(e.target.value)} required />
+          <input aria-label="Pro max capacity" className={inputCls} type="number" min="0" value={premCapacity} onChange={(e) => setPremCapacity(e.target.value)} required />
         </div>
       </div>
 
