@@ -36,6 +36,27 @@ const contract: any = {
   ],
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const airQualityContract: any = {
+  id: 'c-2',
+  title: 'Air Quality Alert — CDMX',
+  description: null,
+  category_id: 'cat-1',
+  status: 'active',
+  trigger_type: 'air_quality',
+  trigger_condition: { metric: 'aqi_imeca', operator: 'gte', threshold: 0 },
+  trigger_deadline: '2027-12-31T00:00:00Z',
+  is_recurring: false,
+  location: { city: 'Mexico City', country: 'MX', lat: 19.43, lng: -99.13 },
+  icon_url: null,
+  is_featured: false,
+  corridor: null,
+  coverage_tiers: [
+    { name: 'basic', premium_usd: 100, payout_usd: 500, max_capacity_usd: 100000 },
+    { name: 'premium', premium_usd: 400, payout_usd: 2000, max_capacity_usd: 100000 },
+  ],
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   upsertContract.mockResolvedValue('c-1')
@@ -91,5 +112,16 @@ describe('ContractForm — tier validation surfaces a real message', () => {
 
     await waitFor(() => expect(upsertContract).toHaveBeenCalledTimes(1))
     expect(upsertContract.mock.calls[0][0]).toMatchObject({ id: 'c-1' })
+  })
+})
+
+describe('ContractForm — air_quality/flood threshold validation', () => {
+  it('blocks submit with "Threshold must be a positive number" when threshold is zero', async () => {
+    render(<ContractForm categories={categories} contract={airQualityContract} />)
+
+    await userEvent.click(screen.getByRole('button', { name: /save contract/i }))
+
+    expect(await screen.findByText('Threshold must be a positive number')).toBeInTheDocument()
+    expect(upsertContract).not.toHaveBeenCalled()
   })
 })

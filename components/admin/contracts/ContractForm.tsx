@@ -141,6 +141,12 @@ export function ContractForm({ categories, contract }: Props) {
   // errors are redacted to an opaque digest in production builds, so a bare
   // throw in upsertContract() surfaces here as an unhelpful generic message.
   function validate(): string | null {
+    if (triggerType === 'air_quality' || triggerType === 'flood') {
+      const t = condState.threshold.trim()
+      if (t === '' || Number.isNaN(Number(t)) || Number(t) <= 0) {
+        return 'Threshold must be a positive number'
+      }
+    }
     const tierFields: Array<[string, string]> = [
       ['Basic premium', basicPremium], ['Basic payout', basicPayout], ['Basic max capacity', basicCapacity],
       ['Pro premium', premPremium], ['Pro payout', premPayout], ['Pro max capacity', premCapacity],
@@ -398,11 +404,13 @@ export function ContractForm({ categories, contract }: Props) {
           <div>
             <label className={labelCls}>Threshold</label>
             <input
+              aria-label="Trigger threshold"
               className={inputCls}
               type="number"
               min="0"
-              placeholder="e.g. 150 (IMECA) or 30 (mm)"
+              placeholder={triggerType === 'air_quality' ? 'e.g. 150 (IMECA)' : 'e.g. 30 (mm)'}
               value={condState.threshold}
+              required
               onChange={(e) => setCondState((s) => ({ ...s, threshold: e.target.value }))}
             />
             <p className="mt-1 text-xs text-insu-dim">
