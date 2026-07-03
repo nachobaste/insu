@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { imecaFromConcentrations, interpolateImeca, PM25_BREAKPOINTS } from '@/lib/oracle/airQualityIndex'
+import { imecaFromConcentrations, interpolateImeca, PM25_BREAKPOINTS, O3_PPB_BREAKPOINTS } from '@/lib/oracle/airQualityIndex'
 
 describe('interpolateImeca', () => {
   it('returns the low index bound at the low concentration bound', () => {
@@ -29,5 +29,21 @@ describe('imecaFromConcentrations', () => {
   it('handles a missing pollutant by ignoring it', () => {
     const out = imecaFromConcentrations({ pm25: 6.0 })
     expect(out.aqi_imeca).toBe(25)
+  })
+
+  it('returns aqi_imeca 0 when no pollutants are provided', () => {
+    expect(imecaFromConcentrations({}).aqi_imeca).toBe(0)
+  })
+
+  it('ignores a NaN reading instead of returning the max index', () => {
+    expect(imecaFromConcentrations({ pm25: NaN }).aqi_imeca).toBe(0)
+  })
+
+  it('computes an O3-only index via the ugm3->ppb conversion', () => {
+    // 200 µg/m³ O3 → 200 * 24.45/48 ≈ 101.875 ppb → O3 segment [96,154,101,150]
+    const out = imecaFromConcentrations({ o3_ugm3: 200 })
+    const expectedPpb = 200 * (24.45 / 48)
+    expect(out.aqi_imeca).toBe(interpolateImeca(expectedPpb, O3_PPB_BREAKPOINTS))
+    expect(out.aqi_imeca).toBeGreaterThan(100)
   })
 })

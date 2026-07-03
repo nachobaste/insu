@@ -30,6 +30,11 @@ export const O3_PPB_BREAKPOINTS: readonly Breakpoint[] = [
 // OWM reports O3 in µg/m³; IMECA O3 uses ppb. At 25°C / 1 atm: ppb = µg/m³ × 24.45 / MW(48).
 const O3_UGM3_TO_PPB = 24.45 / 48
 
+/**
+ * Piecewise-linear IMECA sub-index for a concentration. Each breakpoint is
+ * [cLow, cHigh, iLow, iHigh]; values above the top breakpoint clamp to its max
+ * index, and values in a gap between segments clamp to the next segment's iLow.
+ */
 export function interpolateImeca(concentration: number, table: readonly Breakpoint[]): number {
   const top = table[table.length - 1]
   if (concentration >= top[1]) return top[3]
@@ -58,8 +63,8 @@ export interface ImecaResult {
 /** Max sub-index across available pollutants. Missing pollutants are ignored. */
 export function imecaFromConcentrations(input: ImecaInput): ImecaResult {
   const subIndices: number[] = []
-  if (typeof input.pm25 === 'number') subIndices.push(interpolateImeca(input.pm25, PM25_BREAKPOINTS))
-  if (typeof input.o3_ugm3 === 'number') {
+  if (typeof input.pm25 === 'number' && isFinite(input.pm25)) subIndices.push(interpolateImeca(input.pm25, PM25_BREAKPOINTS))
+  if (typeof input.o3_ugm3 === 'number' && isFinite(input.o3_ugm3)) {
     subIndices.push(interpolateImeca(input.o3_ugm3 * O3_UGM3_TO_PPB, O3_PPB_BREAKPOINTS))
   }
   return {
