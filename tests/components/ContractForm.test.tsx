@@ -9,7 +9,7 @@ vi.mock('@/lib/actions/admin', () => ({
   cancelContract: (...args: unknown[]) => cancelContract(...args),
 }))
 
-import { ContractForm } from '@/components/admin/contracts/ContractForm'
+import { ContractForm, buildTriggerCondition } from '@/components/admin/contracts/ContractForm'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const categories: any = [{ id: 'cat-1', name: 'Fuel', display_order: 1 }]
@@ -39,6 +39,22 @@ const contract: any = {
 beforeEach(() => {
   vi.clearAllMocks()
   upsertContract.mockResolvedValue('c-1')
+})
+
+describe('buildTriggerCondition (air_quality / flood)', () => {
+  it('builds an aqi_imeca gte condition for air_quality', () => {
+    const c = buildTriggerCondition('air_quality', {
+      metric: '', comparator: '>', threshold: '150', unit: '', description: '', fuel_type: '',
+    })
+    expect(c).toMatchObject({ metric: 'aqi_imeca', operator: 'gte', threshold: 150 })
+  })
+
+  it('builds a rain_1h_mm gte condition for flood', () => {
+    const c = buildTriggerCondition('flood', {
+      metric: '', comparator: '>', threshold: '30', unit: '', description: '', fuel_type: '',
+    })
+    expect(c).toMatchObject({ metric: 'rain_1h_mm', operator: 'gte', threshold: 30 })
+  })
 })
 
 describe('ContractForm — tier validation surfaces a real message', () => {
