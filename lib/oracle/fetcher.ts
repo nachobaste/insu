@@ -1,6 +1,7 @@
 import type { OracleReading } from '@/lib/types'
 import { trafficIndex } from './trafficIndex'
 import { rainfallFromOwm } from './rainfall'
+import { imecaFromConcentrations } from './airQualityIndex'
 
 type FetchedReading = Pick<OracleReading, 'source' | 'reading_type' | 'value'>
 
@@ -110,6 +111,24 @@ export async function fetchGoogleMapsReading(
     source: 'google_maps',
     reading_type: 'traffic',
     value: { traffic_index, duration_s: durationS, static_duration_s: staticDurationS, baseline_duration_s: baselineS },
+  }
+}
+
+export async function fetchAirQualityReading(
+  lat: number,
+  lng: number,
+  apiKey: string,
+): Promise<FetchedReading> {
+  const url = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lng}&appid=${apiKey}`
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`OpenWeatherMap error: ${res.status}`)
+  const data = await res.json()
+  const c = (data.list?.[0]?.components ?? {}) as { pm2_5?: number; o3?: number }
+  const index = imecaFromConcentrations({ pm25: c.pm2_5, o3_ugm3: c.o3 })
+  return {
+    source: 'openweathermap',
+    reading_type: 'air_quality',
+    value: { ...index, source_detail: 'owm' },
   }
 }
 
