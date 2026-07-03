@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { fetchWeatherReading, fetchTomorrowReading, fetchGoogleMapsReading } from '@/lib/oracle/fetcher'
+import { fetchWeatherReading, fetchTomorrowReading, fetchGoogleMapsReading, fetchFloodReading } from '@/lib/oracle/fetcher'
 
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
@@ -155,6 +155,32 @@ describe('fetchGoogleMapsReading', () => {
     await expect(
       fetchGoogleMapsReading(19.3983, -99.1918, 19.4147, -99.0790, 'test-key'),
     ).rejects.toThrow('no routes returned')
+  })
+})
+
+describe('fetchFloodReading', () => {
+  beforeEach(() => mockFetch.mockReset())
+
+  it('returns peak hourly rainfall from OWM', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ rain: { '1h': 34.2, '3h': 51.0 } }),
+    })
+    const reading = await fetchFloodReading(19.4, -99.1, 'test-key')
+    expect(reading.source).toBe('openweathermap')
+    expect(reading.reading_type).toBe('flood')
+    expect(reading.value).toMatchObject({ rain_1h_mm: 34.2, rain_3h_mm: 51.0 })
+  })
+
+  it('reports zero rain when OWM omits the rain field', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}) })
+    const reading = await fetchFloodReading(19.4, -99.1, 'test-key')
+    expect(reading.value).toMatchObject({ rain_1h_mm: 0, rain_3h_mm: 0 })
+  })
+
+  it('throws on a non-ok OWM response', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500 })
+    await expect(fetchFloodReading(19.4, -99.1, 'k')).rejects.toThrow('OpenWeatherMap error: 500')
   })
 })
 
