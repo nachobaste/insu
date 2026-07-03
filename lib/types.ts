@@ -2,7 +2,7 @@
 
 export type CategoryName = 'Urban' | 'Nature' | 'Experiences' | 'Events'
 export type ContractStatus = 'active' | 'settled' | 'cancelled' | 'pending'
-export type TriggerType = 'weather' | 'urban' | 'event' | 'manual' | 'fuel'
+export type TriggerType = 'weather' | 'urban' | 'event' | 'manual' | 'fuel' | 'air_quality' | 'flood'
 export type CoverageLevel = 'basic' | 'premium'
 export type Currency = 'USD' | 'MXN'
 export type UserRole = 'hedger' | 'provider' | 'admin' | 'both'
@@ -140,7 +140,7 @@ export interface ProviderPosition {
 export interface OracleReading {
   id: string
   contract_id: string
-  source: 'openweathermap' | 'tomorrow_io' | 'google_maps' | 'manual' | 'cre_datos_gob'
+  source: 'openweathermap' | 'tomorrow_io' | 'google_maps' | 'manual' | 'cre_datos_gob' | 'sedema'
   reading_type: string
   value: Record<string, unknown>
   trigger_met: boolean
@@ -150,7 +150,7 @@ export interface OracleReading {
 export interface LatestOracleReading {
   value: Record<string, unknown>
   read_at: string
-  source: 'openweathermap' | 'tomorrow_io' | 'google_maps' | 'manual' | 'cre_datos_gob'
+  source: 'openweathermap' | 'tomorrow_io' | 'google_maps' | 'manual' | 'cre_datos_gob' | 'sedema'
   trigger_met: boolean
 }
 
