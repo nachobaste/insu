@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { pollContracts, ensureCorridorPolylines } from '@/lib/oracle/poll'
+import { pollContracts, ensureCorridorPolylines, POLLABLE_TRIGGER_TYPES } from '@/lib/oracle/poll'
 import type { Contract } from '@/lib/types'
 
 const mockContract: Contract = {
@@ -59,7 +59,7 @@ describe('pollContracts', () => {
   it('defaults to querying all supported trigger types', async () => {
     const db = makeDb()
     await pollContracts(db as never, vi.fn().mockResolvedValue([]))
-    expect(db._in).toHaveBeenCalledWith('trigger_type', ['weather', 'urban', 'fuel'])
+    expect(db._in).toHaveBeenCalledWith('trigger_type', ['weather', 'urban', 'fuel', 'air_quality', 'flood'])
   })
 
   it('queries only the requested trigger types when given a filter', async () => {
@@ -273,5 +273,12 @@ describe('ensureCorridorPolylines', () => {
     expect(count).toBe(1)
     expect(db._updateEq).toHaveBeenCalledWith('id', 'cor-2')
     errSpy.mockRestore()
+  })
+})
+
+describe('POLLABLE_TRIGGER_TYPES', () => {
+  it('includes air_quality and flood', () => {
+    expect(POLLABLE_TRIGGER_TYPES).toContain('air_quality')
+    expect(POLLABLE_TRIGGER_TYPES).toContain('flood')
   })
 })
