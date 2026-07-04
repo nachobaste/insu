@@ -407,7 +407,7 @@ export function ContractForm({ categories, contract }: Props) {
               aria-label="Trigger threshold"
               className={inputCls}
               type="number"
-              min="0"
+              min="0.001"
               placeholder={triggerType === 'air_quality' ? 'e.g. 150 (IMECA)' : 'e.g. 30 (mm)'}
               value={condState.threshold}
               required

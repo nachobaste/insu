@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
@@ -117,9 +117,14 @@ describe('ContractForm — tier validation surfaces a real message', () => {
 
 describe('ContractForm — air_quality/flood threshold validation', () => {
   it('blocks submit with "Threshold must be a positive number" when threshold is zero', async () => {
-    render(<ContractForm categories={categories} contract={airQualityContract} />)
+    const { container } = render(<ContractForm categories={categories} contract={airQualityContract} />)
 
-    await userEvent.click(screen.getByRole('button', { name: /save contract/i }))
+    // HTML5 constraint: threshold input must have min="0.001" to match JS validate()
+    const thresholdInput = screen.getByRole('spinbutton', { name: /trigger threshold/i })
+    expect(thresholdInput).toHaveAttribute('min', '0.001')
+
+    // Use fireEvent.submit to bypass HTML5 constraint validation and reach JS validate()
+    fireEvent.submit(container.querySelector('form')!)
 
     expect(await screen.findByText('Threshold must be a positive number')).toBeInTheDocument()
     expect(upsertContract).not.toHaveBeenCalled()

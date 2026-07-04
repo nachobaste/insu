@@ -81,4 +81,17 @@ describe('ContractMeta', () => {
     expect(screen.getByText('Manaus')).toBeInTheDocument()
     expect(screen.queryByText(/undefined/)).not.toBeInTheDocument()
   })
+
+  it('renders "Air quality" label and IMECA condition for air_quality trigger type', () => {
+    const c = {
+      ...mockContract,
+      trigger_type: 'air_quality',
+      trigger_condition: { metric: 'aqi_imeca', operator: 'gte', threshold: 150 },
+    } as ContractWithTiers
+    render(<ContractMeta contract={c} />)
+    expect(screen.getByText('Air quality')).toBeInTheDocument()
+    expect(
+      screen.getByText((t) => t.includes('IMECA air quality index') && t.includes('150')),
+    ).toBeInTheDocument()
+  })
 })
