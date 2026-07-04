@@ -17,10 +17,16 @@ const OPERATOR_TO_SYMBOL: Record<string, string> = {
   gt: '>', gte: '>=', lt: '<', lte: '<=',
 }
 
-function buildTriggerCondition(
+export function buildTriggerCondition(
   type: string,
   state: { metric: string; comparator: string; threshold: string; unit: string; description: string; fuel_type: string },
 ): Record<string, unknown> {
+  if (type === 'air_quality') {
+    return { metric: 'aqi_imeca', operator: 'gte', threshold: Number(state.threshold) }
+  }
+  if (type === 'flood') {
+    return { metric: 'rain_1h_mm', operator: 'gte', threshold: Number(state.threshold) }
+  }
   if (type === 'weather' || type === 'urban') {
     return {
       metric: state.metric,
@@ -46,6 +52,9 @@ function parseTriggerCondition(
   type: string,
   condition: Record<string, unknown>,
 ) {
+  if (type === 'air_quality' || type === 'flood') {
+    return { metric: '', comparator: '>', threshold: String(condition.threshold ?? ''), unit: '', description: '', fuel_type: '' }
+  }
   if (type === 'weather' || type === 'urban') {
     const operator = String(condition.operator ?? condition.comparator ?? 'gt')
     const comparator = OPERATOR_TO_SYMBOL[operator] ?? operator
@@ -132,6 +141,12 @@ export function ContractForm({ categories, contract }: Props) {
   // errors are redacted to an opaque digest in production builds, so a bare
   // throw in upsertContract() surfaces here as an unhelpful generic message.
   function validate(): string | null {
+    if (triggerType === 'air_quality' || triggerType === 'flood') {
+      const t = condState.threshold.trim()
+      if (t === '' || Number.isNaN(Number(t)) || Number(t) <= 0) {
+        return 'Threshold must be a positive number'
+      }
+    }
     const tierFields: Array<[string, string]> = [
       ['Basic premium', basicPremium], ['Basic payout', basicPayout], ['Basic max capacity', basicCapacity],
       ['Pro premium', premPremium], ['Pro payout', premPayout], ['Pro max capacity', premCapacity],
@@ -287,6 +302,8 @@ export function ContractForm({ categories, contract }: Props) {
             {['weather', 'urban', 'fuel', 'event', 'manual'].map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
+            <option value="air_quality">Air quality (IMECA)</option>
+            <option value="flood">Flood (rainfall)</option>
           </select>
         </div>
         {!isRecurring && (
@@ -381,6 +398,25 @@ export function ContractForm({ categories, contract }: Props) {
 
         {triggerType === 'manual' && (
           <p className="text-sm text-insu-muted">No oracle condition — settlement is triggered manually via the Trigger Override section.</p>
+        )}
+
+        {(triggerType === 'air_quality' || triggerType === 'flood') && (
+          <div>
+            <label className={labelCls}>Threshold</label>
+            <input
+              aria-label="Trigger threshold"
+              className={inputCls}
+              type="number"
+              min="0.001"
+              placeholder={triggerType === 'air_quality' ? 'e.g. 150 (IMECA)' : 'e.g. 30 (mm)'}
+              value={condState.threshold}
+              required
+              onChange={(e) => setCondState((s) => ({ ...s, threshold: e.target.value }))}
+            />
+            <p className="mt-1 text-xs text-insu-dim">
+              {triggerType === 'air_quality' ? 'Metric: aqi_imeca ≥ threshold (fixed)' : 'Metric: rain_1h_mm ≥ threshold (fixed)'}
+            </p>
+          </div>
         )}
       </div>
 

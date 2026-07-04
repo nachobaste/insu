@@ -1,0 +1,21 @@
+name: Oracle Poll (flood)
+
+# Hourly year-round — storms are not schedulable.
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll /api/oracle-poll?types=flood
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' \
+            -X POST -H "Authorization: Bearer ${CRON_SECRET}" \
+            "https://insu-theta.vercel.app/api/oracle-poll?types=flood")
+          echo "HTTP ${code}"; cat /tmp/body; echo
+          test "${code}" = "200"

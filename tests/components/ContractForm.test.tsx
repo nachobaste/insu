@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
@@ -9,7 +9,7 @@ vi.mock('@/lib/actions/admin', () => ({
   cancelContract: (...args: unknown[]) => cancelContract(...args),
 }))
 
-import { ContractForm } from '@/components/admin/contracts/ContractForm'
+import { ContractForm, buildTriggerCondition } from '@/components/admin/contracts/ContractForm'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const categories: any = [{ id: 'cat-1', name: 'Fuel', display_order: 1 }]
@@ -36,9 +36,46 @@ const contract: any = {
   ],
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const airQualityContract: any = {
+  id: 'c-2',
+  title: 'Air Quality Alert — CDMX',
+  description: null,
+  category_id: 'cat-1',
+  status: 'active',
+  trigger_type: 'air_quality',
+  trigger_condition: { metric: 'aqi_imeca', operator: 'gte', threshold: 0 },
+  trigger_deadline: '2027-12-31T00:00:00Z',
+  is_recurring: false,
+  location: { city: 'Mexico City', country: 'MX', lat: 19.43, lng: -99.13 },
+  icon_url: null,
+  is_featured: false,
+  corridor: null,
+  coverage_tiers: [
+    { name: 'basic', premium_usd: 100, payout_usd: 500, max_capacity_usd: 100000 },
+    { name: 'premium', premium_usd: 400, payout_usd: 2000, max_capacity_usd: 100000 },
+  ],
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   upsertContract.mockResolvedValue('c-1')
+})
+
+describe('buildTriggerCondition (air_quality / flood)', () => {
+  it('builds an aqi_imeca gte condition for air_quality', () => {
+    const c = buildTriggerCondition('air_quality', {
+      metric: '', comparator: '>', threshold: '150', unit: '', description: '', fuel_type: '',
+    })
+    expect(c).toMatchObject({ metric: 'aqi_imeca', operator: 'gte', threshold: 150 })
+  })
+
+  it('builds a rain_1h_mm gte condition for flood', () => {
+    const c = buildTriggerCondition('flood', {
+      metric: '', comparator: '>', threshold: '30', unit: '', description: '', fuel_type: '',
+    })
+    expect(c).toMatchObject({ metric: 'rain_1h_mm', operator: 'gte', threshold: 30 })
+  })
 })
 
 describe('ContractForm — tier validation surfaces a real message', () => {
@@ -75,5 +112,21 @@ describe('ContractForm — tier validation surfaces a real message', () => {
 
     await waitFor(() => expect(upsertContract).toHaveBeenCalledTimes(1))
     expect(upsertContract.mock.calls[0][0]).toMatchObject({ id: 'c-1' })
+  })
+})
+
+describe('ContractForm — air_quality/flood threshold validation', () => {
+  it('blocks submit with "Threshold must be a positive number" when threshold is zero', async () => {
+    const { container } = render(<ContractForm categories={categories} contract={airQualityContract} />)
+
+    // HTML5 constraint: threshold input must have min="0.001" to match JS validate()
+    const thresholdInput = screen.getByRole('spinbutton', { name: /trigger threshold/i })
+    expect(thresholdInput).toHaveAttribute('min', '0.001')
+
+    // Use fireEvent.submit to bypass HTML5 constraint validation and reach JS validate()
+    fireEvent.submit(container.querySelector('form')!)
+
+    expect(await screen.findByText('Threshold must be a positive number')).toBeInTheDocument()
+    expect(upsertContract).not.toHaveBeenCalled()
   })
 })

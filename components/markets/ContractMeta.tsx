@@ -6,10 +6,12 @@ interface Props {
 }
 
 const TRIGGER_LABELS: Record<string, string> = {
-  weather: 'Weather',
-  urban:   'Urban event',
-  event:   'Event cancellation',
-  manual:  'Manual',
+  weather:     'Weather',
+  urban:       'Urban event',
+  event:       'Event cancellation',
+  manual:      'Manual',
+  air_quality: 'Air quality',
+  flood:       'Flood',
 }
 
 const METRIC_LABELS: Record<string, string> = {
@@ -19,6 +21,8 @@ const METRIC_LABELS: Record<string, string> = {
   price_mxn_per_liter: 'Fuel price',
   wind_kph: 'Wind speed',
   wind_mps: 'Wind speed',
+  aqi_imeca: 'IMECA air quality index',
+  rain_1h_mm: 'Hourly rainfall',
 }
 
 const METRIC_UNITS: Record<string, string> = {
@@ -26,6 +30,8 @@ const METRIC_UNITS: Record<string, string> = {
   rain_mm: 'mm',
   wind_kph: ' km/h',
   price_mxn_per_liter: ' MXN/L',
+  aqi_imeca: '',
+  rain_1h_mm: 'mm',
 }
 
 const OP_SYMBOLS: Record<string, string> = {

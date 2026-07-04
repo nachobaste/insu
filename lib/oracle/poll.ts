@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { evaluateTrigger, type TriggerCondition } from './trigger'
-import { fetchWeatherReading, fetchTomorrowReading, fetchGoogleMapsReading, fetchCorridorPolyline } from './fetcher'
+import { fetchWeatherReading, fetchTomorrowReading, fetchGoogleMapsReading, fetchCorridorPolyline, fetchAirQualityReading, fetchFloodReading } from './fetcher'
 import { fetchGasPrice } from './gasFetcher'
 import type { Contract, Corridor } from '@/lib/types'
 
@@ -103,11 +103,35 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
     }
   }
 
+  if (contract.trigger_type === 'air_quality') {
+    const apiKey = process.env.OPENWEATHERMAP_API_KEY ?? ''
+    if (!apiKey) return []
+    const { lat, lng } = contract.location
+    try {
+      return [await fetchAirQualityReading(lat, lng, apiKey)]
+    } catch (err) {
+      console.error(`Air-quality fetch error for contract ${contract.id}:`, err)
+      return []
+    }
+  }
+
+  if (contract.trigger_type === 'flood') {
+    const apiKey = process.env.OPENWEATHERMAP_API_KEY ?? ''
+    if (!apiKey) return []
+    const { lat, lng } = contract.location
+    try {
+      return [await fetchFloodReading(lat, lng, apiKey)]
+    } catch (err) {
+      console.error(`Flood fetch error for contract ${contract.id}:`, err)
+      return []
+    }
+  }
+
   return []
 }
 
 /** Trigger types this poller knows how to fetch readings for. */
-export const POLLABLE_TRIGGER_TYPES = ['weather', 'urban', 'fuel'] as const
+export const POLLABLE_TRIGGER_TYPES = ['weather', 'urban', 'fuel', 'air_quality', 'flood'] as const
 
 interface CorridorGeo {
   id: string

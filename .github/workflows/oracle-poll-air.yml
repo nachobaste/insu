@@ -1,0 +1,22 @@
+name: Oracle Poll (air quality)
+
+# Hourly during CDMX daytime when ozone/PM peak. MX is permanently UTC-6.
+# MX 08:00–21:00 -> UTC 14:00–03:00 (next day).
+on:
+  schedule:
+    - cron: '0 14-23,0-3 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll /api/oracle-poll?types=air_quality
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' \
+            -X POST -H "Authorization: Bearer ${CRON_SECRET}" \
+            "https://insu-theta.vercel.app/api/oracle-poll?types=air_quality")
+          echo "HTTP ${code}"; cat /tmp/body; echo
+          test "${code}" = "200"
