@@ -196,6 +196,45 @@ describe('upsertContract', () => {
     } as never)
     await expect(upsertContract(baseInput)).rejects.toThrow('MFA_REQUIRED')
   })
+
+  it('sends product_launched notifications to interested users when flipping from coming_soon to live', async () => {
+    const mockSb = makeSupabase({
+      tables: {
+        contracts: { data: { launch_stage: 'coming_soon' }, error: null },
+        coverage_tiers: { data: [{ id: 'tier-basic', name: 'basic' }, { id: 'tier-prem', name: 'premium' }], error: null },
+        launch_interest: { data: [{ user_id: 'user-a' }, { user_id: 'user-b' }], error: null },
+      },
+    })
+    vi.mocked(createClient).mockReturnValue(mockSb as never)
+    vi.mocked(createServiceClient).mockReturnValue(mockSb as never)
+
+    const id = await upsertContract({ ...baseInput, id: 'contract-existing', launch_stage: 'live' })
+    expect(id).toBe('contract-existing')
+
+    const fromCalls = mockSb.from.mock.calls.map((c: unknown[]) => c[0])
+    expect(fromCalls).toContain('launch_interest')
+    expect(fromCalls).toContain('notifications')
+    // Two interested users → two notification inserts
+    expect(fromCalls.filter((t) => t === 'notifications').length).toBe(2)
+  })
+
+  it('does not query launch_interest when launch_stage remains live', async () => {
+    const mockSb = makeSupabase({
+      tables: {
+        contracts: { data: { launch_stage: 'live' }, error: null },
+        coverage_tiers: { data: [{ id: 'tier-basic', name: 'basic' }, { id: 'tier-prem', name: 'premium' }], error: null },
+      },
+    })
+    vi.mocked(createClient).mockReturnValue(mockSb as never)
+    vi.mocked(createServiceClient).mockReturnValue(mockSb as never)
+
+    const id = await upsertContract({ ...baseInput, id: 'contract-existing', launch_stage: 'live' })
+    expect(id).toBe('contract-existing')
+
+    const fromCalls = mockSb.from.mock.calls.map((c: unknown[]) => c[0])
+    expect(fromCalls).not.toContain('launch_interest')
+    expect(fromCalls).not.toContain('notifications')
+  })
 })
 
 describe('overrideContractTrigger', () => {

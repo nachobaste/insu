@@ -3,6 +3,7 @@
 import Stripe from 'stripe'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { fetchCorridorPolyline } from '@/lib/oracle/fetcher'
+import { createNotification } from '@/lib/notifications/create'
 import type { UpsertContractInput } from '@/lib/types'
 
 function getStripe() {
@@ -55,9 +56,16 @@ export async function upsertContract(input: UpsertContractInput): Promise<string
     icon_url: input.icon_url,
     is_featured: input.is_featured,
     is_recurring: input.is_recurring,
+    launch_stage: input.launch_stage,
   }
 
   if (input.id) {
+    const { data: prevRow } = await supabase
+      .from('contracts')
+      .select('launch_stage')
+      .eq('id', input.id)
+      .single()
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await supabase.from('contracts').update(contractFields as any).eq('id', input.id)
 
@@ -93,6 +101,26 @@ export async function upsertContract(input: UpsertContractInput): Promise<string
       await supabase.from('corridors').update({
         origin_lat, origin_lng, dest_lat, dest_lng, path_polyline,
       } as any).eq('id', corridorId)
+    }
+
+    // Product launch: tell everyone who asked to be notified. Service client
+    // reads launch_interest (RLS is owner-scoped); createNotification is
+    // best-effort and per-user prefs-aware.
+    const wasComingSoon = (prevRow as { launch_stage?: string } | null)?.launch_stage === 'coming_soon'
+    if (wasComingSoon && input.launch_stage === 'live') {
+      const { data: interested } = await supabase
+        .from('launch_interest')
+        .select('user_id')
+        .eq('contract_id', input.id)
+      for (const row of (interested ?? []) as Array<{ user_id: string }>) {
+        await createNotification(supabase, {
+          userId: row.user_id,
+          type: 'product_launched',
+          title: `${input.title} is now live`,
+          body: 'Coverage you asked about is now available to buy on Insu.',
+          contractId: input.id,
+        })
+      }
     }
 
     return input.id
