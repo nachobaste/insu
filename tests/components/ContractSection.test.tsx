@@ -58,7 +58,7 @@ describe('ContractSection road chips', () => {
       makeContract({ id: '2', corridor: makeCorridor({ road: 'Paseo de la Reforma', slug: 'reforma-pm', window_start: '17:00:00' }) }),
       makeContract({ id: '3', corridor: makeCorridor({ road: 'Circuito Bicentenario', slug: 'bicentenario-am' }) }),
     ]
-    render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
+    render(<ContractSection title="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
 
     expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Circuito Bicentenario' })).toBeInTheDocument()
@@ -71,7 +71,7 @@ describe('ContractSection road chips', () => {
       makeContract({ id: '2', title: 'Reforma Evening', corridor: makeCorridor({ road: 'Paseo de la Reforma', slug: 'reforma-pm', window_start: '17:00:00' }) }),
       makeContract({ id: '3', title: 'Bicentenario Morning', corridor: makeCorridor({ road: 'Circuito Bicentenario', slug: 'bicentenario-am' }) }),
     ]
-    render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
+    render(<ContractSection title="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
 
     await userEvent.click(screen.getByRole('button', { name: 'Circuito Bicentenario' }))
 
@@ -86,7 +86,7 @@ describe('ContractSection road chips', () => {
       makeContract({ id: '2', title: 'Reforma Morning', corridor: makeCorridor({ road: 'Paseo de la Reforma' }) }),
       makeContract({ id: '3', title: 'Bicentenario Morning', corridor: makeCorridor({ road: 'Circuito Bicentenario', slug: 'bicentenario-am' }) }),
     ]
-    render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
+    render(<ContractSection title="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
 
     expect(screen.getByText('General Traffic')).toBeInTheDocument()
 
@@ -101,7 +101,7 @@ describe('ContractSection road chips', () => {
       makeContract({ id: '1', title: 'Reforma Morning', corridor: makeCorridor({ road: 'Paseo de la Reforma' }) }),
       makeContract({ id: '2', title: 'Reforma Evening', corridor: makeCorridor({ road: 'Paseo de la Reforma', slug: 'reforma-pm', window_start: '17:00:00' }) }),
     ]
-    render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
+    render(<ContractSection title="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
 
     // A road's morning + evening protections collapse into one CorridorPairCard
     // with a period toggle, so both periods are reachable from a single card.
@@ -117,7 +117,7 @@ describe('ContractSection road chips', () => {
         category: { id: 'cat-2', name: 'Nature', slug: 'nature', color: '#34d399', icon_url: null, display_order: 2 },
       }),
     ]
-    render(<ContractSection categoryName="Nature" categorySlug="nature" contracts={contracts} currency="USD" />)
+    render(<ContractSection title="Nature" categorySlug="nature" contracts={contracts} currency="USD" />)
 
     expect(screen.queryByRole('button', { name: 'All' })).not.toBeInTheDocument()
   })
@@ -136,7 +136,7 @@ describe('ContractSection recommended badge', () => {
       makeContract({ id: '1', title: 'Reforma Morning', corridor: makeCorridor({ road: 'Paseo de la Reforma', window_start: '07:00:00' }) }),
       makeContract({ id: '2', title: 'Reforma Evening', corridor: makeCorridor({ road: 'Paseo de la Reforma', slug: 'reforma-pm', window_start: '17:00:00' }) }),
     ]
-    render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
+    render(<ContractSection title="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
 
     // The merged CorridorPairCard defaults its active period to the recommended
     // one (evening at 08:00) and surfaces the badge for it.
@@ -157,7 +157,7 @@ describe('ContractSection recommended badge', () => {
         corridor: makeCorridor({ road: 'Paseo de la Reforma', slug: 'reforma-pm', window_start: '17:00:00' }),
       }),
     ]
-    render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
+    render(<ContractSection title="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
 
     const card = screen.getByText('Reforma Evening').closest('article')
     expect(card).toHaveTextContent('recommended')
@@ -171,9 +171,26 @@ describe('ContractSection recommended badge', () => {
     const contracts = [
       makeContract({ id: '1', title: 'General Traffic', is_featured: true, corridor: null }),
     ]
-    render(<ContractSection categoryName="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
+    render(<ContractSection title="Urban" categorySlug="urban" contracts={contracts} currency="USD" />)
 
     const card = screen.getByText('General Traffic').closest('article')
     expect(card).toHaveTextContent('trending')
+  })
+})
+
+describe('ContractSection caller-provided header', () => {
+  it('renders caller-provided icon and description over the slug defaults', () => {
+    render(
+      <ContractSection
+        title="Traffic protection — Mexico City"
+        categorySlug="urban"
+        icon="🚗"
+        description="Rush-hour delay coverage"
+        contracts={[]}
+        currency="USD"
+      />,
+    )
+    expect(screen.getByText(/🚗 Traffic protection — Mexico City/)).toBeInTheDocument()
+    expect(screen.getByText('Rush-hour delay coverage')).toBeInTheDocument()
   })
 })
