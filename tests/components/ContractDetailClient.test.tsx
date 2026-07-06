@@ -10,7 +10,7 @@ vi.mock('@/components/markets/ContractMeta', () => ({ default: () => <div data-t
 vi.mock('@/components/markets/PurchasePanel', () => ({ default: () => <div data-testid="panel" /> }))
 vi.mock('@/components/markets/TierSelector', () => ({ default: () => <div data-testid="tiers" /> }))
 vi.mock('@/components/markets/ComingSoonPanel', () => ({
-  default: () => <p>This coverage isn't live yet</p>,
+  default: () => <p>This coverage isn&apos;t live yet</p>,
 }))
 
 const contract = {
