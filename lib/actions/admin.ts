@@ -121,6 +121,9 @@ export async function upsertContract(input: UpsertContractInput): Promise<string
           contractId: input.id,
         })
       }
+      // Interest is fulfilled once launched; clearing prevents duplicate
+      // notifications if the contract is ever flipped back and re-launched.
+      await supabase.from('launch_interest').delete().eq('contract_id', input.id)
     }
 
     return input.id

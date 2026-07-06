@@ -15,7 +15,7 @@ import Stripe from 'stripe'
 
 function makeChainable(result: unknown) {
   const b: Record<string, unknown> = {}
-  for (const m of ['select', 'eq', 'in', 'order', 'update', 'not', 'is']) {
+  for (const m of ['select', 'eq', 'in', 'order', 'update', 'not', 'is', 'delete']) {
     b[m] = vi.fn().mockReturnValue(b)
   }
   b.insert = vi.fn().mockReturnValue(b)
@@ -216,6 +216,8 @@ describe('upsertContract', () => {
     expect(fromCalls).toContain('notifications')
     // Two interested users → two notification inserts
     expect(fromCalls.filter((t) => t === 'notifications').length).toBe(2)
+    // launch_interest appears twice: select + delete
+    expect(fromCalls.filter((t) => t === 'launch_interest').length).toBe(2)
   })
 
   it('does not query launch_interest when launch_stage remains live', async () => {
