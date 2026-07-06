@@ -61,7 +61,11 @@ function mockFeeds(stations: Station[]) {
 }
 
 describe('fetchGasPrice', () => {
-  beforeEach(() => mockFetch.mockReset())
+  // Braces matter: a beforeEach that returns a function registers it as a
+  // cleanup hook, and mockReset() returns the mock itself.
+  beforeEach(() => {
+    mockFetch.mockReset()
+  })
 
   it('fetches both CRE feed URLs', async () => {
     mockFeeds(cdmxStations(60))
