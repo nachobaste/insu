@@ -19,6 +19,7 @@ const PREF_LABELS: Record<keyof NotificationPrefs, string> = {
   coverage_expired: 'Coverage expired (no payout)',
   protection_purchased: 'Protection purchased',
   provider_settled: 'Provider position settled',
+  product_launched: 'Launch of products I asked about',
 }
 
 const fieldCls =
