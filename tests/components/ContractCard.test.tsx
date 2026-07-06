@@ -103,4 +103,18 @@ describe('ContractCard', () => {
     render(<ContractCard contract={mockContract} currency="USD" badge="recommended" />)
     expect(screen.getByText('recommended')).toBeInTheDocument()
   })
+
+  it('renders the coming-soon variant: badge, no prices, Notify me CTA', () => {
+    render(<ContractCard contract={mockContract} currency="USD" comingSoon />)
+    expect(screen.getByText(/coming soon/i)).toBeInTheDocument()
+    expect(screen.getByText(/pricing available at launch/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /notify me/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /buy now/i })).not.toBeInTheDocument()
+  })
+
+  it('does not show coming-soon UI on live cards', () => {
+    render(<ContractCard contract={mockContract} currency="USD" />)
+    expect(screen.queryByText(/coming soon/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /buy now/i })).toBeInTheDocument()
+  })
 })
