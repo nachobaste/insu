@@ -189,6 +189,7 @@ export function ContractForm({ categories, contract }: Props) {
       },
       icon_url: iconUrl || null,
       is_featured: isFeatured,
+      // TODO(Task 10): replace pass-through with useState + launch-stage select
       launch_stage: contract?.launch_stage ?? 'live',
       basic_tier: { premium_usd: Number(basicPremium), payout_usd: Number(basicPayout), max_capacity_usd: Number(basicCapacity) },
       premium_tier: { premium_usd: Number(premPremium), payout_usd: Number(premPayout), max_capacity_usd: Number(premCapacity) },
