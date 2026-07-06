@@ -80,6 +80,7 @@ export default async function MarketPage({
   const contract = contractData as unknown as ContractDetailData
   const userId = userResult.data.user?.id ?? null
   const corridor = contract.corridor as Corridor | null
+  const comingSoon = contract.launch_stage === 'coming_soon'
 
   // For a corridor contract, find its sibling (same road, opposite period).
   let sibling: ContractDetailData | null = null
@@ -105,7 +106,8 @@ export default async function MarketPage({
   }
 
   // Paired corridor: preload both periods, toggle instantly client-side.
-  if (contract.trigger_type === 'urban' && corridor && sibling) {
+  // coming-soon corridors (none today) must fall through to the notify-me view
+  if (contract.trigger_type === 'urban' && corridor && sibling && !comingSoon) {
     const [openedBundle, siblingBundle] = await Promise.all([
       loadBundle(supabase, contract),
       loadBundle(supabase, sibling),
@@ -123,7 +125,7 @@ export default async function MarketPage({
   }
 
   // Single contract: non-corridor, or a road with only one active period.
-  const [latestReadingResult, sparklineResult] = await Promise.all([
+  const [latestReadingResult, sparklineResult, interestResult] = await Promise.all([
     supabase
       .from('oracle_readings')
       .select('value, read_at, source, trigger_met')
@@ -139,6 +141,14 @@ export default async function MarketPage({
           .order('read_at', { ascending: false })
           .limit(6)
       : Promise.resolve({ data: null, error: null }),
+    comingSoon && userId
+      ? supabase
+          .from('launch_interest')
+          .select('contract_id')
+          .eq('contract_id', contract.id)
+          .eq('user_id', userId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ])
 
   if (latestReadingResult.error) {
@@ -151,19 +161,7 @@ export default async function MarketPage({
   const latestReading = latestReadingResult.data as LatestOracleReading | null
   const sparklineReadings = (sparklineResult.data ?? []) as OracleReading[]
   const triggerCondition = contract.trigger_condition
-
-  const comingSoon = contract.launch_stage === 'coming_soon'
-
-  let initiallyInterested = false
-  if (comingSoon && userId) {
-    const { data: interest } = await supabase
-      .from('launch_interest')
-      .select('contract_id')
-      .eq('contract_id', contract.id)
-      .eq('user_id', userId)
-      .maybeSingle()
-    initiallyInterested = !!interest
-  }
+  const initiallyInterested = !!interestResult.data
 
   return (
     <>

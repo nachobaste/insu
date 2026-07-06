@@ -19,11 +19,12 @@ export async function toggleLaunchInterest(contractId: string): Promise<boolean>
     .maybeSingle()
 
   if (existing) {
-    await supabase
+    const { error: delError } = await supabase
       .from('launch_interest')
       .delete()
       .eq('contract_id', contractId)
       .eq('user_id', user.id)
+    if (delError) throw new Error(`Could not remove interest: ${delError.message}`)
     return false
   }
 
