@@ -39,7 +39,7 @@ export default function BrowseClient({ initialContracts, stats }: Props) {
   const isSearching = normalizedQuery.length > 0
 
   const searchResults = useMemo(() => {
-    if (!isSearching) return []
+    if (normalizedQuery.length === 0) return []
     return contracts.filter((c) =>
       c.title.toLowerCase().includes(normalizedQuery) ||
       (c.description ?? '').toLowerCase().includes(normalizedQuery) ||
@@ -47,7 +47,7 @@ export default function BrowseClient({ initialContracts, stats }: Props) {
       (c.location?.country ?? '').toLowerCase().includes(normalizedQuery) ||
       (c.category?.name ?? '').toLowerCase().includes(normalizedQuery)
     )
-  }, [contracts, normalizedQuery, isSearching])
+  }, [contracts, normalizedQuery])
 
   return (
     <main className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-7 lg:px-8">
