@@ -1,19 +1,20 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import CategoryTabs from '@/components/layout/CategoryTabs'
 import StatsBar from '@/components/contracts/StatsBar'
 import ContractSection from '@/components/contracts/ContractSection'
+import ContractCard from '@/components/contracts/ContractCard'
+import ComingSoonSection from '@/components/contracts/ComingSoonSection'
 import TrendingSection from '@/components/contracts/TrendingSection'
 import RegionToggle from '@/components/contracts/RegionToggle'
 import { useRealtimeContracts } from '@/hooks/useRealtimeContracts'
 import { scoreTrending } from '@/lib/trending'
 import { filterByRegion, type Region } from '@/lib/region'
+import { partitionByLaunchStage, groupLiveContracts } from '@/lib/launch'
 import { useSearch } from '@/lib/search-context'
-import type { Category, ContractWithTiers } from '@/lib/types'
+import type { ContractWithTiers } from '@/lib/types'
 
 interface Props {
-  categories: Category[]
   initialContracts: ContractWithTiers[]
   stats: {
     totalVolumeUsd: number
@@ -23,14 +24,15 @@ interface Props {
   }
 }
 
-export default function BrowseClient({ categories, initialContracts, stats }: Props) {
-  const [activeSlug, setActiveSlug] = useState<string>('all')
+export default function BrowseClient({ initialContracts, stats }: Props) {
   const [region, setRegion] = useState<Region>('MX')
   const allContracts = useRealtimeContracts(initialContracts)
-  // Scope everything below (trending, category sections, search) to the selected
+  // Scope everything below (trending, sections, search) to the selected
   // region. Mexico is the demo focus; International is one click away.
   const contracts = useMemo(() => filterByRegion(allContracts, region), [allContracts, region])
-  const trendingContracts = useMemo(() => scoreTrending(contracts), [contracts])
+  const { live, comingSoon } = useMemo(() => partitionByLaunchStage(contracts), [contracts])
+  const groups = useMemo(() => groupLiveContracts(live), [live])
+  const trendingContracts = useMemo(() => scoreTrending(live), [live])
   const { query } = useSearch()
 
   const normalizedQuery = query.trim().toLowerCase()
@@ -47,83 +49,59 @@ export default function BrowseClient({ categories, initialContracts, stats }: Pr
     )
   }, [contracts, normalizedQuery, isSearching])
 
-  const visibleCategories =
-    activeSlug === 'all'
-      ? categories
-      : categories.filter((c) => c.slug === activeSlug)
-
   return (
-    <>
-      <CategoryTabs
-        categories={categories}
-        activeSlug={activeSlug}
-        onSelect={(slug) => setActiveSlug(slug === activeSlug ? 'all' : slug)}
-      />
+    <main className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-7 lg:px-8">
+      <div className="mb-5">
+        <RegionToggle region={region} onSelect={setRegion} />
+      </div>
 
-      <main className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-7 lg:px-8">
-        <div className="mb-5">
-          <RegionToggle region={region} onSelect={setRegion} />
-        </div>
+      <StatsBar stats={stats} />
 
-        <StatsBar stats={stats} />
-
-        {isSearching ? (
-          <>
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-insu-muted">
-              {searchResults.length === 0
-                ? `No results for "${query}"`
-                : `${searchResults.length} result${searchResults.length === 1 ? '' : 's'} for "${query}"`}
+      {isSearching ? (
+        <>
+          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-insu-muted">
+            {searchResults.length === 0
+              ? `No results for "${query}"`
+              : `${searchResults.length} result${searchResults.length === 1 ? '' : 's'} for "${query}"`}
+          </p>
+          {searchResults.length === 0 ? (
+            <p className="py-16 text-center text-[13px] text-insu-dim">
+              Try searching for a city, event, or risk type.
             </p>
-            {searchResults.length === 0 ? (
-              <p className="py-16 text-center text-[13px] text-insu-dim">
-                Try searching for a city, event, or risk type.
-              </p>
-            ) : (
-              categories.map((cat) => {
-                const catContracts = searchResults.filter((c) => c.category?.slug === cat.slug)
-                if (catContracts.length === 0) return null
-                return (
-                  <ContractSection
-                    key={cat.id}
-                    categoryName={cat.name}
-                    categorySlug={cat.slug}
-                    contracts={catContracts}
-                    currency="USD"
-                  />
-                )
-              })
-            )}
-          </>
-        ) : (
-          <>
-            {activeSlug === 'all' && trendingContracts.length >= 2 && (
-              <TrendingSection contracts={trendingContracts} currency="USD" />
-            )}
-
-            {activeSlug === 'all' && trendingContracts.length >= 2 && (
-              <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-insu-muted">
-                All contracts
-              </p>
-            )}
-
-            {visibleCategories.map((cat) => {
-              const catContracts = contracts.filter(
-                (c) => c.category?.slug === cat.slug
-              )
-              if (catContracts.length === 0) return null
-              return (
-                <ContractSection
-                  key={cat.id}
-                  categoryName={cat.name}
-                  categorySlug={cat.slug}
-                  contracts={catContracts}
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {searchResults.map((contract) => (
+                <ContractCard
+                  key={contract.id}
+                  contract={contract}
                   currency="USD"
+                  comingSoon={contract.launch_stage === 'coming_soon'}
                 />
-              )
-            })}
-          </>
-        )}
-      </main>
-    </>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {trendingContracts.length >= 2 && (
+            <TrendingSection contracts={trendingContracts} currency="USD" />
+          )}
+
+          {groups.map((group) => (
+            <ContractSection
+              key={group.key}
+              title={group.title}
+              categorySlug={group.categorySlug}
+              icon={group.icon}
+              description={group.description}
+              contracts={group.contracts}
+              currency="USD"
+            />
+          ))}
+
+          <ComingSoonSection contracts={comingSoon} currency="USD" />
+        </>
+      )}
+    </main>
   )
 }

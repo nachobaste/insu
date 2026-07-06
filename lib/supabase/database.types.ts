@@ -103,6 +103,7 @@ export type Database = {
           id: string
           is_featured: boolean
           is_recurring: boolean
+          launch_stage: string
           location: Json
           settled_at: string | null
           settled_outcome: boolean | null
@@ -125,6 +126,7 @@ export type Database = {
           id?: string
           is_featured?: boolean
           is_recurring?: boolean
+          launch_stage?: string
           location?: Json
           settled_at?: string | null
           settled_outcome?: boolean | null
@@ -147,6 +149,7 @@ export type Database = {
           id?: string
           is_featured?: boolean
           is_recurring?: boolean
+          launch_stage?: string
           location?: Json
           settled_at?: string | null
           settled_outcome?: boolean | null
