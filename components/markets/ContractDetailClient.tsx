@@ -10,6 +10,7 @@ import OracleConditions from './OracleConditions'
 import PriceChart from './PriceChart'
 import PurchasePanel from './PurchasePanel'
 import TierSelector from './TierSelector'
+import ComingSoonPanel from './ComingSoonPanel'
 
 type PanelMode = 'buy' | 'provide'
 
@@ -27,9 +28,12 @@ interface Props {
   periodToggle?: ReactNode
   /** Optional content rendered below the description, above the price chart (e.g. corridor evidence). */
   evidence?: ReactNode
+  /** Coming-soon market: replace all purchase UI with the notify-me panel. */
+  comingSoon?: boolean
+  initiallyInterested?: boolean
 }
 
-export default function ContractDetailClient({ contract, userId, latestReading, periodToggle, evidence }: Props) {
+export default function ContractDetailClient({ contract, userId, latestReading, periodToggle, evidence, comingSoon, initiallyInterested }: Props) {
   const isRecurring = contract.is_recurring
 
   const [panelOpen, setPanelOpen] = useState(false)
@@ -117,72 +121,84 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
         {/* Right column — sticky on desktop, stacked below lg */}
         <div className="space-y-4 lg:sticky lg:top-[80px]">
 
-          {/* Period selector — oracle-driven contracts only */}
-          {isRecurring && (
-            <div>
-              <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
-                Coverage period
+          {comingSoon ? (
+            <ComingSoonPanel
+              contractId={contract.id}
+              userId={userId}
+              initiallyInterested={initiallyInterested ?? false}
+            />
+          ) : (
+            <>
+              {/* Period selector — oracle-driven contracts only */}
+              {isRecurring && (
+                <div>
+                  <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
+                    Coverage period
+                  </p>
+                  <div className="flex gap-2">
+                    {PERIOD_OPTIONS.map(({ days, label }) => (
+                      <button
+                        key={days}
+                        onClick={() => selectPeriod(days)}
+                        className={cn(
+                          'flex flex-1 flex-col items-center rounded-lg border py-2.5 text-[12px] font-semibold transition-all',
+                          selectedPeriodDays === days
+                            ? 'border-insu-accent/50 bg-insu-accent/5 text-insu-accent'
+                            : 'border-white/[0.07] bg-bg-card text-insu-muted hover:border-white/15',
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p className="text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
+                Select tier
               </p>
-              <div className="flex gap-2">
-                {PERIOD_OPTIONS.map(({ days, label }) => (
-                  <button
-                    key={days}
-                    onClick={() => selectPeriod(days)}
-                    className={cn(
-                      'flex flex-1 flex-col items-center rounded-lg border py-2.5 text-[12px] font-semibold transition-all',
-                      selectedPeriodDays === days
-                        ? 'border-insu-accent/50 bg-insu-accent/5 text-insu-accent'
-                        : 'border-white/[0.07] bg-bg-card text-insu-muted hover:border-white/15',
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
+
+              <TierSelector
+                tiers={contract.coverage_tiers}
+                selectedTierId={selectedTierId}
+                onSelect={(id) => setSelectedTierId(prev => prev === id ? null : id)}
+                mode="buy"
+                priceByTier={priceByTier}
+                lockedReasonByTier={lockedReasonByTier}
+              />
+
+              <div className="space-y-2 pt-1">
+                <button
+                  onClick={() => openPanel('buy')}
+                  disabled={!hasPoolCoverage}
+                  className="w-full rounded-lg bg-insu-accent py-3 text-[14px] font-bold text-bg transition-all hover:bg-[#f7b84a] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Buy Protection
+                </button>
+                <button
+                  onClick={() => openPanel('provide')}
+                  className="w-full rounded-lg border border-white/[0.07] bg-bg-card py-3 text-[14px] font-semibold text-insu-text transition-all hover:border-white/15"
+                >
+                  Provide Capital
+                </button>
               </div>
-            </div>
+            </>
           )}
-
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
-            Select tier
-          </p>
-
-          <TierSelector
-            tiers={contract.coverage_tiers}
-            selectedTierId={selectedTierId}
-            onSelect={(id) => setSelectedTierId(prev => prev === id ? null : id)}
-            mode="buy"
-            priceByTier={priceByTier}
-            lockedReasonByTier={lockedReasonByTier}
-          />
-
-          <div className="space-y-2 pt-1">
-            <button
-              onClick={() => openPanel('buy')}
-              disabled={!hasPoolCoverage}
-              className="w-full rounded-lg bg-insu-accent py-3 text-[14px] font-bold text-bg transition-all hover:bg-[#f7b84a] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Buy Protection
-            </button>
-            <button
-              onClick={() => openPanel('provide')}
-              className="w-full rounded-lg border border-white/[0.07] bg-bg-card py-3 text-[14px] font-semibold text-insu-text transition-all hover:border-white/15"
-            >
-              Provide Capital
-            </button>
-          </div>
         </div>
       </div>
 
-      <PurchasePanel
-        contract={contract}
-        userId={userId}
-        open={panelOpen}
-        initialMode={panelMode}
-        initialPeriodDays={selectedPeriodDays}
-        initialTierId={selectedTierId}
-        latestReading={latestReading}
-        onClose={() => setPanelOpen(false)}
-      />
+      {!comingSoon && (
+        <PurchasePanel
+          contract={contract}
+          userId={userId}
+          open={panelOpen}
+          initialMode={panelMode}
+          initialPeriodDays={selectedPeriodDays}
+          initialTierId={selectedTierId}
+          latestReading={latestReading}
+          onClose={() => setPanelOpen(false)}
+        />
+      )}
     </main>
   )
 }

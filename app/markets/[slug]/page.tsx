@@ -152,6 +152,19 @@ export default async function MarketPage({
   const sparklineReadings = (sparklineResult.data ?? []) as OracleReading[]
   const triggerCondition = contract.trigger_condition
 
+  const comingSoon = contract.launch_stage === 'coming_soon'
+
+  let initiallyInterested = false
+  if (comingSoon && userId) {
+    const { data: interest } = await supabase
+      .from('launch_interest')
+      .select('contract_id')
+      .eq('contract_id', contract.id)
+      .eq('user_id', userId)
+      .maybeSingle()
+    initiallyInterested = !!interest
+  }
+
   return (
     <>
       <Header />
@@ -159,6 +172,8 @@ export default async function MarketPage({
         contract={contract}
         userId={userId}
         latestReading={latestReading}
+        comingSoon={comingSoon}
+        initiallyInterested={initiallyInterested}
         evidence={
           contract.trigger_type === 'urban' && corridor ? (
             <CorridorEvidence
