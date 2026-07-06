@@ -74,7 +74,8 @@ export interface Contract {
   total_volume_usd: number
   total_volume_mxn: number
   is_featured: boolean
-  launch_stage: LaunchStage
+  /** Optional because pre-migration rows and test fixtures may omit it; missing means 'live'. */
+  launch_stage?: LaunchStage
   settled_outcome: boolean | null
   created_by: string
   created_at: string

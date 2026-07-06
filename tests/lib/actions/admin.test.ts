@@ -63,6 +63,7 @@ const baseInput = {
   location: { city: 'CDMX', country: 'MX', lat: 19.4, lng: -99.1 },
   icon_url: null,
   is_featured: false,
+  launch_stage: 'live' as const,
   basic_tier: { premium_usd: 45, payout_usd: 500, max_capacity_usd: 50000 },
   premium_tier: { premium_usd: 120, payout_usd: 2000, max_capacity_usd: 100000 },
 }

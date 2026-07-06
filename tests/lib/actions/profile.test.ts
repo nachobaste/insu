@@ -23,7 +23,7 @@ describe('updateProfile', () => {
     const res = await updateProfile({
       full_name: 'Ada',
       preferred_currency: 'MXN',
-      notification_prefs: { coverage_paid: true, coverage_expired: false, protection_purchased: true, provider_settled: true },
+      notification_prefs: { coverage_paid: true, coverage_expired: false, protection_purchased: true, provider_settled: true, product_launched: true },
     })
     expect(res).toEqual({ ok: true })
     expect(update).toHaveBeenCalledWith(expect.objectContaining({
