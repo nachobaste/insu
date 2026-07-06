@@ -418,7 +418,7 @@ Expected: `readyState: READY`, aliased to `insu-theta.vercel.app`. Because every
 
 > Mirrors `scripts/tune-base-probability.mjs`. Computes each corridor's **median weekday** in-window `duration_s` from `oracle_readings` (the poller only writes in-window readings, so no extra time filtering is needed). Dry-run by default; `--apply` writes `corridors.baseline_duration_s`. Gated by sample count.
 
-- [ ] **Step 1: Write the script**
+- [x] **Step 1: Write the script**
 
 ```js
 // scripts/compute-corridor-baselines.mjs
@@ -531,12 +531,12 @@ if (APPLY) {
 }
 ```
 
-- [ ] **Step 2: Smoke-run the dry-run against staging**
+- [x] **Step 2: Smoke-run the dry-run against staging**
 
 Run: `node scripts/compute-corridor-baselines.mjs`
 Expected: a table prints without error. With thin history, most corridors show `confidence = low` or `NONE` and nothing would be written. **This is the verification** (operator-script convention — no vitest).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add scripts/compute-corridor-baselines.mjs
@@ -554,7 +554,7 @@ git commit -m "feat(scripts): compute per-corridor typical-duration baselines"
 
 > Recomputes, per urban contract that HAS a `baseline_duration_s`, the daily breach frequency = (distinct days with `trafficIndex(duration_s, baseline) > threshold`) / (distinct days with any reading), then writes `coverage_tiers.base_probability`. It recomputes the index from `duration_s` + baseline rather than trusting the stored `trigger_met` (which mixes pre/post-rebaseline values). Supersedes `tune-base-probability.mjs` for urban corridors. Dry-run / `--apply`, gated by ≥7 days.
 
-- [ ] **Step 1: Write the script**
+- [x] **Step 1: Write the script**
 
 ```js
 // scripts/recalibrate-base-probability.mjs
@@ -657,12 +657,12 @@ if (APPLY) {
 }
 ```
 
-- [ ] **Step 2: Smoke-run the dry-run against staging**
+- [x] **Step 2: Smoke-run the dry-run against staging**
 
 Run: `node scripts/recalibrate-base-probability.mjs`
 Expected: prints a table; with no baselines set yet, every row shows `no baseline` and nothing writes. Verification = output review.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add scripts/recalibrate-base-probability.mjs
