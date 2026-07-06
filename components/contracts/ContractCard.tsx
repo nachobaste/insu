@@ -28,7 +28,7 @@ interface Props {
   contract: ContractWithTiers
   currency: Currency
   badge?: 'trending' | 'new' | 'live' | 'recommended'
-  /** Dimmed teaser: badge, no prices, Notify me CTA. Card still opens the detail page. */
+  /** Dimmed teaser: badge, no prices, Notify me CTA. Card still opens the detail page. Takes precedence over the `badge` prop. */
   comingSoon?: boolean
 }
 
@@ -38,6 +38,8 @@ const BADGE_STYLES = {
   live:        'bg-red-500/12 text-red-400 border border-red-500/25 animate-pulse',
   recommended: 'bg-blue-400/15 text-blue-400 border border-blue-400/25',
 }
+
+const BADGE_BASE = 'absolute right-3.5 top-3.5 rounded px-[7px] py-[3px] text-[10px] font-bold uppercase tracking-[0.1em]'
 
 const COMING_SOON_BADGE = 'bg-amber-400/10 text-amber-300 border border-amber-400/25'
 
@@ -61,16 +63,11 @@ export default function ContractCard({ contract, currency, badge, comingSoon }: 
       )}
     >
       {comingSoon ? (
-        <span className={cn('absolute right-3.5 top-3.5 rounded px-[7px] py-[3px] text-[10px] font-bold uppercase tracking-[0.1em]', COMING_SOON_BADGE)}>
+        <span className={cn(BADGE_BASE, COMING_SOON_BADGE)}>
           coming soon
         </span>
       ) : badge ? (
-        <span
-          className={cn(
-            'absolute right-3.5 top-3.5 rounded px-[7px] py-[3px] text-[10px] font-bold uppercase tracking-[0.1em]',
-            BADGE_STYLES[badge]
-          )}
-        >
+        <span className={cn(BADGE_BASE, BADGE_STYLES[badge])}>
           {badge}
         </span>
       ) : null}

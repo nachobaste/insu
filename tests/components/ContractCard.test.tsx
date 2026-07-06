@@ -110,6 +110,11 @@ describe('ContractCard', () => {
     expect(screen.getByText(/pricing available at launch/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /notify me/i })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /buy now/i })).not.toBeInTheDocument()
+    // Assert tier pricing is not rendered
+    expect(screen.queryByText('$100 USD')).not.toBeInTheDocument()
+    expect(screen.queryByText('$500 USD')).not.toBeInTheDocument()
+    expect(screen.queryByText('$600 USD')).not.toBeInTheDocument()
+    expect(screen.queryByText('$1,700 USD')).not.toBeInTheDocument()
   })
 
   it('does not show coming-soon UI on live cards', () => {
