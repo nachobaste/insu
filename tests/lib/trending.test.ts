@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { scoreTrending } from '@/lib/trending'
-import type { ContractWithTiers } from '@/lib/types'
+import type { ContractWithTiers, Corridor } from '@/lib/types'
 
 function makeContract(overrides: Partial<ContractWithTiers>): ContractWithTiers {
   return {
@@ -77,5 +77,87 @@ describe('scoreTrending', () => {
     const original = [...contracts]
     scoreTrending(contracts)
     expect(contracts[0].id).toBe(original[0].id)
+  })
+
+  describe('corridor pair dedupe', () => {
+    function makeCorridor(overrides: Partial<Corridor>): Corridor {
+      return {
+        id: 'cor-1',
+        slug: 'test-am',
+        name: 'Test (Mañana)',
+        road: 'Carretera a El Salvador (CA-1 Oriente)',
+        origin_lat: 0,
+        origin_lng: 0,
+        dest_lat: 0,
+        dest_lng: 0,
+        window_start: '07:00',
+        window_end: '10:00',
+        ...overrides,
+      } as Corridor
+    }
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('shows one card per road, preferring the recommended commute period', () => {
+      // 2pm local → recommended period is the evening commute
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date(2026, 6, 6, 14, 0, 0))
+
+      const am = makeContract({
+        id: 'gt-am',
+        corridor: makeCorridor({ id: 'cor-am', window_start: '07:00', window_end: '10:00' }),
+      })
+      const pm = makeContract({
+        id: 'gt-pm',
+        corridor: makeCorridor({ id: 'cor-pm', window_start: '17:00', window_end: '20:00' }),
+      })
+
+      const result = scoreTrending([am, pm])
+      expect(result).toHaveLength(1)
+      expect(result[0].id).toBe('gt-pm')
+    })
+
+    it('keeps the recommended period regardless of input order', () => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date(2026, 6, 6, 14, 0, 0))
+
+      const am = makeContract({
+        id: 'gt-am',
+        corridor: makeCorridor({ id: 'cor-am', window_start: '07:00', window_end: '10:00' }),
+      })
+      const pm = makeContract({
+        id: 'gt-pm',
+        corridor: makeCorridor({ id: 'cor-pm', window_start: '17:00', window_end: '20:00' }),
+      })
+
+      const result = scoreTrending([pm, am])
+      expect(result).toHaveLength(1)
+      expect(result[0].id).toBe('gt-pm')
+    })
+
+    it('keeps the lone direction when a road has only one contract', () => {
+      const am = makeContract({
+        id: 'solo-am',
+        corridor: makeCorridor({ id: 'cor-am' }),
+      })
+      const result = scoreTrending([am])
+      expect(result).toHaveLength(1)
+      expect(result[0].id).toBe('solo-am')
+    })
+
+    it('does not dedupe across different roads or non-corridor contracts', () => {
+      const roadA = makeContract({
+        id: 'a',
+        corridor: makeCorridor({ id: 'cor-a', road: 'Road A' }),
+      })
+      const roadB = makeContract({
+        id: 'b',
+        corridor: makeCorridor({ id: 'cor-b', road: 'Road B' }),
+      })
+      const plain = makeContract({ id: 'plain', corridor: null })
+      expect(scoreTrending([roadA, roadB, plain])).toHaveLength(3)
+    })
   })
 })
