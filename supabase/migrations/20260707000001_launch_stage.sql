@@ -2,9 +2,10 @@
 -- pricing) from Coming Soon teasers, and cancel expired demo contracts.
 -- See docs/superpowers/specs/2026-07-06-coming-soon-cleanup-design.md.
 --
--- NOTE: bad-bunny-cancelled is curated as coming_soon (NOT cancelled) because
--- it carries an active provider position (~$2,000 deposited). Cancel it
--- manually once that position is settled/refunded.
+-- NOTE: all existing contracts and positions are test data (per Gerardo,
+-- 2026-07-06), so cancelling a demo contract that still carries an active
+-- hedger/provider position is an accepted write-off. The DO block below only
+-- logs a NOTICE with the count instead of blocking.
 
 -- 1) Explicit launch stage. Default 'live' so existing purchase/payout flows
 --    and future oracle-backed contracts are unaffected unless curated.
@@ -35,14 +36,14 @@ CREATE POLICY "Own interest insert" ON launch_interest FOR INSERT
 CREATE POLICY "Own interest delete" ON launch_interest FOR DELETE
   USING (auth.uid() = user_id);
 
--- 4) Curation. Guard: never cancel a contract someone actively holds —
---    neither buyers (hedger_positions) nor capital providers (provider_positions).
+-- 4) Curation. All positions are test data: log (don't block) how many active
+--    hedger/provider positions are being written off by the cancellations.
 DO $$
 DECLARE
   n int;
   cancel_slugs text[] := ARRAY[
     'earthquakes-7-june-30','cdmx-marathon-rain','oaxaca-food-festival',
-    'karol-g-medellin-cancelled','lollapalooza-bsas-cancelled',
+    'bad-bunny-cancelled','karol-g-medellin-cancelled','lollapalooza-bsas-cancelled',
     'monterrey-tech-summit','carnaval-rio-shortened','patagonia-trail-closed',
     'diablos-rojos-vs-tigres-de-quintana-roo-mp99hwh4'];
 BEGIN
@@ -55,26 +56,23 @@ BEGIN
       WHERE pp.status = 'active' AND c.slug = ANY(cancel_slugs))
   INTO n;
   IF n > 0 THEN
-    RAISE EXCEPTION 'Refusing to cancel demo contracts: % active position(s) exist', n;
+    RAISE NOTICE 'Cancelling demo contracts writes off % active test position(s).', n;
   END IF;
 END $$;
 
--- Evergreen teasers stay browsable as Coming Soon. bad-bunny-cancelled is
--- included here (not in the cancel list) because it holds an active provider
--- position; cancel it manually once that position is settled/refunded.
+-- Evergreen teasers stay browsable as Coming Soon.
 UPDATE contracts SET launch_stage = 'coming_soon'
 WHERE slug IN (
   'caribbean-hurricane-landfall','guadalajara-flash-flood','cabo-heatwave',
   'cancun-beach-closure','whistler-snow-20cm','amazon-flood-alert',
   'sao-paulo-metro-shutdown','gas-price-guatemala-q45',
-  'bogota-water-shortage','buenos-aires-blackout',
-  'bad-bunny-cancelled');
+  'bogota-water-shortage','buenos-aires-blackout');
 
 -- Dated/expired demos disappear from browse (still visible in admin).
 UPDATE contracts SET status = 'cancelled'
 WHERE slug IN (
   'earthquakes-7-june-30','cdmx-marathon-rain','oaxaca-food-festival',
-  'karol-g-medellin-cancelled','lollapalooza-bsas-cancelled',
+  'bad-bunny-cancelled','karol-g-medellin-cancelled','lollapalooza-bsas-cancelled',
   'monterrey-tech-summit','carnaval-rio-shortened','patagonia-trail-closed',
   'diablos-rojos-vs-tigres-de-quintana-roo-mp99hwh4')
   AND status NOT IN ('settled','cancelled');
