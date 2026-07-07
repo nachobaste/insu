@@ -39,7 +39,7 @@ export default async function ProfilePage() {
           createdAt={p.created_at}
           fullName={p.full_name ?? ''}
           preferredCurrency={p.preferred_currency ?? 'USD'}
-          notificationPrefs={p.notification_prefs ?? DEFAULT_NOTIFICATION_PREFS}
+          notificationPrefs={{ ...DEFAULT_NOTIFICATION_PREFS, ...(p.notification_prefs ?? {}) }}
         />
       </main>
     </>

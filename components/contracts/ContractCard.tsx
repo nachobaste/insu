@@ -28,6 +28,8 @@ interface Props {
   contract: ContractWithTiers
   currency: Currency
   badge?: 'trending' | 'new' | 'live' | 'recommended'
+  /** Dimmed teaser: badge, no prices, Notify me CTA. Card still opens the detail page. Takes precedence over the `badge` prop. */
+  comingSoon?: boolean
 }
 
 const BADGE_STYLES = {
@@ -37,7 +39,11 @@ const BADGE_STYLES = {
   recommended: 'bg-blue-400/15 text-blue-400 border border-blue-400/25',
 }
 
-export default function ContractCard({ contract, currency, badge }: Props) {
+const BADGE_BASE = 'absolute right-3.5 top-3.5 rounded px-[7px] py-[3px] text-[10px] font-bold uppercase tracking-[0.1em]'
+
+const COMING_SOON_BADGE = 'bg-amber-400/10 text-amber-300 border border-amber-400/25'
+
+export default function ContractCard({ contract, currency, badge, comingSoon }: Props) {
   const router = useRouter()
   const slug = contract.category.slug
   const tiers = [...contract.coverage_tiers].sort((a, b) =>
@@ -52,19 +58,19 @@ export default function ContractCard({ contract, currency, badge }: Props) {
         'transition-all duration-200 hover:-translate-y-0.5 hover:bg-bg-card-hover hover:border-white/15',
         'before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-card',
         'card-fadein',
+        comingSoon && 'opacity-60 saturate-[.85] hover:opacity-100',
         CARD_STYLES[slug] ?? ''
       )}
     >
-      {badge && (
-        <span
-          className={cn(
-            'absolute right-3.5 top-3.5 rounded px-[7px] py-[3px] text-[10px] font-bold uppercase tracking-[0.1em]',
-            BADGE_STYLES[badge]
-          )}
-        >
+      {comingSoon ? (
+        <span className={cn(BADGE_BASE, COMING_SOON_BADGE)}>
+          coming soon
+        </span>
+      ) : badge ? (
+        <span className={cn(BADGE_BASE, BADGE_STYLES[badge])}>
           {badge}
         </span>
-      )}
+      ) : null}
 
       {/* Icon */}
       <div
@@ -96,42 +102,57 @@ export default function ContractCard({ contract, currency, badge }: Props) {
       </p>
 
       {/* Price rows */}
-      <div className="mb-3.5 space-y-0">
-        {tiers.map((tier) => (
-          <div
-            key={tier.id}
-            className="flex items-center justify-between border-b border-white/[0.04] py-1.5 last:border-none"
-          >
-            <span className="text-[12px] font-medium text-insu-muted">
-              {TIER_LABELS[tier.name]}
-            </span>
-            <span className="font-mono text-[13px] font-bold text-insu-text">
-              {formatCurrency(currency === 'USD' ? tier.premium_usd : tier.premium_mxn, currency)}
-              <span className="mx-1 font-normal text-insu-muted">/</span>
-              <span className="text-insu-green">
-                {formatCurrency(currency === 'USD' ? tier.payout_usd : tier.payout_mxn, currency)}
+      {comingSoon ? (
+        <p className="mb-3.5 py-1.5 text-[12px] text-insu-muted">Pricing available at launch</p>
+      ) : (
+        <div className="mb-3.5 space-y-0">
+          {tiers.map((tier) => (
+            <div
+              key={tier.id}
+              className="flex items-center justify-between border-b border-white/[0.04] py-1.5 last:border-none"
+            >
+              <span className="text-[12px] font-medium text-insu-muted">
+                {TIER_LABELS[tier.name]}
               </span>
-            </span>
-          </div>
-        ))}
-      </div>
+              <span className="font-mono text-[13px] font-bold text-insu-text">
+                {formatCurrency(currency === 'USD' ? tier.premium_usd : tier.premium_mxn, currency)}
+                <span className="mx-1 font-normal text-insu-muted">/</span>
+                <span className="text-insu-green">
+                  {formatCurrency(currency === 'USD' ? tier.payout_usd : tier.payout_mxn, currency)}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 font-mono text-[11px] font-medium text-insu-muted">
-          <span aria-hidden="true" className="inline-block h-[5px] w-[5px] rounded-full bg-insu-green vol-dot-pulse" />
-          {formatVolume(contract.total_volume_usd)} Vol.
-        </span>
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            router.push(`/markets/${contract.slug}`)
-          }}
-          className="rounded-lg bg-insu-text px-3.5 py-1.5 text-[13px] font-bold text-bg transition-all hover:scale-105 hover:bg-insu-accent"
-        >
-          Buy now
-        </button>
-      </div>
+      {comingSoon ? (
+        <div className="flex items-center justify-end">
+          <button
+            onClick={(e) => { e.stopPropagation(); router.push(`/markets/${contract.slug}`) }}
+            className="rounded-lg border border-white/15 px-3.5 py-1.5 text-[13px] font-bold text-insu-text transition-all hover:border-amber-400/40 hover:text-amber-300"
+          >
+            Notify me
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1.5 font-mono text-[11px] font-medium text-insu-muted">
+            <span aria-hidden="true" className="inline-block h-[5px] w-[5px] rounded-full bg-insu-green vol-dot-pulse" />
+            {formatVolume(contract.total_volume_usd)} Vol.
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              router.push(`/markets/${contract.slug}`)
+            }}
+            className="rounded-lg bg-insu-text px-3.5 py-1.5 text-[13px] font-bold text-bg transition-all hover:scale-105 hover:bg-insu-accent"
+          >
+            Buy now
+          </button>
+        </div>
+      )}
     </article>
   )
 }

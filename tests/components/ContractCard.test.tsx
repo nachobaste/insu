@@ -103,4 +103,23 @@ describe('ContractCard', () => {
     render(<ContractCard contract={mockContract} currency="USD" badge="recommended" />)
     expect(screen.getByText('recommended')).toBeInTheDocument()
   })
+
+  it('renders the coming-soon variant: badge, no prices, Notify me CTA', () => {
+    render(<ContractCard contract={mockContract} currency="USD" comingSoon />)
+    expect(screen.getByText(/coming soon/i)).toBeInTheDocument()
+    expect(screen.getByText(/pricing available at launch/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /notify me/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /buy now/i })).not.toBeInTheDocument()
+    // Assert tier pricing is not rendered
+    expect(screen.queryByText('$100 USD')).not.toBeInTheDocument()
+    expect(screen.queryByText('$500 USD')).not.toBeInTheDocument()
+    expect(screen.queryByText('$600 USD')).not.toBeInTheDocument()
+    expect(screen.queryByText('$1,700 USD')).not.toBeInTheDocument()
+  })
+
+  it('does not show coming-soon UI on live cards', () => {
+    render(<ContractCard contract={mockContract} currency="USD" />)
+    expect(screen.queryByText(/coming soon/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /buy now/i })).toBeInTheDocument()
+  })
 })

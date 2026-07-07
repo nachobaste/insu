@@ -15,7 +15,7 @@ import Stripe from 'stripe'
 
 function makeChainable(result: unknown) {
   const b: Record<string, unknown> = {}
-  for (const m of ['select', 'eq', 'in', 'order', 'update', 'not', 'is']) {
+  for (const m of ['select', 'eq', 'in', 'order', 'update', 'not', 'is', 'delete']) {
     b[m] = vi.fn().mockReturnValue(b)
   }
   b.insert = vi.fn().mockReturnValue(b)
@@ -63,6 +63,7 @@ const baseInput = {
   location: { city: 'CDMX', country: 'MX', lat: 19.4, lng: -99.1 },
   icon_url: null,
   is_featured: false,
+  launch_stage: 'live' as const,
   basic_tier: { premium_usd: 45, payout_usd: 500, max_capacity_usd: 50000 },
   premium_tier: { premium_usd: 120, payout_usd: 2000, max_capacity_usd: 100000 },
 }
@@ -194,6 +195,47 @@ describe('upsertContract', () => {
       },
     } as never)
     await expect(upsertContract(baseInput)).rejects.toThrow('MFA_REQUIRED')
+  })
+
+  it('sends product_launched notifications to interested users when flipping from coming_soon to live', async () => {
+    const mockSb = makeSupabase({
+      tables: {
+        contracts: { data: { launch_stage: 'coming_soon' }, error: null },
+        coverage_tiers: { data: [{ id: 'tier-basic', name: 'basic' }, { id: 'tier-prem', name: 'premium' }], error: null },
+        launch_interest: { data: [{ user_id: 'user-a' }, { user_id: 'user-b' }], error: null },
+      },
+    })
+    vi.mocked(createClient).mockReturnValue(mockSb as never)
+    vi.mocked(createServiceClient).mockReturnValue(mockSb as never)
+
+    const id = await upsertContract({ ...baseInput, id: 'contract-existing', launch_stage: 'live' })
+    expect(id).toBe('contract-existing')
+
+    const fromCalls = mockSb.from.mock.calls.map((c: unknown[]) => c[0])
+    expect(fromCalls).toContain('launch_interest')
+    expect(fromCalls).toContain('notifications')
+    // Two interested users → two notification inserts
+    expect(fromCalls.filter((t) => t === 'notifications').length).toBe(2)
+    // launch_interest appears twice: select + delete
+    expect(fromCalls.filter((t) => t === 'launch_interest').length).toBe(2)
+  })
+
+  it('does not query launch_interest when launch_stage remains live', async () => {
+    const mockSb = makeSupabase({
+      tables: {
+        contracts: { data: { launch_stage: 'live' }, error: null },
+        coverage_tiers: { data: [{ id: 'tier-basic', name: 'basic' }, { id: 'tier-prem', name: 'premium' }], error: null },
+      },
+    })
+    vi.mocked(createClient).mockReturnValue(mockSb as never)
+    vi.mocked(createServiceClient).mockReturnValue(mockSb as never)
+
+    const id = await upsertContract({ ...baseInput, id: 'contract-existing', launch_stage: 'live' })
+    expect(id).toBe('contract-existing')
+
+    const fromCalls = mockSb.from.mock.calls.map((c: unknown[]) => c[0])
+    expect(fromCalls).not.toContain('launch_interest')
+    expect(fromCalls).not.toContain('notifications')
   })
 })
 

@@ -55,6 +55,8 @@ export interface Corridor {
   created_at: string
 }
 
+export type LaunchStage = 'live' | 'coming_soon'
+
 export interface Contract {
   id: string
   slug: string
@@ -72,6 +74,8 @@ export interface Contract {
   total_volume_usd: number
   total_volume_mxn: number
   is_featured: boolean
+  /** Optional because pre-migration rows and test fixtures may omit it; missing means 'live'. */
+  launch_stage?: LaunchStage
   settled_outcome: boolean | null
   created_by: string
   created_at: string
@@ -207,6 +211,7 @@ export interface UpsertContractInput {
   location: ContractLocation
   icon_url: string | null
   is_featured: boolean
+  launch_stage: LaunchStage
   basic_tier: { premium_usd: number; payout_usd: number; max_capacity_usd: number }
   premium_tier: { premium_usd: number; payout_usd: number; max_capacity_usd: number }
   // For corridor (urban) contracts: edit the linked corridor's route endpoints.
@@ -225,12 +230,14 @@ export type NotificationType =
   | 'coverage_expired'
   | 'protection_purchased'
   | 'provider_settled'
+  | 'product_launched'
 
 export interface NotificationPrefs {
   coverage_paid: boolean
   coverage_expired: boolean
   protection_purchased: boolean
   provider_settled: boolean
+  product_launched: boolean
 }
 
 export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
@@ -238,6 +245,7 @@ export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
   coverage_expired: true,
   protection_purchased: true,
   provider_settled: true,
+  product_launched: true,
 }
 
 export interface Notification {

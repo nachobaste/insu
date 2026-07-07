@@ -103,6 +103,7 @@ export type Database = {
           id: string
           is_featured: boolean
           is_recurring: boolean
+          launch_stage: string
           location: Json
           settled_at: string | null
           settled_outcome: boolean | null
@@ -125,6 +126,7 @@ export type Database = {
           id?: string
           is_featured?: boolean
           is_recurring?: boolean
+          launch_stage?: string
           location?: Json
           settled_at?: string | null
           settled_outcome?: boolean | null
@@ -147,6 +149,7 @@ export type Database = {
           id?: string
           is_featured?: boolean
           is_recurring?: boolean
+          launch_stage?: string
           location?: Json
           settled_at?: string | null
           settled_outcome?: boolean | null
@@ -362,6 +365,39 @@ export type Database = {
           },
           {
             foreignKeyName: "hedger_positions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      launch_interest: {
+        Row: {
+          contract_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "launch_interest_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_interest_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

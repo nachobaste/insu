@@ -6,7 +6,7 @@ import CorridorPairCard from './CorridorPairCard'
 import AddContractCard from './AddContractCard'
 import { cn } from '@/lib/utils'
 import { getContractPeriod, getRecommendedPeriod, getUrbanRoads } from '@/lib/corridors'
-import type { ContractWithTiers, Currency, CategoryName } from '@/lib/types'
+import type { ContractWithTiers, Currency } from '@/lib/types'
 
 const SECTION_STYLES: Record<string, string> = {
   urban:       'text-category-urban',
@@ -34,15 +34,20 @@ const CHIP_ACTIVE = 'border-category-urban/30 bg-category-urban/10 text-category
 const CHIP_INACTIVE = 'border-white/10 text-insu-muted hover:text-insu-text hover:border-white/20'
 
 interface Props {
-  categoryName: CategoryName
+  title: string
   categorySlug: string
+  /** Falls back to the per-slug SECTION_ICONS / SECTION_DESCRIPTIONS maps. */
+  icon?: string
+  description?: string
   contracts: ContractWithTiers[]
   currency: Currency
 }
 
 export default function ContractSection({
-  categoryName,
+  title,
   categorySlug,
+  icon,
+  description,
   contracts,
   currency,
 }: Props) {
@@ -87,10 +92,10 @@ export default function ContractSection({
             SECTION_STYLES[categorySlug] ?? ''
           )}
         >
-          {SECTION_ICONS[categorySlug]} {categoryName}
+          {icon ?? SECTION_ICONS[categorySlug]} {title}
         </h2>
         <p className="text-[13px] font-medium tracking-[0.05em] text-insu-muted">
-          {SECTION_DESCRIPTIONS[categorySlug]}
+          {description ?? SECTION_DESCRIPTIONS[categorySlug]}
         </p>
         <div className="h-px flex-1 bg-white/[0.07]" />
       </div>

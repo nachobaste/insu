@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { upsertContract, cancelContract } from '@/lib/actions/admin'
 import { cn } from '@/lib/utils'
-import type { Category, ContractWithTiers, UpsertContractInput } from '@/lib/types'
+import type { Category, ContractWithTiers, LaunchStage, UpsertContractInput } from '@/lib/types'
 
 const WEATHER_METRICS = ['rainfall', 'temperature', 'wind', 'snow']
 const URBAN_METRICS = ['delay', 'congestion']
@@ -110,6 +110,7 @@ export function ContractForm({ categories, contract }: Props) {
   const [locationLng, setLocationLng] = useState(String(contract?.location?.lng ?? ''))
   const [iconUrl, setIconUrl] = useState(contract?.icon_url ?? '')
   const [isFeatured, setIsFeatured] = useState(contract?.is_featured ?? false)
+  const [launchStage, setLaunchStage] = useState<LaunchStage>(contract?.launch_stage ?? 'live')
   const [isRecurring, setIsRecurring] = useState(contract?.is_recurring ?? false)
 
   // Corridor (urban) route endpoints live on the linked corridor row.
@@ -189,6 +190,7 @@ export function ContractForm({ categories, contract }: Props) {
       },
       icon_url: iconUrl || null,
       is_featured: isFeatured,
+      launch_stage: launchStage,
       basic_tier: { premium_usd: Number(basicPremium), payout_usd: Number(basicPayout), max_capacity_usd: Number(basicCapacity) },
       premium_tier: { premium_usd: Number(premPremium), payout_usd: Number(premPayout), max_capacity_usd: Number(premCapacity) },
       ...(corridor ? {
@@ -503,6 +505,18 @@ export function ContractForm({ categories, contract }: Props) {
           <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="rounded" />
           <span className="text-sm text-insu-dim">Featured on homepage</span>
         </label>
+      </div>
+
+      <div>
+        <label className={labelCls}>Launch stage</label>
+        <select
+          value={launchStage}
+          onChange={(e) => setLaunchStage(e.target.value as LaunchStage)}
+          className={selectCls}
+        >
+          <option value="live">Live (purchasable)</option>
+          <option value="coming_soon">Coming soon (notify-me only)</option>
+        </select>
       </div>
 
       <div className="flex items-center gap-3">
