@@ -178,7 +178,7 @@ describe('pollContracts', () => {
         id: 'cor2', slug: 'viaducto-am', name: 'Viaducto AM', road: 'Viaducto',
         origin_lat: 19.3983, origin_lng: -99.1918,
         dest_lat: 19.4147, dest_lng: -99.0790,
-        window_start: '07:00:00', window_end: '10:00:00', baseline_duration_s: null, path_polyline: null, created_at: '',
+        window_start: '07:00:00', window_end: '10:00:00', baseline_duration_s: 1200, path_polyline: null, created_at: '',
       },
     }
     const db = makeDb({ contracts: [urbanContract] })
@@ -197,6 +197,69 @@ describe('pollContracts', () => {
       source: 'google_maps',
       trigger_met: true,
     })
+
+    vi.useRealTimers()
+  })
+
+  it('never sets trigger_met on an urban contract whose corridor has no baseline', async () => {
+    // Without a computed rush-hour baseline the traffic index is measured
+    // against free-flow, so every ordinary rush hour would read as a trigger.
+    // The reading must still be recorded (it builds the baseline history).
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-26T14:00:00.000Z')) // inside window
+
+    const uncalibrated: Contract = {
+      ...mockContract,
+      id: 'u3',
+      trigger_type: 'urban',
+      trigger_condition: { metric: 'traffic_index', threshold: 50, operator: 'gt' },
+      corridor: {
+        id: 'cor3', slug: 'roosevelt-pm', name: 'Roosevelt PM', road: 'CA-1',
+        origin_lat: 14.61, origin_lng: -90.55,
+        dest_lat: 14.60, dest_lng: -90.65,
+        window_start: '07:00:00', window_end: '10:00:00', baseline_duration_s: null, path_polyline: null, created_at: '',
+      },
+    }
+    const db = makeDb({ contracts: [uncalibrated] })
+    const mockFetcher = vi.fn().mockResolvedValue([{
+      source: 'google_maps',
+      reading_type: 'traffic',
+      value: { traffic_index: 100, duration_s: 3600, static_duration_s: 1800, baseline_duration_s: 1800 },
+    }])
+
+    const count = await pollContracts(db as never, mockFetcher)
+    expect(count).toBe(1)
+    expect(db._insert).toHaveBeenCalledTimes(1)
+    expect(db._insert.mock.calls[0][0]).toMatchObject({ trigger_met: false })
+
+    vi.useRealTimers()
+  })
+
+  it('evaluates the urban trigger normally once the corridor has a baseline', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-26T14:00:00.000Z'))
+
+    const calibrated: Contract = {
+      ...mockContract,
+      id: 'u4',
+      trigger_type: 'urban',
+      trigger_condition: { metric: 'traffic_index', threshold: 50, operator: 'gt' },
+      corridor: {
+        id: 'cor4', slug: 'roosevelt-pm', name: 'Roosevelt PM', road: 'CA-1',
+        origin_lat: 14.61, origin_lng: -90.55,
+        dest_lat: 14.60, dest_lng: -90.65,
+        window_start: '07:00:00', window_end: '10:00:00', baseline_duration_s: 2400, path_polyline: null, created_at: '',
+      },
+    }
+    const db = makeDb({ contracts: [calibrated] })
+    const mockFetcher = vi.fn().mockResolvedValue([{
+      source: 'google_maps',
+      reading_type: 'traffic',
+      value: { traffic_index: 60, duration_s: 3840, static_duration_s: 1800, baseline_duration_s: 2400 },
+    }])
+
+    await pollContracts(db as never, mockFetcher)
+    expect(db._insert.mock.calls[0][0]).toMatchObject({ trigger_met: true })
 
     vi.useRealTimers()
   })
