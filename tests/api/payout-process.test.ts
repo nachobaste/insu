@@ -10,7 +10,7 @@ vi.mock('@supabase/supabase-js', () => ({
 }))
 vi.mock('stripe', () => {
   class MockStripe {
-    constructor(key: string) {}
+    constructor(_key: string) {}
   }
   return { default: MockStripe }
 })

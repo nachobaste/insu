@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { cn, formatCurrency, formatVolume, countryFlag } from '@/lib/utils'
@@ -23,21 +23,25 @@ function stripPeriodSuffix(title: string): string {
   return idx >= 0 ? title.slice(0, idx) : title
 }
 
+const emptySubscribe = () => () => {}
+
 export default function CorridorPairCard({ morning, evening, currency }: Props) {
   const router = useRouter()
 
   const hasBoth = morning !== null && evening !== null
 
-  // SSR-safe default: stable value that doesn't depend on new Date()
-  const [activePeriod, setActivePeriod] = useState<CommutePeriod>(morning ? 'morning' : 'evening')
-  // null until mounted so badge doesn't render during SSR (avoids hydration mismatch)
-  const [recommendedPeriod, setRecommendedPeriod] = useState<CommutePeriod | null>(null)
-
-  useEffect(() => {
-    const period = getRecommendedPeriod()
-    setRecommendedPeriod(period)
-    if (hasBoth) setActivePeriod(period)
-  }, [hasBoth])
+  // false during SSR/hydration, true after mount — recommendedPeriod depends on
+  // new Date(), so it must stay null until the client renders (avoids hydration
+  // mismatch)
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false)
+  const recommendedPeriod = useMemo<CommutePeriod | null>(
+    () => (mounted ? getRecommendedPeriod() : null),
+    [mounted]
+  )
+  const [selectedPeriod, setSelectedPeriod] = useState<CommutePeriod | null>(null)
+  const activePeriod: CommutePeriod =
+    selectedPeriod ??
+    (hasBoth && recommendedPeriod !== null ? recommendedPeriod : morning ? 'morning' : 'evening')
 
   const active = activePeriod === 'morning' ? morning : evening
   if (!active) return null
@@ -51,7 +55,7 @@ export default function CorridorPairCard({ morning, evening, currency }: Props) 
 
   function handleToggle(e: React.MouseEvent, period: CommutePeriod) {
     e.stopPropagation()
-    setActivePeriod(period)
+    setSelectedPeriod(period)
   }
 
   const morningTime = morning?.corridor ? formatWindow(morning.corridor.window_start) : null

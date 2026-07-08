@@ -1,6 +1,3 @@
-// lib/supabase/database.types.ts
-// Auto-generated from the linked Supabase project (ref: eagmczieznsogsxldedk).
-// Regenerate with: npx supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts
 export type Json =
   | string
   | number
@@ -14,6 +11,31 @@ export type Database = {
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -188,6 +210,7 @@ export type Database = {
       }
       corridors: {
         Row: {
+          baseline_duration_s: number | null
           created_at: string
           dest_lat: number
           dest_lng: number
@@ -195,12 +218,14 @@ export type Database = {
           name: string
           origin_lat: number
           origin_lng: number
+          path_polyline: string | null
           road: string
           slug: string
           window_end: string
           window_start: string
         }
         Insert: {
+          baseline_duration_s?: number | null
           created_at?: string
           dest_lat: number
           dest_lng: number
@@ -208,12 +233,14 @@ export type Database = {
           name: string
           origin_lat: number
           origin_lng: number
+          path_polyline?: string | null
           road: string
           slug: string
           window_end: string
           window_start: string
         }
         Update: {
+          baseline_duration_s?: number | null
           created_at?: string
           dest_lat?: number
           dest_lng?: number
@@ -221,6 +248,7 @@ export type Database = {
           name?: string
           origin_lat?: number
           origin_lng?: number
+          path_polyline?: string | null
           road?: string
           slug?: string
           window_end?: string
@@ -296,11 +324,11 @@ export type Database = {
           payment_provider: string
           payout_amount_mxn: number
           payout_amount_usd: number
+          payouts_made: number
+          payouts_remaining: number | null
           premium_paid_mxn: number
           premium_paid_usd: number
           purchased_at: string
-          payouts_made: number
-          payouts_remaining: number | null
           reserved_usd: number | null
           status: string
           tier_id: string
@@ -317,11 +345,11 @@ export type Database = {
           payment_provider: string
           payout_amount_mxn?: number
           payout_amount_usd?: number
+          payouts_made?: number
+          payouts_remaining?: number | null
           premium_paid_mxn?: number
           premium_paid_usd?: number
           purchased_at?: string
-          payouts_made?: number
-          payouts_remaining?: number | null
           reserved_usd?: number | null
           status?: string
           tier_id: string
@@ -338,11 +366,11 @@ export type Database = {
           payment_provider?: string
           payout_amount_mxn?: number
           payout_amount_usd?: number
+          payouts_made?: number
+          payouts_remaining?: number | null
           premium_paid_mxn?: number
           premium_paid_usd?: number
           purchased_at?: string
-          payouts_made?: number
-          payouts_remaining?: number | null
           reserved_usd?: number | null
           status?: string
           tier_id?: string
@@ -405,6 +433,54 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string
+          contract_id: string | null
+          created_at: string
+          id: string
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          contract_id?: string | null
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          contract_id?: string | null
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       oracle_readings: {
         Row: {
           contract_id: string
@@ -456,6 +532,7 @@ export type Database = {
           payment_provider: string
           status: string
           transfer_id: string | null
+          trigger_day: string | null
         }
         Insert: {
           amount_mxn?: number
@@ -469,6 +546,7 @@ export type Database = {
           payment_provider: string
           status?: string
           transfer_id?: string | null
+          trigger_day?: string | null
         }
         Update: {
           amount_mxn?: number
@@ -482,6 +560,7 @@ export type Database = {
           payment_provider?: string
           status?: string
           transfer_id?: string | null
+          trigger_day?: string | null
         }
         Relationships: [
           {
@@ -494,7 +573,7 @@ export type Database = {
           {
             foreignKeyName: "payouts_hedger_position_id_fkey"
             columns: ["hedger_position_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "hedger_positions"
             referencedColumns: ["id"]
           },
@@ -554,6 +633,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          notification_prefs: Json
           preferred_currency: string
           role: string
           stripe_customer_id: string | null
@@ -563,6 +643,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          notification_prefs?: Json
           preferred_currency?: string
           role?: string
           stripe_customer_id?: string | null
@@ -572,6 +653,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          notification_prefs?: Json
           preferred_currency?: string
           role?: string
           stripe_customer_id?: string | null
@@ -798,6 +880,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
