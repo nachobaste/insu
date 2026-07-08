@@ -195,10 +195,12 @@ export async function pollContracts(
   for (const contract of contracts as Contract[]) {
     try {
       // Urban contracts: skip if no corridor or outside the active window
+      let corridorBaselineS: number | null = null
       if (contract.trigger_type === 'urban') {
         const corridor = contract.corridor as Corridor | null
         if (!corridor) continue
         if (!isWithinWindow(corridor.window_start, corridor.window_end)) continue
+        corridorBaselineS = corridor.baseline_duration_s ?? null
       }
 
       const readings = await readingFetcher(contract)
@@ -206,8 +208,15 @@ export async function pollContracts(
 
       const condition = contract.trigger_condition as unknown as TriggerCondition
 
+      // Urban triggers are only meaningful against a computed rush-hour
+      // baseline; against the free-flow fallback every ordinary rush hour
+      // reads as extraordinary. Keep recording readings (they build the
+      // baseline history) but never fire until one exists.
+      const canEvaluate =
+        contract.trigger_type !== 'urban' || (corridorBaselineS ?? 0) > 0
+
       for (const reading of readings) {
-        const trigger_met = condition.metric
+        const trigger_met = condition.metric && canEvaluate
           ? evaluateTrigger(condition, reading.value)
           : false
 
