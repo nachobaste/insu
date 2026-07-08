@@ -37,17 +37,19 @@ export async function processPayouts(
 
   // Build map of contractId → earliest trigger timestamp (for one-time contracts)
   const triggerMap = new Map<string, string>()
-  // Build map of contractId → Set of YYYY-MM-DD trigger-day strings (for recurring contracts)
-  const triggerDaysByContract = new Map<string, Set<string>>()
+  // Build map of contractId → (YYYY-MM-DD trigger-day → earliest read_at that day),
+  // so recurring settlement can tell whether a same-day purchase preceded the trigger
+  const triggerDaysByContract = new Map<string, Map<string, string>>()
   for (const r of triggeredReadings as Array<{ contract_id: string; read_at: string }>) {
     const existing = triggerMap.get(r.contract_id)
-    if (!existing || r.read_at < existing) {
+    if (!existing || new Date(r.read_at) < new Date(existing)) {
       triggerMap.set(r.contract_id, r.read_at)
     }
     const day = new Date(r.read_at).toISOString().slice(0, 10)
-    const set = triggerDaysByContract.get(r.contract_id) ?? new Set<string>()
-    set.add(day)
-    triggerDaysByContract.set(r.contract_id, set)
+    const days = triggerDaysByContract.get(r.contract_id) ?? new Map<string, string>()
+    const prev = days.get(day)
+    if (!prev || new Date(r.read_at) < new Date(prev)) days.set(day, r.read_at)
+    triggerDaysByContract.set(r.contract_id, days)
   }
 
   const contractIds = Array.from(triggerMap.keys())
@@ -64,7 +66,7 @@ export async function processPayouts(
   let total = 0
   for (const contract of contracts as Contract[]) {
     if (contract.is_recurring) {
-      total += await settleRecurring(db, stripe, contract, triggerDaysByContract.get(contract.id) ?? new Set())
+      total += await settleRecurring(db, stripe, contract, triggerDaysByContract.get(contract.id) ?? new Map())
     } else {
       const triggerReadAt = triggerMap.get(contract.id) ?? new Date().toISOString()
       total += await settleContract(db, stripe, contract, triggerReadAt)
@@ -90,10 +92,12 @@ async function settleContract(
   // market for no reason).
   if (!positions || positions.length === 0) return 0
 
-  // Skip positions whose coverage window closed before the trigger fired
+  // Skip positions purchased after the trigger fired (they never covered the
+  // event) and positions whose coverage window closed before the trigger fired
   const eligiblePositions = (positions as HedgerPosition[]).filter((pos) =>
-    !pos.coverage_period_days ||
-    new Date(pos.expires_at) >= new Date(triggerReadAt),
+    new Date(pos.purchased_at) <= new Date(triggerReadAt) &&
+    (!pos.coverage_period_days ||
+      new Date(pos.expires_at) >= new Date(triggerReadAt)),
   )
 
   let paid = 0
@@ -208,7 +212,7 @@ async function settleRecurring(
   db: DbClient,
   stripe: StripeClient,
   contract: Contract,
-  triggerDays: Set<string>,
+  triggerDays: Map<string, string>,
 ): Promise<number> {
   const { data: positions } = await db
     .from('hedger_positions')
@@ -217,7 +221,7 @@ async function settleRecurring(
     .eq('status', 'active')
   if (!positions || positions.length === 0) return 0
 
-  const days = [...triggerDays].sort()
+  const days = [...triggerDays.keys()].sort()
   let paid = 0
   for (const pos of positions as HedgerPosition[]) {
     const windowStart = new Date(pos.purchased_at).toISOString().slice(0, 10)
@@ -229,6 +233,11 @@ async function settleRecurring(
       if (remaining <= 0) break
       if (day < windowStart || day > windowEnd) continue
       if (lastDay && day <= lastDay) continue
+      // A trigger that fired before this position was purchased is not a
+      // covered event — without this, buying after the day's trigger still
+      // collects at the next settlement run
+      const firstTriggerAt = triggerDays.get(day)
+      if (firstTriggerAt && new Date(firstTriggerAt) < new Date(pos.purchased_at)) continue
       const amount = await payoutOnce(db, stripe, contract.id, pos, day)
       if (amount > 0) {
         paid++
