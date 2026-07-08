@@ -388,8 +388,9 @@ describe('processPayouts', () => {
     db.from = vi.fn((table: string) => {
       const branch = originalFrom(table)
       if (table === 'contracts') {
-        const originalUpdate = branch.update.bind(branch)
-        branch.update = vi.fn((...args: unknown[]) => {
+        const contractsBranch = branch as { update: (...args: unknown[]) => unknown }
+        const originalUpdate = contractsBranch.update.bind(contractsBranch)
+        contractsBranch.update = vi.fn((...args: unknown[]) => {
           callOrder.push('contracts.update')
           return originalUpdate(...args)
         })

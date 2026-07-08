@@ -97,10 +97,9 @@ export async function upsertContract(input: UpsertContractInput): Promise<string
       } catch (err) {
         console.error(`Polyline refresh failed for corridor ${corridorId}:`, err)
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await supabase.from('corridors').update({
         origin_lat, origin_lng, dest_lat, dest_lng, path_polyline,
-      } as any).eq('id', corridorId)
+      }).eq('id', corridorId)
     }
 
     // Product launch: tell everyone who asked to be notified. Service client
