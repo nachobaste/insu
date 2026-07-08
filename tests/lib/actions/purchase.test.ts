@@ -118,16 +118,31 @@ const mockRecurringContract = {
 
 const mockOracleReading = { value: { aqi: 100 } }
 
-function makeOracleChain(reading: unknown | null) {
+// Serves both oracle_readings queries in the purchase flow:
+//  - the trigger-fired gate (select id ... eq(trigger_met) [gte] limit) — no .order
+//  - the pricing read (select value ... order(read_at desc) limit)
+// Dispatch on whether .order was called before .limit.
+function makeOracleChain(reading: unknown | null, firedRows: unknown[] = []) {
   const chain: Record<string, unknown> = {}
+  let ordered = false
   chain.select = vi.fn().mockReturnValue(chain)
   chain.eq = vi.fn().mockReturnValue(chain)
-  chain.order = vi.fn().mockReturnValue(chain)
-  chain.limit = vi.fn().mockResolvedValue({ data: reading ? [reading] : [], error: null })
+  chain.gte = vi.fn().mockReturnValue(chain)
+  chain.order = vi.fn(() => {
+    ordered = true
+    return chain
+  })
+  chain.limit = vi.fn(() =>
+    Promise.resolve(
+      ordered
+        ? { data: reading ? [reading] : [], error: null }
+        : { data: firedRows, error: null },
+    ),
+  )
   return chain
 }
 
-function setupMocks(opts: { recurring?: boolean } = {}) {
+function setupMocks(opts: { recurring?: boolean; firedRows?: unknown[]; reading?: unknown } = {}) {
   mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
 
   const tier = opts.recurring ? mockRecurringTier : mockTier
@@ -145,8 +160,13 @@ function setupMocks(opts: { recurring?: boolean } = {}) {
   contractChain.single.mockResolvedValue({ data: contract, error: null })
   mockContractQuery.mockReturnValue(contractChain)
 
-  // Oracle readings mock (used only for recurring path)
-  mockOracleReadingsQuery.mockReturnValue(makeOracleChain(opts.recurring ? mockOracleReading : null))
+  // Oracle readings mock: trigger-fired gate (both paths) + pricing read (recurring)
+  mockOracleReadingsQuery.mockReturnValue(
+    makeOracleChain(
+      opts.reading !== undefined ? opts.reading : (opts.recurring ? mockOracleReading : null),
+      opts.firedRows ?? [],
+    ),
+  )
 
   const posInsertChain = { insert: vi.fn(), select: vi.fn(), single: vi.fn() }
   posInsertChain.insert.mockReturnValue(posInsertChain)
@@ -297,5 +317,54 @@ describe('createHedgerPaymentIntent', () => {
     // Stripe and position insert should not have been called
     expect(mockPaymentIntentsCreate).not.toHaveBeenCalled()
     expect(mockPositionInsert().insert).not.toHaveBeenCalled()
+  })
+
+  describe('trigger-fired purchase gate', () => {
+    it('rejects recurring purchase when the trigger already fired today', async () => {
+      setupMocks({ recurring: true, firedRows: [{ id: 'r-fired' }] })
+      const { createHedgerPaymentIntent } = await import('@/lib/actions/purchase')
+      const result = await createHedgerPaymentIntent('tier-recurring', 7)
+      expect(result).toHaveProperty('error')
+      expect((result as { error: string }).error).toMatch(/triggered/i)
+      expect(mockPaymentIntentsCreate).not.toHaveBeenCalled()
+    })
+
+    it('scopes the recurring gate to readings from the current UTC day', async () => {
+      setupMocks({ recurring: true })
+      const { createHedgerPaymentIntent } = await import('@/lib/actions/purchase')
+      await createHedgerPaymentIntent('tier-recurring', 7)
+      const chain = mockOracleReadingsQuery.mock.results[0]?.value
+      expect(chain.gte).toHaveBeenCalledWith(
+        'read_at',
+        expect.stringContaining(new Date().toISOString().slice(0, 10)),
+      )
+    })
+
+    it('rejects recurring purchase when the latest reading shows the trigger active', async () => {
+      // Cross-UTC-midnight case: no trigger_met reading yet "today", but the
+      // most recent reading (late yesterday UTC) still has the trigger active.
+      setupMocks({ recurring: true, reading: { value: { aqi: 200 }, trigger_met: true } })
+      const { createHedgerPaymentIntent } = await import('@/lib/actions/purchase')
+      const result = await createHedgerPaymentIntent('tier-recurring', 7)
+      expect(result).toHaveProperty('error')
+      expect((result as { error: string }).error).toMatch(/active/i)
+      expect(mockPaymentIntentsCreate).not.toHaveBeenCalled()
+    })
+
+    it('rejects one-time purchase once the contract has triggered', async () => {
+      setupMocks({ firedRows: [{ id: 'r-fired' }] })
+      const { createHedgerPaymentIntent } = await import('@/lib/actions/purchase')
+      const result = await createHedgerPaymentIntent('tier-basic')
+      expect(result).toHaveProperty('error')
+      expect((result as { error: string }).error).toMatch(/triggered/i)
+      expect(mockPaymentIntentsCreate).not.toHaveBeenCalled()
+    })
+
+    it('allows recurring purchase when the trigger has not fired today and is not active', async () => {
+      setupMocks({ recurring: true })
+      const { createHedgerPaymentIntent } = await import('@/lib/actions/purchase')
+      const result = await createHedgerPaymentIntent('tier-recurring', 7)
+      expect(result).toHaveProperty('clientSecret')
+    })
   })
 })

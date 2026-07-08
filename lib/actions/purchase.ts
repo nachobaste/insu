@@ -54,6 +54,26 @@ export async function createHedgerPaymentIntent(
 
   const isRecurring = contract.is_recurring
 
+  // A position must never cover an event that already happened: settlement
+  // buckets recurring trigger-days by UTC date, so a purchase made after
+  // today's trigger would collect immediately for an event it never covered.
+  // One-time contracts stay blocked from first trigger until settlement.
+  const firedQuery = supabase
+    .from('oracle_readings')
+    .select('id')
+    .eq('contract_id', contract.id)
+    .eq('trigger_met', true)
+  const { data: fired } = isRecurring
+    ? await firedQuery.gte('read_at', `${new Date().toISOString().slice(0, 10)}T00:00:00Z`).limit(1)
+    : await firedQuery.limit(1)
+  if (fired && fired.length > 0) {
+    return {
+      error: isRecurring
+        ? 'This protection already triggered today — purchases reopen tomorrow.'
+        : 'This contract has already triggered and is awaiting settlement.',
+    }
+  }
+
   let periodPremium: number
   let expiresAt: string
   let reservedUsd: number
@@ -63,12 +83,18 @@ export async function createHedgerPaymentIntent(
     if (!periodDays) return { error: 'Choose a coverage period' }
     const { data: latest } = await supabase
       .from('oracle_readings')
-      .select('value')
+      .select('value, trigger_met')
       .eq('contract_id', contract.id)
       .order('read_at', { ascending: false })
       .limit(1)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const reading = (latest?.[0] ?? null) as any
+    // Covers the cross-UTC-midnight gap the day-scoped gate above misses:
+    // an active window can straddle 00:00 UTC, so the latest reading may
+    // still show a live trigger before any reading lands on the new UTC day
+    if (reading?.trigger_met) {
+      return { error: 'The trigger is currently active — purchases reopen once conditions clear.' }
+    }
     const p = dailyHazard(
       Number(tier.base_probability),
       reading,

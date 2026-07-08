@@ -313,6 +313,22 @@ describe('processPayouts', () => {
     expect(stripe.customers.createBalanceTransaction).toHaveBeenCalled()
   })
 
+  it('does not pay a one-time position purchased after the trigger fired', async () => {
+    const lateBuyer: HedgerPosition = {
+      ...mockHedgerPosition,
+      id: 'pos-late',
+      purchased_at: new Date().toISOString(),
+    }
+    const db = makeDb({
+      triggeredReadings: [{ contract_id: 'c1', read_at: new Date(Date.now() - 3600_000).toISOString() }],
+      hedgerPositions: [lateBuyer],
+    })
+    const stripe = makeStripe()
+    const count = await processPayouts(db as never, stripe as never)
+    expect(count).toBe(0)
+    expect(stripe.customers.createBalanceTransaction).not.toHaveBeenCalled()
+  })
+
   it('always pays position with null coverage_period_days (full-duration)', async () => {
     const fullDurationPosition: HedgerPosition = {
       ...mockHedgerPosition,
@@ -709,6 +725,59 @@ describe('recurring settlement', () => {
       triggeredReadings: [
         { contract_id: 'rc-1', read_at: `${day1}T08:00:00.000Z` },
         { contract_id: 'rc-1', read_at: `${day1}T20:00:00.000Z` },
+      ],
+      recurringContract,
+      recurringPositions: [position],
+    })
+    const stripe = makeStripe()
+
+    const count = await processPayouts(db as never, stripe as never)
+
+    expect(count).toBe(1)
+    expect(stripe.customers.createBalanceTransaction).toHaveBeenCalledTimes(1)
+  })
+
+  it('does NOT pay for a same-day trigger that fired before the position was purchased', async () => {
+    // Trigger fired at 08:00; position bought at 10:00 the same day. The buyer
+    // never covered that event and must not collect for it.
+    const position = makeRecurringPosition({ purchased_at: `${day1}T10:00:00.000Z` })
+    const db = makeRecurringDb({
+      triggeredReadings: [{ contract_id: 'rc-1', read_at: `${day1}T08:00:00.000Z` }],
+      recurringContract,
+      recurringPositions: [position],
+    })
+    const stripe = makeStripe()
+
+    const count = await processPayouts(db as never, stripe as never)
+
+    expect(count).toBe(0)
+    expect(stripe.customers.createBalanceTransaction).not.toHaveBeenCalled()
+  })
+
+  it('pays for a same-day trigger that fired after the position was purchased', async () => {
+    const position = makeRecurringPosition({ purchased_at: `${day1}T08:00:00.000Z` })
+    const db = makeRecurringDb({
+      triggeredReadings: [{ contract_id: 'rc-1', read_at: `${day1}T12:00:00.000Z` }],
+      recurringContract,
+      recurringPositions: [position],
+    })
+    const stripe = makeStripe()
+
+    const count = await processPayouts(db as never, stripe as never)
+
+    expect(count).toBe(1)
+    expect(stripe.customers.createBalanceTransaction).toHaveBeenCalledTimes(1)
+  })
+
+  it('a pre-purchase same-day trigger does not block payouts for later trigger-days', async () => {
+    const position = makeRecurringPosition({
+      purchased_at: `${day1}T10:00:00.000Z`,
+      payouts_remaining: 3,
+    })
+    const db = makeRecurringDb({
+      triggeredReadings: [
+        { contract_id: 'rc-1', read_at: `${day1}T08:00:00.000Z` }, // before purchase → not covered
+        { contract_id: 'rc-1', read_at: `${day2}T12:00:00.000Z` }, // next day → covered
       ],
       recurringContract,
       recurringPositions: [position],
