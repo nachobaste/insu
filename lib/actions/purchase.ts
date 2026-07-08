@@ -6,6 +6,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { validateProviderCapacity, validateBuyerCapacity } from '@/lib/utils/capacity'
 import { dailyHazard, priceTenor, capacityFactor } from '@/lib/pricing/derivative'
 import { createNotification } from '@/lib/notifications/create'
+import { marketDay, marketDayStartUtc } from '@/lib/utils/marketDay'
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY
@@ -55,16 +56,17 @@ export async function createHedgerPaymentIntent(
   const isRecurring = contract.is_recurring
 
   // A position must never cover an event that already happened: settlement
-  // buckets recurring trigger-days by UTC date, so a purchase made after
-  // today's trigger would collect immediately for an event it never covered.
-  // One-time contracts stay blocked from first trigger until settlement.
+  // buckets recurring trigger-days by market-local date, so a purchase made
+  // after today's trigger would collect immediately for an event it never
+  // covered. One-time contracts stay blocked from first trigger until
+  // settlement.
   const firedQuery = supabase
     .from('oracle_readings')
     .select('id')
     .eq('contract_id', contract.id)
     .eq('trigger_met', true)
   const { data: fired } = isRecurring
-    ? await firedQuery.gte('read_at', `${new Date().toISOString().slice(0, 10)}T00:00:00Z`).limit(1)
+    ? await firedQuery.gte('read_at', marketDayStartUtc(marketDay(new Date()))).limit(1)
     : await firedQuery.limit(1)
   if (fired && fired.length > 0) {
     return {

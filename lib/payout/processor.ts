@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Contract, HedgerPosition, ProviderPosition } from '@/lib/types'
 import { createNotification } from '@/lib/notifications/create'
+import { marketDay } from '@/lib/utils/marketDay'
 
 interface DbClient {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,15 +38,18 @@ export async function processPayouts(
 
   // Build map of contractId → earliest trigger timestamp (for one-time contracts)
   const triggerMap = new Map<string, string>()
-  // Build map of contractId → (YYYY-MM-DD trigger-day → earliest read_at that day),
-  // so recurring settlement can tell whether a same-day purchase preceded the trigger
+  // Build map of contractId → (market-local trigger-day → earliest read_at that
+  // day), so recurring settlement can tell whether a same-day purchase preceded
+  // the trigger. Days are bucketed in market-local time, NOT UTC: an evening
+  // window (23:00–02:00 UTC) straddles UTC midnight and would otherwise count
+  // one rush hour as two payable days.
   const triggerDaysByContract = new Map<string, Map<string, string>>()
   for (const r of triggeredReadings as Array<{ contract_id: string; read_at: string }>) {
     const existing = triggerMap.get(r.contract_id)
     if (!existing || new Date(r.read_at) < new Date(existing)) {
       triggerMap.set(r.contract_id, r.read_at)
     }
-    const day = new Date(r.read_at).toISOString().slice(0, 10)
+    const day = marketDay(r.read_at)
     const days = triggerDaysByContract.get(r.contract_id) ?? new Map<string, string>()
     const prev = days.get(day)
     if (!prev || new Date(r.read_at) < new Date(prev)) days.set(day, r.read_at)
@@ -224,8 +228,9 @@ async function settleRecurring(
   const days = [...triggerDays.keys()].sort()
   let paid = 0
   for (const pos of positions as HedgerPosition[]) {
-    const windowStart = new Date(pos.purchased_at).toISOString().slice(0, 10)
-    const windowEnd = new Date(pos.expires_at).toISOString().slice(0, 10)
+    // Same market-local bucketing as the trigger days above
+    const windowStart = marketDay(pos.purchased_at)
+    const windowEnd = marketDay(pos.expires_at)
     let remaining = pos.payouts_remaining ?? 1
     let lastDay = pos.last_payout_date ?? null
     const startRemaining = remaining

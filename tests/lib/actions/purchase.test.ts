@@ -329,15 +329,21 @@ describe('createHedgerPaymentIntent', () => {
       expect(mockPaymentIntentsCreate).not.toHaveBeenCalled()
     })
 
-    it('scopes the recurring gate to readings from the current UTC day', async () => {
-      setupMocks({ recurring: true })
-      const { createHedgerPaymentIntent } = await import('@/lib/actions/purchase')
-      await createHedgerPaymentIntent('tier-recurring', 7)
-      const chain = mockOracleReadingsQuery.mock.results[0]?.value
-      expect(chain.gte).toHaveBeenCalledWith(
-        'read_at',
-        expect.stringContaining(new Date().toISOString().slice(0, 10)),
-      )
+    it('scopes the recurring gate to the current market-local day, not the UTC day', async () => {
+      // 01:00 UTC on the 8th is 19:00 on the 7th in market time (UTC-6):
+      // the gate must look back to the local day start (06:00Z), or an
+      // evening trigger before UTC midnight would reopen purchases at 00:00Z.
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-07-08T01:00:00.000Z'))
+      try {
+        setupMocks({ recurring: true })
+        const { createHedgerPaymentIntent } = await import('@/lib/actions/purchase')
+        await createHedgerPaymentIntent('tier-recurring', 7)
+        const chain = mockOracleReadingsQuery.mock.results[0]?.value
+        expect(chain.gte).toHaveBeenCalledWith('read_at', '2026-07-07T06:00:00Z')
+      } finally {
+        vi.useRealTimers()
+      }
     })
 
     it('rejects recurring purchase when the latest reading shows the trigger active', async () => {

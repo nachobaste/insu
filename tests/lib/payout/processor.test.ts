@@ -790,6 +790,44 @@ describe('recurring settlement', () => {
     expect(stripe.customers.createBalanceTransaction).toHaveBeenCalledTimes(1)
   })
 
+  it('an evening window straddling UTC midnight pays only ONCE (one local trigger-day)', async () => {
+    // GT/CDMX evening rush 5–8pm local = 23:00–02:00 UTC: readings before and
+    // after UTC midnight are the SAME jam. Bucketing by UTC date paid twice.
+    const position = makeRecurringPosition({ id: 'rpos-evening', payouts_remaining: 3 })
+    const db = makeRecurringDb({
+      triggeredReadings: [
+        { contract_id: 'rc-1', read_at: `${day1}T23:30:00.000Z` }, // 17:30 local, day1
+        { contract_id: 'rc-1', read_at: `${day2}T00:15:00.000Z` }, // 18:15 local, still day1
+      ],
+      recurringContract,
+      recurringPositions: [position],
+    })
+    const stripe = makeStripe()
+
+    const count = await processPayouts(db as never, stripe as never)
+
+    expect(count).toBe(1)
+    expect(stripe.customers.createBalanceTransaction).toHaveBeenCalledTimes(1)
+  })
+
+  it('triggers on two distinct local days still pay twice', async () => {
+    const position = makeRecurringPosition({ id: 'rpos-twodays', payouts_remaining: 3 })
+    const db = makeRecurringDb({
+      triggeredReadings: [
+        { contract_id: 'rc-1', read_at: `${day1}T23:30:00.000Z` }, // 17:30 local, day1
+        { contract_id: 'rc-1', read_at: `${day2}T23:30:00.000Z` }, // 17:30 local, day2
+      ],
+      recurringContract,
+      recurringPositions: [position],
+    })
+    const stripe = makeStripe()
+
+    const count = await processPayouts(db as never, stripe as never)
+
+    expect(count).toBe(2)
+    expect(stripe.customers.createBalanceTransaction).toHaveBeenCalledTimes(2)
+  })
+
   it('trigger-day outside the position window → no payout', async () => {
     // Position window: day1..day2; trigger is day4 (after windowEnd)
     const narrowWindowEnd = '2026-06-16T23:59:59.000Z' // ends on day2
