@@ -45,9 +45,9 @@ describe('getDashboardData', () => {
 
   it('returns all three arrays when queries succeed', async () => {
     vi.mocked(createClient).mockReturnValue(makeSupabase({
-      hedgerData: [{ id: 'hp-1', status: 'active' }],
-      providerData: [{ id: 'pp-1', status: 'active' }],
-      payoutsData: [{ id: 'pay-1', status: 'completed' }],
+      hedgerData: [{ id: 'hp-1', status: 'active', contract: { id: 'c-1', status: 'active' } }],
+      providerData: [{ id: 'pp-1', status: 'active', contract: { id: 'c-1', status: 'active' } }],
+      payoutsData: [{ id: 'pay-1', status: 'completed', contract: { id: 'c-1', status: 'active' } }],
     }) as never)
 
     const result = await getDashboardData('user-1')
@@ -71,6 +71,31 @@ describe('getDashboardData', () => {
       payoutsData: [
         { id: 'pay-1', status: 'completed', contract: { id: 'c-1', status: 'active' } },
         { id: 'pay-2', status: 'completed', contract: { id: 'c-2', status: 'cancelled' } },
+      ],
+    }) as never)
+
+    const result = await getDashboardData('user-1')
+    expect(result.hedgerPositions.map((p) => p.id)).toEqual(['hp-1'])
+    expect(result.providerPositions).toEqual([])
+    expect(result.payouts.map((p) => p.id)).toEqual(['pay-1'])
+  })
+
+  it('hides positions and payouts whose contract embed is null (RLS-hidden contract)', async () => {
+    // RLS hides cancelled contracts from users, so the join comes back null even
+    // though the position row itself is visible. These rows cannot render (the
+    // cards dereference contract.*) and caused the prod /dashboard crash on
+    // 2026-07-09: "Cannot read properties of null (reading 'trigger_deadline')".
+    vi.mocked(createClient).mockReturnValue(makeSupabase({
+      hedgerData: [
+        { id: 'hp-1', status: 'active', contract: { id: 'c-1', status: 'active' } },
+        { id: 'hp-2', status: 'active', contract: null },
+      ],
+      providerData: [
+        { id: 'pp-1', status: 'active', contract: null },
+      ],
+      payoutsData: [
+        { id: 'pay-1', status: 'completed', contract: { id: 'c-1', status: 'active' } },
+        { id: 'pay-2', status: 'completed', contract: null },
       ],
     }) as never)
 

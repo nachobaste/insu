@@ -48,8 +48,10 @@ export async function getDashboardData(userId?: string): Promise<DashboardData> 
 
   // Cancelled markets are removed from the platform, so hide their positions and
   // payouts here even though the position rows themselves remain in the database.
+  // RLS also hides cancelled contracts entirely, in which case the join comes
+  // back null — treat that the same way (the cards can't render without one).
   const notCancelled = (row: { contract?: { status?: string } | null }) =>
-    row.contract?.status !== 'cancelled'
+    row.contract != null && row.contract.status !== 'cancelled'
 
   const hedgerPositions = ((hedgerResult.data ?? []) as HedgerPositionWithContract[]).filter(notCancelled)
 
