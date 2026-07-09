@@ -64,6 +64,7 @@ export function breachProbability({ baselineS, thresholdPct, muLog, sigma }) {
 export function betaBlend({ pModel, priorDays, breachDays, totalDays }) {
   const hasModel = Number.isFinite(pModel)
   if (!hasModel) return totalDays > 0 ? breachDays / totalDays : null
+  if (!Number.isFinite(priorDays) || priorDays < 0 || priorDays + totalDays <= 0) return null
   return (priorDays * pModel + breachDays) / (priorDays + totalDays)
 }
 

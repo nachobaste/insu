@@ -117,6 +117,10 @@ describe('betaBlend', () => {
     expect(betaBlend({ pModel: null, priorDays: 20, breachDays: 3, totalDays: 15 })).toBeCloseTo(0.2, 10)
     expect(betaBlend({ pModel: null, priorDays: 20, breachDays: 0, totalDays: 0 })).toBeNull()
   })
+  it('returns null instead of NaN on a degenerate denominator', () => {
+    expect(betaBlend({ pModel: 0.1, priorDays: 0, breachDays: 0, totalDays: 0 })).toBeNull()
+    expect(betaBlend({ pModel: 0.1, priorDays: undefined, breachDays: 0, totalDays: 5 })).toBeNull()
+  })
 })
 
 describe('fitZ', () => {
