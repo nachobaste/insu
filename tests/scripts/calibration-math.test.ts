@@ -6,6 +6,8 @@ import {
   normCdf,
   sigmaFromEnvelope,
   breachProbability,
+  betaBlend,
+  fitZ,
 } from '../../scripts/lib/calibration-math.mjs'
 
 describe('median', () => {
@@ -92,5 +94,58 @@ describe('breachProbability', () => {
   })
   it('returns null when sigma is invalid', () => {
     expect(breachProbability({ baselineS: 3000, thresholdPct: 50, muLog: Math.log(3000), sigma: null })).toBeNull()
+  })
+})
+
+describe('betaBlend', () => {
+  it('returns the pure prior with no observed days', () => {
+    expect(betaBlend({ pModel: 0.1, priorDays: 20, breachDays: 0, totalDays: 0 })).toBeCloseTo(0.1, 10)
+  })
+  it('shrinks toward zero with clean observed days (no P_MIN collapse)', () => {
+    // (20*0.1 + 0) / (20 + 15) = 2/35 ≈ 0.0571 — NOT floored to 0.0005
+    expect(betaBlend({ pModel: 0.1, priorDays: 20, breachDays: 0, totalDays: 15 })).toBeCloseTo(0.05714, 4)
+  })
+  it('moves above the prior when breaches exceed the model rate', () => {
+    // (20*0.1 + 3) / (20 + 15) = 5/35 ≈ 0.1429
+    expect(betaBlend({ pModel: 0.1, priorDays: 20, breachDays: 3, totalDays: 15 })).toBeCloseTo(0.14286, 4)
+  })
+  it('converges to the observed frequency as data accumulates', () => {
+    const p = betaBlend({ pModel: 0.1, priorDays: 20, breachDays: 35, totalDays: 500 })
+    expect(p).toBeCloseTo(35 / 500, 1)
+  })
+  it('falls back to the observed frequency when there is no model prior', () => {
+    expect(betaBlend({ pModel: null, priorDays: 20, breachDays: 3, totalDays: 15 })).toBeCloseTo(0.2, 10)
+    expect(betaBlend({ pModel: null, priorDays: 20, breachDays: 0, totalDays: 0 })).toBeNull()
+  })
+})
+
+describe('fitZ', () => {
+  it('recovers the z implied by a corridor whose measured rate matches the model exactly', () => {
+    // Constructed so pModel(z) = 1 - Phi(z): opt=2000, pess=4500, best=3000, baseline=3000, t=50
+    //   sigma = ln(2.25)/(2z) and ln(1.5)/sigma = z  (since ln(2.25) = 2 ln(1.5))
+    // Measured rate 0.1 -> 1 - Phi(z) = 0.1 -> z ≈ 1.2816
+    const corridors = [{
+      optS: 2000, pessS: 4500, bestS: 3000,
+      baselineS: 3000, thresholdPct: 50,
+      breachDays: 2, totalDays: 20, // measured 0.1
+    }]
+    const { z, pooledMeasured, pooledModel } = fitZ(corridors)
+    expect(pooledMeasured).toBeCloseTo(0.1, 10)
+    expect(z).toBeGreaterThan(1.2)
+    expect(z).toBeLessThan(1.36)
+    expect(pooledModel).toBeCloseTo(0.1, 1)
+  })
+  it('ignores corridors without enough data or without an envelope', () => {
+    const corridors = [
+      { optS: 2000, pessS: 4500, bestS: 3000, baselineS: 3000, thresholdPct: 50, breachDays: 2, totalDays: 20 },
+      { optS: null, pessS: null, bestS: null, baselineS: 2500, thresholdPct: 50, breachDays: 9, totalDays: 10 },
+      { optS: 2000, pessS: 4500, bestS: 3000, baselineS: 3000, thresholdPct: 50, breachDays: 0, totalDays: 3 }, // < minDays
+    ]
+    const { z } = fitZ(corridors, { minDays: 7 })
+    expect(z).toBeGreaterThan(1.2)
+    expect(z).toBeLessThan(1.36)
+  })
+  it('returns null z when no corridor qualifies', () => {
+    expect(fitZ([], {}).z).toBeNull()
   })
 })

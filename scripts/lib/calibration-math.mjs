@@ -55,3 +55,51 @@ export function breachProbability({ baselineS, thresholdPct, muLog, sigma }) {
   const cutoff = Math.log(baselineS * (1 + thresholdPct / 100))
   return 1 - normCdf((cutoff - muLog) / sigma)
 }
+
+/**
+ * Beta-Binomial credibility posterior:
+ *   pPost = (priorDays * pModel + breachDays) / (priorDays + totalDays)
+ * With no model prior, falls back to the raw observed frequency (null if no data).
+ */
+export function betaBlend({ pModel, priorDays, breachDays, totalDays }) {
+  const hasModel = Number.isFinite(pModel)
+  if (!hasModel) return totalDays > 0 ? breachDays / totalDays : null
+  return (priorDays * pModel + breachDays) / (priorDays + totalDays)
+}
+
+/**
+ * Grid-search the single global quantile offset z so that the reading-day-weighted
+ * pooled model breach rate matches the pooled measured breach rate.
+ * corridors: [{ optS, pessS, bestS, baselineS, thresholdPct, breachDays, totalDays }]
+ * Only corridors with a valid envelope, a baseline, and totalDays >= minDays participate.
+ */
+export function fitZ(corridors, { zMin = 0.5, zMax = 2.5, zStep = 0.01, minDays = 7 } = {}) {
+  const usable = (corridors ?? []).filter(
+    (c) =>
+      Number.isFinite(c.optS) && Number.isFinite(c.pessS) && Number.isFinite(c.bestS) &&
+      c.optS > 0 && c.pessS > c.optS && c.bestS > 0 &&
+      Number.isFinite(c.baselineS) && c.baselineS > 0 &&
+      Number.isFinite(c.totalDays) && c.totalDays >= minDays,
+  )
+  if (usable.length === 0) return { z: null, pooledMeasured: null, pooledModel: null }
+
+  const totalN = usable.reduce((a, c) => a + c.totalDays, 0)
+  const pooledMeasured = usable.reduce((a, c) => a + c.breachDays, 0) / totalN
+
+  const pooledModelAt = (z) =>
+    usable.reduce((acc, c) => {
+      const sigma = sigmaFromEnvelope(c.optS, c.pessS, z)
+      const p = breachProbability({
+        baselineS: c.baselineS, thresholdPct: c.thresholdPct, muLog: Math.log(c.bestS), sigma,
+      })
+      return acc + (p ?? 0) * c.totalDays
+    }, 0) / totalN
+
+  let best = { z: null, diff: Infinity, pooledModel: null }
+  for (let z = zMin; z <= zMax + 1e-9; z += zStep) {
+    const pm = pooledModelAt(z)
+    const diff = Math.abs(pm - pooledMeasured)
+    if (diff < best.diff) best = { z: Math.round(z * 100) / 100, diff, pooledModel: pm }
+  }
+  return { z: best.z, pooledMeasured, pooledModel: best.pooledModel }
+}
