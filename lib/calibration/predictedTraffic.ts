@@ -7,7 +7,7 @@ const DAY_MS = 86_400_000
 
 export interface DepartureSlot {
   departureTime: string // ISO UTC, e.g. 2026-07-13T13:00:00Z
-  date: string // local calendar date of the slot, YYYY-MM-DD
+  date: string // market-local (UTC-6) calendar day of the slot, YYYY-MM-DD — NOT the UTC date of departureTime (they differ for evening slots)
   slot: string // local time label, e.g. 07:30
 }
 
@@ -58,7 +58,7 @@ export interface CorridorGeometry {
 }
 
 export interface EnvelopeDay {
-  date: string
+  date: string // market-local (UTC-6) calendar day — see DepartureSlot.date
   bestS: number
   optS: number
   pessS: number
