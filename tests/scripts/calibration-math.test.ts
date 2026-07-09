@@ -3,6 +3,9 @@ import {
   median,
   credibilityWeight,
   blendBaseline,
+  normCdf,
+  sigmaFromEnvelope,
+  breachProbability,
 } from '../../scripts/lib/calibration-math.mjs'
 
 describe('median', () => {
@@ -49,5 +52,45 @@ describe('blendBaseline', () => {
     expect(
       blendBaseline({ harvestedMedianS: null, harvestedWeekdayDays: 0, predictedMedianS: null, k: 10 }),
     ).toEqual({ baselineS: null, source: null })
+  })
+})
+
+describe('normCdf', () => {
+  it('is 0.5 at 0', () => {
+    expect(normCdf(0)).toBeCloseTo(0.5, 6)
+  })
+  it('matches the 95th percentile', () => {
+    expect(normCdf(1.645)).toBeCloseTo(0.95, 3)
+  })
+  it('is symmetric', () => {
+    expect(normCdf(-1.645)).toBeCloseTo(0.05, 3)
+  })
+})
+
+describe('sigmaFromEnvelope', () => {
+  it('computes sigma = ln(pess/opt) / (2z)', () => {
+    // ln(5959/1901) = ln(3.1347) = 1.1426; / (2*1.2816) = 0.4458
+    expect(sigmaFromEnvelope(1901, 5959, 1.2816)).toBeCloseTo(0.4458, 3)
+  })
+  it('returns null for degenerate input', () => {
+    expect(sigmaFromEnvelope(0, 5959, 1.2816)).toBeNull()
+    expect(sigmaFromEnvelope(2000, 2000, 1.2816)).toBeNull() // zero spread
+  })
+})
+
+describe('breachProbability', () => {
+  it('computes P(X > baseline * (1 + threshold/100)) under lognormal(mu, sigma)', () => {
+    // mu = ln(3000), sigma = 0.4, baseline = 3000, threshold = 50
+    // x = ln(1.5)/0.4 = 1.0137 -> p = 1 - Phi(1.0137) ≈ 0.1554
+    const p = breachProbability({ baselineS: 3000, thresholdPct: 50, muLog: Math.log(3000), sigma: 0.4 })
+    expect(p).toBeCloseTo(0.1554, 2)
+  })
+  it('is higher when the typical duration already sits above the baseline', () => {
+    const pAtBaseline = breachProbability({ baselineS: 3000, thresholdPct: 50, muLog: Math.log(3000), sigma: 0.4 })
+    const pAboveBaseline = breachProbability({ baselineS: 2500, thresholdPct: 50, muLog: Math.log(3000), sigma: 0.4 })
+    expect(pAboveBaseline).toBeGreaterThan(pAtBaseline)
+  })
+  it('returns null when sigma is invalid', () => {
+    expect(breachProbability({ baselineS: 3000, thresholdPct: 50, muLog: Math.log(3000), sigma: null })).toBeNull()
   })
 })
