@@ -90,7 +90,8 @@ describe('breachProbability', () => {
   it('is higher when the typical duration already sits above the baseline', () => {
     const pAtBaseline = breachProbability({ baselineS: 3000, thresholdPct: 50, muLog: Math.log(3000), sigma: 0.4 })
     const pAboveBaseline = breachProbability({ baselineS: 2500, thresholdPct: 50, muLog: Math.log(3000), sigma: 0.4 })
-    expect(pAboveBaseline).toBeGreaterThan(pAtBaseline)
+    expect(pAtBaseline).not.toBeNull()
+    expect(pAboveBaseline).toBeGreaterThan(pAtBaseline as number)
   })
   it('returns null when sigma is invalid', () => {
     expect(breachProbability({ baselineS: 3000, thresholdPct: 50, muLog: Math.log(3000), sigma: null })).toBeNull()
