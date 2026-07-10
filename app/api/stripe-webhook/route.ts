@@ -35,19 +35,21 @@ export async function POST(req: NextRequest) {
     }
 
     if (position_type === 'hedger') {
+      // Fallback activation only: the buyer's activation server action is the
+      // primary path and may have already run — guard on status so the two
+      // never both activate (and double-count volume) for the same position.
       const { data: position } = await supabase
         .from('hedger_positions')
         .update({ status: 'active' })
         .eq('id', position_id)
         .eq('payment_intent_id', pi.id)
+        .eq('status', 'pending_payment')
         .select('tier_id, premium_paid_usd, contract_id')
         .single()
 
       if (position) {
-        await supabase.rpc('increment_tier_capacity', {
-          p_tier_id: position.tier_id,
-          p_amount: position.premium_paid_usd,
-        })
+        // Pool capacity comes from provider deposits, never from premiums —
+        // matching the server action's activation path.
         await supabase.rpc('increment_contract_volume', {
           p_contract_id: position.contract_id,
           p_amount: position.premium_paid_usd,

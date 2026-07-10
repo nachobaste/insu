@@ -21,7 +21,7 @@ const CARD_STYLE = {
 interface FormProps {
   clientSecret: string
   amountUsd: number
-  onSuccess: () => void
+  onSuccess: () => void | Promise<void>
   onError: (msg: string) => void
 }
 
@@ -38,15 +38,20 @@ function CardPaymentForm({ clientSecret, amountUsd, onSuccess, onError }: FormPr
     const card = elements.getElement(CardElement)
     if (!card) { setLoading(false); return }
 
-    const { error } = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: { card },
-    })
+    try {
+      const { error } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: { card },
+      })
 
-    setLoading(false)
-    if (error) {
-      onError(error.message ?? 'Payment failed')
-    } else {
-      onSuccess()
+      if (error) {
+        onError(error.message ?? 'Payment failed')
+      } else {
+        // Hold the processing state through activation: re-enabling the form
+        // here invites a double-submit against an already-succeeded intent.
+        await onSuccess()
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -74,7 +79,7 @@ function CardPaymentForm({ clientSecret, amountUsd, onSuccess, onError }: FormPr
 interface Props {
   clientSecret: string
   amountUsd: number
-  onSuccess: () => void
+  onSuccess: () => void | Promise<void>
   onError: (msg: string) => void
 }
 

@@ -9,8 +9,13 @@ const {
   mockPositionInsert,
   mockPaymentIntentsCreate,
   mockPaymentIntentsUpdate,
+  mockPaymentIntentsRetrieve,
   mockPendingCountQuery,
   mockOracleReadingsQuery,
+  mockServiceHedgerUpdate,
+  mockServiceHedgerSelect,
+  mockRpc,
+  mockCreateNotification,
 } = vi.hoisted(() => ({
   mockGetUser: vi.fn(),
   mockTierQuery: vi.fn(),
@@ -18,11 +23,31 @@ const {
   mockPositionInsert: vi.fn(),
   mockPaymentIntentsCreate: vi.fn(),
   mockPaymentIntentsUpdate: vi.fn(),
+  mockPaymentIntentsRetrieve: vi.fn(),
   mockPendingCountQuery: vi.fn(),
   mockOracleReadingsQuery: vi.fn(),
+  mockServiceHedgerUpdate: vi.fn(),
+  mockServiceHedgerSelect: vi.fn(),
+  mockRpc: vi.fn(),
+  mockCreateNotification: vi.fn(),
 }))
 
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+vi.mock('@/lib/notifications/create', () => ({ createNotification: mockCreateNotification }))
+
 vi.mock('@/lib/supabase/server', () => ({
+  createServiceClient: vi.fn(() => ({
+    from: vi.fn((table: string) => {
+      if (table === 'hedger_positions') {
+        return {
+          update: (...args: unknown[]) => mockServiceHedgerUpdate(...args),
+          select: (...args: unknown[]) => mockServiceHedgerSelect(...args),
+        }
+      }
+      return {}
+    }),
+    rpc: mockRpc,
+  })),
   createClient: vi.fn(() => ({
     auth: { getUser: mockGetUser },
     from: vi.fn((table: string) => {
@@ -58,6 +83,7 @@ vi.mock('stripe', () => ({
       paymentIntents: {
         create: mockPaymentIntentsCreate,
         update: mockPaymentIntentsUpdate,
+        retrieve: mockPaymentIntentsRetrieve,
       },
     }
   }),
@@ -372,5 +398,79 @@ describe('createHedgerPaymentIntent', () => {
       const result = await createHedgerPaymentIntent('tier-recurring', 7)
       expect(result).toHaveProperty('clientSecret')
     })
+  })
+})
+
+describe('activatePositionByPaymentIntent', () => {
+  const activatedPosition = { tier_id: 'tier-basic', premium_paid_usd: 240.27, contract_id: 'c1' }
+
+  function makeUpdateChain(result: { data: unknown; error: unknown }) {
+    const chain: Record<string, unknown> = {}
+    chain.eq = vi.fn().mockReturnValue(chain)
+    chain.select = vi.fn().mockReturnValue(chain)
+    chain.single = vi.fn().mockResolvedValue(result)
+    return chain
+  }
+
+  function makeSelectChain(result: { data: unknown; error: unknown }) {
+    const chain: Record<string, unknown> = {}
+    chain.eq = vi.fn().mockReturnValue(chain)
+    chain.single = vi.fn().mockResolvedValue(result)
+    return chain
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.env.STRIPE_SECRET_KEY = 'sk_test_mock_key'
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
+    mockPaymentIntentsRetrieve.mockResolvedValue({
+      status: 'succeeded',
+      metadata: { position_type: 'hedger', position_id: 'pos-1' },
+    })
+    mockRpc.mockResolvedValue({ data: null, error: null })
+    mockCreateNotification.mockResolvedValue(undefined)
+  })
+
+  it('activates the position and returns its id as the confirmation reference', async () => {
+    mockServiceHedgerUpdate.mockReturnValue(makeUpdateChain({ data: activatedPosition, error: null }))
+
+    const { activatePositionByPaymentIntent } = await import('@/lib/actions/purchase')
+    const result = await activatePositionByPaymentIntent('pi_test_secret_abc')
+
+    expect(result).toEqual({ ok: true, positionId: 'pos-1' })
+    expect(mockRpc).toHaveBeenCalledWith('increment_contract_volume', {
+      p_contract_id: 'c1',
+      p_amount: 240.27,
+    })
+  })
+
+  it('treats a position already activated by the webhook as success, without double-counting volume', async () => {
+    // Guarded update matches no row because the Stripe webhook won the race.
+    mockServiceHedgerUpdate.mockReturnValue(makeUpdateChain({ data: null, error: { message: 'no rows' } }))
+    mockServiceHedgerSelect.mockReturnValue(
+      makeSelectChain({ data: { status: 'active', user_id: 'user-1', contract_id: 'c1' }, error: null }),
+    )
+
+    const { activatePositionByPaymentIntent } = await import('@/lib/actions/purchase')
+    const result = await activatePositionByPaymentIntent('pi_test_secret_abc')
+
+    expect(result).toEqual({ ok: true, positionId: 'pos-1' })
+    // The webhook already incremented volume when it activated the position.
+    expect(mockRpc).not.toHaveBeenCalledWith('increment_contract_volume', expect.anything())
+    // The webhook does not notify, so the action still must.
+    expect(mockCreateNotification).toHaveBeenCalled()
+  })
+
+  it('returns an error when the payment is not confirmed', async () => {
+    mockPaymentIntentsRetrieve.mockResolvedValue({
+      status: 'requires_payment_method',
+      metadata: { position_type: 'hedger', position_id: 'pos-1' },
+    })
+
+    const { activatePositionByPaymentIntent } = await import('@/lib/actions/purchase')
+    const result = await activatePositionByPaymentIntent('pi_test_secret_abc')
+
+    expect(result).toEqual({ error: 'Payment not confirmed (status: requires_payment_method)' })
+    expect(mockServiceHedgerUpdate).not.toHaveBeenCalled()
   })
 })

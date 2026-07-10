@@ -17,11 +17,15 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/actions/purchase', () => ({
   createHedgerPaymentIntent: vi.fn().mockResolvedValue({ clientSecret: 'pi_test_secret' }),
   createProviderPaymentIntent: vi.fn().mockResolvedValue({ clientSecret: 'pi_test_secret' }),
-  activatePositionByPaymentIntent: vi.fn().mockResolvedValue({ ok: true }),
+  activatePositionByPaymentIntent: vi.fn().mockResolvedValue({ ok: true, positionId: 'f891c1e1-e42e-4600-8435-29efbaceebca' }),
 }))
 
 vi.mock('@/components/markets/StripePaymentForm', () => ({
-  default: () => <div data-testid="stripe-form" />,
+  default: ({ onSuccess }: { onSuccess: () => void }) => (
+    <div data-testid="stripe-form">
+      <button onClick={() => onSuccess()}>Simulate payment success</button>
+    </div>
+  ),
 }))
 
 const mockContract: ContractWithTiers = {
@@ -132,5 +136,19 @@ describe('PurchasePanel', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /continue to payment/i })).not.toBeDisabled()
     })
+  })
+
+  it('shows the confirmation screen with a confirmation number after a 7-day Pro purchase', async () => {
+    render(<PurchasePanel contract={recurringContract} userId="user-1" open initialMode="buy" latestReading={null} onClose={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /7 days/i }))
+    await userEvent.click(screen.getByRole('button', { name: /pays out up to 3 times/i }))
+    await userEvent.click(screen.getByRole('button', { name: /continue to payment/i }))
+
+    await userEvent.click(await screen.findByRole('button', { name: /simulate payment success/i }))
+
+    expect(await screen.findByText(/protection confirmed/i)).toBeInTheDocument()
+    // Short reference the user can quote later — first 8 chars of the position id.
+    expect(screen.getByText(/confirmation #/i)).toBeInTheDocument()
+    expect(screen.getByText(/F891C1E1/)).toBeInTheDocument()
   })
 })
