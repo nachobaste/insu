@@ -167,7 +167,7 @@ export function DashboardClient({
 
       {activeTab === 'protections' && <ProtectionsTab positions={hedgerPositions} />}
       {activeTab === 'positions' && <PositionsTab positions={providerPositions} />}
-      {activeTab === 'payouts' && <PayoutsTab payouts={payouts} />}
+      {activeTab === 'payouts' && <PayoutsTab payouts={payouts} hedgerPositions={hedgerPositions} />}
     </div>
   )
 }
