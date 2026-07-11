@@ -21,15 +21,15 @@ export function StatsStrip({ hedgerPositions, providerPositions }: StatsStripPro
     <div className="mb-6 grid grid-cols-3 gap-3">
       <div className="rounded-xl border border-white/[0.07] bg-bg-card p-4 text-center">
         <p className="font-mono text-2xl font-bold text-insu-text">{activeCovers}</p>
-        <p className="mt-1 font-body text-[11px] uppercase tracking-wide text-insu-muted">Active covers</p>
+        <p className="mt-1 font-body text-[11px] uppercase tracking-wide text-insu-muted">Active protections</p>
       </div>
       <div className="rounded-xl border border-white/[0.07] bg-bg-card p-4 text-center">
         <p className="font-mono text-2xl font-bold text-insu-green">{formatCurrency(coveredUpTo)}</p>
-        <p className="mt-1 font-body text-[11px] uppercase tracking-wide text-insu-muted">Covered up to</p>
+        <p className="mt-1 font-body text-[11px] uppercase tracking-wide text-insu-muted">Protected up to</p>
       </div>
       <div className="rounded-xl border border-white/[0.07] bg-bg-card p-4 text-center">
         <p className="font-mono text-2xl font-bold text-insu-accent">{formatCurrency(providerYield)}</p>
-        <p className="mt-1 font-body text-[11px] uppercase tracking-wide text-insu-muted">Provider yield</p>
+        <p className="mt-1 font-body text-[11px] uppercase tracking-wide text-insu-muted">Expected fees</p>
       </div>
     </div>
   )

@@ -36,8 +36,8 @@ export function PositionCard({ position }: { position: ProviderPositionWithContr
       : null
   const realizedLabel =
     realizedPct !== null
-      ? `Yield ${realizedPct >= 0 ? '+' : ''}${realizedPct.toFixed(1)}%`
-      : 'Yield'
+      ? `Fees ${realizedPct >= 0 ? '+' : ''}${realizedPct.toFixed(1)}%`
+      : 'Fees'
 
   // Settles date
   let settlesStr = '-'
@@ -90,7 +90,7 @@ export function PositionCard({ position }: { position: ProviderPositionWithContr
           </div>
           <div className="text-center">
             <p className="font-body text-[11px] uppercase tracking-wide text-insu-muted">
-              {isSettled ? realizedLabel : `Yield +${yieldPct}%`}
+              {isSettled ? realizedLabel : `Fees +${yieldPct}%`}
             </p>
             <p className={cn('mt-0.5 font-mono text-sm', returnColor)}>{returnValue}</p>
           </div>

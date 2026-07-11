@@ -84,7 +84,7 @@ export function ProtectionCard({ position }: { position: HedgerPositionWithContr
               />
             </div>
             <p className="mt-1 font-body text-[11px] text-insu-muted">
-              {daysLeft} days of coverage left ({totalDays}-day window)
+              {daysLeft} days of protection left ({totalDays}-day window)
             </p>
             {position.current_value_usd != null && (
               <p className="mt-1 font-body text-[11px] text-insu-muted">

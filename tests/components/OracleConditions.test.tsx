@@ -42,14 +42,14 @@ describe('OracleConditions', () => {
     expect(screen.getByText('50% to trigger')).toBeInTheDocument()
   })
 
-  it('shows "Premium elevated" and impact for multiplier 1.34', () => {
+  it('shows "Price elevated" and impact for multiplier 1.34', () => {
     // 28.5 / 35 = 81% → elevated state
     render(<OracleConditions reading={makeReading()} triggerCondition={gteCondition} oracleMultiplier={1.34} />)
-    expect(screen.getByText('Premium elevated')).toBeInTheDocument()
+    expect(screen.getByText('Price elevated')).toBeInTheDocument()
     expect(screen.getByText('+34% vs baseline')).toBeInTheDocument()
   })
 
-  it('shows "Premium discounted" and impact for multiplier 0.7', () => {
+  it('shows "Price discounted" and impact for multiplier 0.7', () => {
     // 9.8 / 35 = 28% → low state
     render(
       <OracleConditions
@@ -58,7 +58,7 @@ describe('OracleConditions', () => {
         oracleMultiplier={0.7}
       />,
     )
-    expect(screen.getByText('Premium discounted')).toBeInTheDocument()
+    expect(screen.getByText('Price discounted')).toBeInTheDocument()
     expect(screen.getByText('-30% vs baseline')).toBeInTheDocument()
   })
 
@@ -76,7 +76,7 @@ describe('OracleConditions', () => {
       />,
     )
     expect(screen.getByText('⚡ Trigger threshold crossed')).toBeInTheDocument()
-    expect(screen.getByText('Premium at maximum')).toBeInTheDocument()
+    expect(screen.getByText('Price at maximum')).toBeInTheDocument()
   })
 
   it('returns null when metric key missing from reading value', () => {
@@ -105,6 +105,6 @@ describe('OracleConditions', () => {
       />,
     )
     expect(screen.getByText('⚡ Trigger threshold crossed')).toBeInTheDocument()
-    expect(screen.getByText('Premium at maximum')).toBeInTheDocument()
+    expect(screen.getByText('Price at maximum')).toBeInTheDocument()
   })
 })

@@ -212,7 +212,7 @@ export default function SubmitForm({ categories }: Props) {
           />
         </div>
         <p className="mt-1.5 text-[12px] text-insu-muted">
-          Insu sets final pricing actuarially — this is your reference, not a commitment.
+          Insu sets final pricing algorithmically — this is your reference, not a commitment.
         </p>
       </div>
 

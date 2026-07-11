@@ -133,7 +133,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
               {isRecurring && (
                 <div>
                   <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
-                    Coverage period
+                    Protection period
                   </p>
                   <div className="flex gap-2">
                     {PERIOD_OPTIONS.map(({ days, label }) => (

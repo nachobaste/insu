@@ -31,21 +31,21 @@ const STATE_CONFIG: Record<State, { text: string; bar: string; border: string; d
     bar: 'bg-insu-green',
     border: 'border-insu-green/10',
     dot: 'bg-insu-green',
-    label: 'Premium discounted',
+    label: 'Price discounted',
   },
   elevated: {
     text: 'text-insu-accent',
     bar: 'bg-gradient-to-r from-insu-green to-insu-accent',
     border: 'border-insu-accent/20',
     dot: 'bg-insu-accent',
-    label: 'Premium elevated',
+    label: 'Price elevated',
   },
   met: {
     text: 'text-red-400',
     bar: 'bg-red-500',
     border: 'border-red-500/20',
     dot: 'bg-red-500',
-    label: 'Premium at maximum',
+    label: 'Price at maximum',
   },
 }
 

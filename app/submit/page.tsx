@@ -27,7 +27,7 @@ export default async function SubmitPage() {
             Pitch a protection
           </h1>
           <p className="text-[14px] leading-relaxed text-insu-muted">
-            See an event that deserves automatic payout coverage? Tell us about it. Our team will review your pitch, set the oracle trigger, price the tiers, and launch it on the marketplace. No technical knowledge required.
+            See an event that deserves automatic payout protection? Tell us about it. Our team will review your pitch, set the oracle trigger, price the tiers, and launch it on the marketplace. No technical knowledge required.
           </p>
         </div>
 

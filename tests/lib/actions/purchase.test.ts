@@ -317,7 +317,7 @@ describe('createHedgerPaymentIntent', () => {
     setupMocks({ recurring: true })
     const { createHedgerPaymentIntent } = await import('@/lib/actions/purchase')
     const result = await createHedgerPaymentIntent('tier-recurring')
-    expect(result).toEqual({ error: 'Choose a coverage period' })
+    expect(result).toEqual({ error: 'Choose a protection period' })
   })
 
   it('returns clientSecret on success', async () => {
