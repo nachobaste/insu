@@ -234,7 +234,7 @@ export async function createProviderPaymentIntent(
 
 export async function activatePositionByPaymentIntent(
   clientSecret: string,
-): Promise<{ ok: true } | { error: string }> {
+): Promise<{ ok: true; positionId: string } | { error: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
@@ -270,23 +270,37 @@ export async function activatePositionByPaymentIntent(
       .select('tier_id, premium_paid_usd, contract_id')
       .single()
 
+    let contractId: string
     if (updateError || !position) {
-      console.error('hedger_positions update failed:', updateError, 'position_id:', position_id, 'user_id:', user.id)
-      return { error: `Failed to activate position: ${updateError?.message ?? 'no row matched'}` }
-    }
+      // The Stripe webhook may have won the race and already activated this
+      // position — that's a success for the buyer, not a failure. It also
+      // means the webhook already counted the volume, so don't count it again.
+      const { data: existing } = await db
+        .from('hedger_positions')
+        .select('status, user_id, contract_id')
+        .eq('id', position_id)
+        .single()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (db.rpc as any)('increment_contract_volume', {
-      p_contract_id: position.contract_id,
-      p_amount: position.premium_paid_usd,
-    })
+      if (!existing || existing.user_id !== user.id || existing.status !== 'active') {
+        console.error('hedger_positions update failed:', updateError, 'position_id:', position_id, 'user_id:', user.id)
+        return { error: `Failed to activate position: ${updateError?.message ?? 'no row matched'}` }
+      }
+      contractId = existing.contract_id
+    } else {
+      contractId = position.contract_id
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (db.rpc as any)('increment_contract_volume', {
+        p_contract_id: position.contract_id,
+        p_amount: position.premium_paid_usd,
+      })
+    }
 
     await createNotification(db, {
       userId: user.id,
       type: 'protection_purchased',
       title: 'Protection active',
-      body: 'Your protection is now active and covering you.',
-      contractId: position.contract_id,
+      body: `Your protection is now active and covering you. Confirmation #${position_id.slice(0, 8).toUpperCase()}.`,
+      contractId,
     })
   } else {
     const { data: providerPosition, error: providerError } = await db
@@ -310,5 +324,5 @@ export async function activatePositionByPaymentIntent(
   }
 
   revalidatePath('/dashboard')
-  return { ok: true }
+  return { ok: true, positionId: position_id }
 }

@@ -40,6 +40,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(initialPeriodDays ?? (isRecurring ? 1 : null))
   const [depositAmount, setDepositAmount] = useState('')
   const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [confirmationNumber, setConfirmationNumber] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -95,6 +96,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
     setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? 1 : null))
     setStep('select')
     setClientSecret(null)
+    setConfirmationNumber(null)
     setError(null)
   }
 
@@ -103,6 +105,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
     setSelectedTierId(initialTierId ?? null)
     setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? 1 : null))
     setClientSecret(null)
+    setConfirmationNumber(null)
     setError(null)
     onClose()
   }
@@ -183,6 +186,12 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                   <span className="font-semibold text-insu-green">
                     ${selectedTier.payout_usd.toLocaleString()} USD
                   </span>
+                </p>
+              )}
+              {confirmationNumber && (
+                <p className="text-[13px] text-insu-muted">
+                  Confirmation #<span className="font-mono font-semibold text-insu-text">{confirmationNumber}</span>
+                  <span className="mt-0.5 block text-[12px]">Save this number for future reference.</span>
                 </p>
               )}
               <button
@@ -313,6 +322,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                         setStep('select')
                         return
                       }
+                      setConfirmationNumber(result.positionId.slice(0, 8).toUpperCase())
                     } catch (err) {
                       console.error('Activation threw:', err)
                     }
