@@ -40,7 +40,7 @@ export async function createHedgerPaymentIntent(
     .eq('id', tierId)
     .single()
 
-  if (tierError || !tier) return { error: 'Coverage tier not found' }
+  if (tierError || !tier) return { error: 'Protection tier not found' }
 
   const capacityError = validateBuyerCapacity(tier.current_capacity_usd, tier.max_payouts * tier.payout_usd)
   if (capacityError) return { error: capacityError }
@@ -82,7 +82,7 @@ export async function createHedgerPaymentIntent(
   let payoutsRemaining: number
 
   if (isRecurring) {
-    if (!periodDays) return { error: 'Choose a coverage period' }
+    if (!periodDays) return { error: 'Choose a protection period' }
     const { data: latest } = await supabase
       .from('oracle_readings')
       .select('value, trigger_met')
@@ -186,7 +186,7 @@ export async function createProviderPaymentIntent(
     .eq('id', tierId)
     .single()
 
-  if (tierError || !tier) return { error: 'Coverage tier not found' }
+  if (tierError || !tier) return { error: 'Protection tier not found' }
 
   const capacityError = validateProviderCapacity(tier.max_capacity_usd, tier.current_capacity_usd, amountUsd)
   if (capacityError) return { error: capacityError }

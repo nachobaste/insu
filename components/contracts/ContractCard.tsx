@@ -20,8 +20,8 @@ const ICON_BG: Record<string, string> = {
 }
 
 const TIER_LABELS: Record<CoverageLevel, string> = {
-  basic:   'Basic coverage',
-  premium: 'Premium coverage',
+  basic:   'Basic protection',
+  premium: 'Pro protection',
 }
 
 interface Props {

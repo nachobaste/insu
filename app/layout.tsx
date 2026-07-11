@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Bebas_Neue, JetBrains_Mono, Outfit } from 'next/font/google'
 import './globals.css'
 import { SearchProvider } from '@/lib/search-context'
+import Footer from '@/components/layout/Footer'
 
 const bebasNeue = Bebas_Neue({
   weight: '400',
@@ -25,7 +26,7 @@ const outfit = Outfit({
 })
 
 export const metadata: Metadata = {
-  title: 'Insu — Everyday Risk, Instantly Covered',
+  title: 'Insu — Everyday Risk, Instant Protection',
   description:
     'Parametric event-protection marketplace. Buy protection against real-life disruptions. Automatic payouts when triggers occur.',
 }
@@ -38,7 +39,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${bebasNeue.variable} ${jetBrainsMono.variable} ${outfit.variable}`}>
       <body className="min-h-screen antialiased">
-        <SearchProvider>{children}</SearchProvider>
+        <SearchProvider>
+          {children}
+          <Footer />
+        </SearchProvider>
       </body>
     </html>
   )

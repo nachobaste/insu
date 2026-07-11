@@ -10,8 +10,8 @@ const STEPS = [
   },
   {
     n: '02',
-    title: 'Pay your premium',
-    body: 'Select a Basic or Premium tier and pay instantly via card. Your position is locked before the trigger deadline. The premium funds the liquidity pool that backs your payout.',
+    title: 'Pay a fixed price',
+    body: 'Select a Basic or Pro tier and pay instantly via card. Your position is locked before the trigger deadline. What you pay funds the liquidity pool that backs your payout.',
     tag: 'PAYMENT',
   },
   {
@@ -32,12 +32,12 @@ const PROBLEMS = [
   {
     icon: '⏳',
     title: 'Weeks to settle',
-    body: 'Traditional insurers average 30–90 days from claim to payout. Insu settles in under 10 minutes.',
+    body: 'Traditional claims processes take 30–90 days from filing to payment. Insu settles in under 10 minutes.',
   },
   {
     icon: '⚖️',
     title: 'Disputed outcomes',
-    body: 'Adjusters interpret policy language differently on every claim. Parametric triggers are binary — they either fire or they don\'t.',
+    body: 'Claim reviewers interpret fine print differently on every case. Parametric triggers are binary — they either fire or they don\'t.',
   },
   {
     icon: '📋',
@@ -51,15 +51,15 @@ const SIDES = [
     role: 'Hedger',
     color: '#f5a623',
     tagline: 'Buy certainty against disruption',
-    description: 'Runners buying marathon rain cover. Vendors protecting their festival weekend. Businesses guarding against traffic-triggered revenue loss. Hedgers pay a fixed premium and receive a fixed payout if the trigger fires — regardless of their actual loss.',
-    items: ['Fixed premium, known upfront', 'Payout in minutes, not months', 'No claim forms, no receipts', 'Coverage from $18 USD/event'],
+    description: 'Runners buying marathon rain cover. Vendors protecting their festival weekend. Businesses guarding against traffic-triggered revenue loss. Hedgers pay a fixed price upfront and receive a fixed payment if the trigger fires — no loss documentation needed, just fast help offsetting the cost of disruption.',
+    items: ['Fixed price, known upfront', 'Payout in minutes, not months', 'No claim forms, no receipts', 'Protection from $18 USD/event'],
   },
   {
     role: 'Provider',
     color: '#34d399',
-    tagline: 'Earn yield on event risk',
-    description: 'Capital providers deposit into a liquidity pool and earn the premium income when triggers don\'t fire. Risk is bounded, transparent, and diversified across multiple contracts. Expected return is priced actuarially at each repricing cycle.',
-    items: ['Earn premium yield on capital', 'Risk parameters known before deposit', 'Repriced every 6 hours', 'Withdraw after contract settles'],
+    tagline: 'Back protection, earn fees',
+    description: 'Capital providers deposit into a liquidity pool that backs other users\' protection, and earn fee income when triggers don\'t fire. Risk is bounded, transparent, and diversified across multiple contracts. Expected fee income is priced algorithmically at each repricing cycle.',
+    items: ['Earn fee income on capital', 'Risk parameters known before deposit', 'Repriced every 6 hours', 'Withdraw after contract settles'],
   },
 ]
 
@@ -85,7 +85,7 @@ export default function HowItWorksPage() {
             How Insu works
           </p>
           <h1 className="font-display text-[clamp(56px,9vw,108px)] leading-[0.92] tracking-[2px] text-insu-text">
-            Insurance that pays
+            Protection that pays
             <br />
             <span className="text-insu-accent">the moment</span>
             <br />
@@ -173,9 +173,9 @@ export default function HowItWorksPage() {
             The problem
           </p>
           <h2 className="mb-12 font-display text-[clamp(36px,5vw,64px)] leading-tight tracking-[1px] text-insu-text">
-            Traditional insurance fails
+            Slow claims processes fail
             <br />
-            <span className="text-insu-muted">when you need it most.</span>
+            <span className="text-insu-muted">when you need them most.</span>
           </h2>
           <div className="grid gap-5 md:grid-cols-3">
             {PROBLEMS.map((p) => (
@@ -306,7 +306,7 @@ export default function HowItWorksPage() {
 
           <div className="mt-8 rounded-[14px] border border-white/[0.07] bg-bg-card px-7 py-5">
             <p className="font-mono text-[13px] leading-relaxed text-insu-muted">
-              <span className="text-insu-accent">{'// Repricing'}</span>{' runs on a 6-hour cron cycle using an actuarial formula that accounts for base probability, capacity utilization, and time-to-deadline decay. Premiums adjust automatically — no manual intervention required.'}
+              <span className="text-insu-accent">{'// Repricing'}</span>{' runs on a 6-hour cron cycle using a statistical pricing model that accounts for base probability, capacity utilization, and time-to-deadline decay. Prices adjust automatically — no manual intervention required.'}
             </p>
           </div>
         </div>
@@ -320,7 +320,7 @@ export default function HowItWorksPage() {
             Ready to get protected?
           </h2>
           <p className="mx-auto mb-10 max-w-[480px] text-[15px] leading-relaxed text-insu-dim">
-            Browse live contracts covering weather, traffic, and events across Mexico. Your first protection takes under 2 minutes to set up.
+            Browse live contracts covering weather, traffic, and events across Mexico and Latam. Your first protection takes under 2 minutes to set up.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Link

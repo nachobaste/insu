@@ -8,8 +8,8 @@ import { getRecommendedPeriod, formatWindow, type CommutePeriod } from '@/lib/co
 import type { ContractWithTiers, Currency, CoverageLevel } from '@/lib/types'
 
 const TIER_LABELS: Record<CoverageLevel, string> = {
-  basic:   'Basic coverage',
-  premium: 'Premium coverage',
+  basic:   'Basic protection',
+  premium: 'Pro protection',
 }
 
 interface Props {

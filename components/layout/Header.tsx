@@ -42,7 +42,7 @@ export default async function Header() {
         <span className="hidden text-[11px] font-medium uppercase leading-tight tracking-wide text-insu-muted lg:block">
           Everyday Risk,
           <br />
-          Instantly Covered
+          Instant Protection
         </span>
       </Link>
 

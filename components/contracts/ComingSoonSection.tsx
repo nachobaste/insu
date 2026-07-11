@@ -17,7 +17,7 @@ export default function ComingSoonSection({ contracts, currency }: Props) {
       <div className="mb-4 flex items-baseline gap-3">
         <h2 className="font-display text-[22px] tracking-[2px] text-insu-muted">🔜 Coming soon</h2>
         <p className="text-[13px] font-medium tracking-[0.05em] text-insu-muted">
-          Coverage we&apos;re building — tap a card to get notified at launch
+          Protection we&apos;re building — tap a card to get notified at launch
         </p>
         <div className="h-px flex-1 bg-white/[0.05]" />
       </div>

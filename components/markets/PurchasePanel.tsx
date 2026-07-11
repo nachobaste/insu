@@ -179,7 +179,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
               </p>
               {mode === 'buy' && selectedTier && (
                 <p className="text-[13px] text-insu-muted">
-                  You&apos;re covered up to{' '}
+                  You&apos;re protected up to{' '}
                   <span className="font-semibold text-insu-green">
                     ${selectedTier.payout_usd.toLocaleString()} USD
                   </span>
@@ -216,7 +216,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                   {isRecurring && mode === 'buy' && (
                     <div className="mb-5">
                       <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-insu-muted">
-                        Coverage period
+                        Protection period
                       </p>
                       <div className="flex gap-2">
                         {PERIOD_OPTIONS.map(({ days, label }) => {

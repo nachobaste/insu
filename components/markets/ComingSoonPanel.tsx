@@ -23,7 +23,7 @@ export default function ComingSoonPanel({ contractId, userId, initiallyIntereste
         Coming soon
       </span>
       <p className="mt-3 text-[14px] font-semibold text-insu-text">
-        This coverage isn&apos;t live yet
+        This protection isn&apos;t live yet
       </p>
       <p className="mt-1.5 text-[13px] leading-relaxed text-insu-muted">
         We&apos;re still wiring up the data source and pricing for this product.
