@@ -17,7 +17,7 @@ function getStripe() {
 export async function createHedgerPaymentIntent(
   tierId: string,
   periodDays?: number,
-): Promise<{ clientSecret: string } | { error: string }> {
+): Promise<{ clientSecret: string; expiresAt: string } | { error: string }> {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -166,7 +166,7 @@ export async function createHedgerPaymentIntent(
     metadata: { position_type: 'hedger', position_id: position.id, tier_id: tierId, user_id: user.id },
   })
 
-  return { clientSecret: paymentIntent.client_secret! }
+  return { clientSecret: paymentIntent.client_secret!, expiresAt }
 }
 
 export async function createProviderPaymentIntent(

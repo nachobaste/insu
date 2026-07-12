@@ -6,6 +6,7 @@ import { quoteTiers } from '@/lib/pricing/quote'
 import type { ContractDetailData, LatestOracleReading } from '@/lib/types'
 import type { TriggerCondition } from '@/lib/oracle/trigger'
 import ContractMeta from './ContractMeta'
+import CoverageDates from './CoverageDates'
 import OracleConditions from './OracleConditions'
 import PriceChart from './PriceChart'
 import PurchasePanel from './PurchasePanel'
@@ -151,6 +152,14 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
                       </button>
                     ))}
                   </div>
+                  {selectedPeriodDays != null && (
+                    <CoverageDates
+                      corridor={contract.corridor}
+                      start={new Date()}
+                      periodDays={selectedPeriodDays}
+                      className="mt-2"
+                    />
+                  )}
                 </div>
               )}
 
