@@ -28,7 +28,7 @@ export default function CoverageDates({ corridor, start, periodDays, className }
 
   return (
     <p className={cn('text-[12px] leading-relaxed text-insu-muted', className)}>
-      Covers <span className="font-semibold text-insu-text">{label}</span>
+      Protects <span className="font-semibold text-insu-text">{label}</span>
     </p>
   )
 }
