@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import Link from 'next/link'
 import { cn, formatCurrency } from '@/lib/utils'
+import CoverageDates from '@/components/markets/CoverageDates'
 import type { HedgerPositionWithContract } from '@/lib/types'
 
 export function ProtectionCard({ position }: { position: HedgerPositionWithContract }) {
@@ -73,6 +74,15 @@ export function ProtectionCard({ position }: { position: HedgerPositionWithContr
             <p className="mt-0.5 font-body text-sm text-insu-text">{dateStr}</p>
           </div>
         </div>
+
+        {contract.is_recurring && (
+          <CoverageDates
+            corridor={contract.corridor}
+            start={purchased_at}
+            periodDays={totalDays}
+            className="mb-3 text-[11px]"
+          />
+        )}
 
         {/* progress bar — active only */}
         {status === 'active' && (

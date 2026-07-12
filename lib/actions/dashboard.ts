@@ -26,7 +26,7 @@ export async function getDashboardData(userId?: string): Promise<DashboardData> 
   const [hedgerResult, providerResult, payoutsResult] = await Promise.all([
     supabase
       .from('hedger_positions')
-      .select('*, contract:contracts(id, slug, title, trigger_type, status, is_recurring, trigger_condition), tier:coverage_tiers(name, base_probability, max_payouts)')
+      .select('*, contract:contracts(id, slug, title, trigger_type, status, is_recurring, trigger_condition, corridor:corridors(window_start, window_end)), tier:coverage_tiers(name, base_probability, max_payouts)')
       .eq('user_id', userId)
       .in('status', ['active', 'paid_out', 'expired']),
     supabase
