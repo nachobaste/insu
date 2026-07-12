@@ -7,6 +7,7 @@ import type { ContractWithTiers, LatestOracleReading } from '@/lib/types'
 import { quoteTiers } from '@/lib/pricing/quote'
 import TierSelector from './TierSelector'
 import AuthGate from './AuthGate'
+import CoverageDates from './CoverageDates'
 import StripePaymentForm from './StripePaymentForm'
 import { createHedgerPaymentIntent, createProviderPaymentIntent, activatePositionByPaymentIntent } from '@/lib/actions/purchase'
 
@@ -40,6 +41,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(initialPeriodDays ?? (isRecurring ? 1 : null))
   const [depositAmount, setDepositAmount] = useState('')
   const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [expiresAt, setExpiresAt] = useState<string | null>(null)
   const [confirmationNumber, setConfirmationNumber] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -82,6 +84,12 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
 
   const selectedTierLocked = selectedTierId != null && Boolean(lockedReasonByTier?.[selectedTierId])
 
+  // After the payment intent exists, coverage start is pinned server-side:
+  // expires_at minus the period. Before that, preview from "now".
+  const coverageStart = expiresAt && selectedPeriodDays
+    ? new Date(new Date(expiresAt).getTime() - selectedPeriodDays * 86_400_000)
+    : new Date()
+
   function selectPeriod(days: number) {
     setSelectedPeriodDays(days)
     if (days <= 1) {
@@ -96,6 +104,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
     setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? 1 : null))
     setStep('select')
     setClientSecret(null)
+    setExpiresAt(null)
     setConfirmationNumber(null)
     setError(null)
   }
@@ -105,6 +114,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
     setSelectedTierId(initialTierId ?? null)
     setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? 1 : null))
     setClientSecret(null)
+    setExpiresAt(null)
     setConfirmationNumber(null)
     setError(null)
     onClose()
@@ -126,6 +136,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
         return
       }
       setClientSecret(result.clientSecret)
+      setExpiresAt('expiresAt' in result && typeof result.expiresAt === 'string' ? result.expiresAt : null)
       setStep('payment')
     } catch {
       setError('Something went wrong — please try again')
@@ -187,6 +198,14 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                     ${selectedTier.payout_usd.toLocaleString()} USD
                   </span>
                 </p>
+              )}
+              {mode === 'buy' && isRecurring && selectedPeriodDays != null && (
+                <CoverageDates
+                  corridor={contract.corridor}
+                  start={coverageStart}
+                  periodDays={selectedPeriodDays}
+                  className="text-[13px]"
+                />
               )}
               {confirmationNumber && (
                 <p className="text-[13px] text-insu-muted">
@@ -252,6 +271,14 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                           )
                         })}
                       </div>
+                      {selectedPeriodDays != null && (
+                        <CoverageDates
+                          corridor={contract.corridor}
+                          start={coverageStart}
+                          periodDays={selectedPeriodDays}
+                          className="mt-2"
+                        />
+                      )}
                     </div>
                   )}
 
@@ -308,28 +335,38 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                   </button>
                 </>
               ) : clientSecret && selectedTier ? (
-                <StripePaymentForm
-                  clientSecret={clientSecret}
-                  amountUsd={mode === 'buy'
-                    ? priceByTier[selectedTier.id]
-                    : parseFloat(depositAmount)}
-                  onSuccess={async () => {
-                    try {
-                      const result = await activatePositionByPaymentIntent(clientSecret)
-                      if ('error' in result) {
-                        console.error('Activation failed:', result.error)
-                        setError(`Activation error: ${result.error}`)
-                        setStep('select')
-                        return
+                <>
+                  {mode === 'buy' && isRecurring && selectedPeriodDays != null && (
+                    <CoverageDates
+                      corridor={contract.corridor}
+                      start={coverageStart}
+                      periodDays={selectedPeriodDays}
+                      className="mb-4"
+                    />
+                  )}
+                  <StripePaymentForm
+                    clientSecret={clientSecret}
+                    amountUsd={mode === 'buy'
+                      ? priceByTier[selectedTier.id]
+                      : parseFloat(depositAmount)}
+                    onSuccess={async () => {
+                      try {
+                        const result = await activatePositionByPaymentIntent(clientSecret)
+                        if ('error' in result) {
+                          console.error('Activation failed:', result.error)
+                          setError(`Activation error: ${result.error}`)
+                          setStep('select')
+                          return
+                        }
+                        setConfirmationNumber(result.positionId.slice(0, 8).toUpperCase())
+                      } catch (err) {
+                        console.error('Activation threw:', err)
                       }
-                      setConfirmationNumber(result.positionId.slice(0, 8).toUpperCase())
-                    } catch (err) {
-                      console.error('Activation threw:', err)
-                    }
-                    setStep('done')
-                  }}
-                  onError={(msg) => { setError(msg); setStep('select') }}
-                />
+                      setStep('done')
+                    }}
+                    onError={(msg) => { setError(msg); setStep('select') }}
+                  />
+                </>
               ) : null}
             </>
           )}

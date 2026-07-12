@@ -320,10 +320,14 @@ describe('createHedgerPaymentIntent', () => {
     expect(result).toEqual({ error: 'Choose a protection period' })
   })
 
-  it('returns clientSecret on success', async () => {
+  it('returns clientSecret and the stored expires_at on success', async () => {
     const { createHedgerPaymentIntent } = await import('@/lib/actions/purchase')
     const result = await createHedgerPaymentIntent('tier-basic', 7)
-    expect(result).toEqual({ clientSecret: 'secret_test' })
+    expect(result).toHaveProperty('clientSecret', 'secret_test')
+    // expiresAt must match the position row so the UI shows the real window
+    const posChain = mockPositionInsert()
+    const insertArg = posChain.insert.mock.calls[0][0]
+    expect((result as { expiresAt: string }).expiresAt).toBe(insertArg.expires_at)
   })
 
   it('rejects when user has 5 or more pending_payment positions', async () => {
