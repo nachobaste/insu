@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { priceTier } from './engine'
-import { dailyHazard, priceTenor, capacityFactor } from '@/lib/pricing/derivative'
+import { dailyHazard, priceTenor, capacityFactor, recurringOracleMultiplier } from '@/lib/pricing/derivative'
 import { computeOracleMultiplier } from '@/lib/oracle/multiplier'
 import type { TriggerCondition } from '@/lib/oracle/trigger'
 import type { CoverageTier, Contract } from '@/lib/types'
@@ -52,11 +52,13 @@ async function applyReprice(
   let inputs: Record<string, unknown>
 
   if (contract.is_recurring) {
-    const p = dailyHazard(tier.base_probability, reading, contract.trigger_condition as never)
+    const condition = contract.trigger_condition as never
+    const p = dailyHazard(tier.base_probability, reading, condition)
     const cap = capacityFactor(tier.current_capacity_usd, tier.max_capacity_usd)
     const r = priceTenor(tier.payout_usd, 1, p, tier.max_payouts, { capacityFactor: cap })
     premiumUsd = r.premiumUsd
-    inputs = { ...r.inputs, oracleMultiplier }
+    // Record the multiplier actually used: recurring pricing floors it at 1.0.
+    inputs = { ...r.inputs, oracleMultiplier: recurringOracleMultiplier(reading, condition) }
   } else {
     const res = priceTier(tier, contract, oracleMultiplier)
     premiumUsd = res.premiumUsd
