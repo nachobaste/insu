@@ -57,4 +57,40 @@ describe('ProtectionCard', () => {
 
     expect(screen.queryByText(/Current value:/)).not.toBeInTheDocument()
   })
+
+  describe('covered dates', () => {
+    it('shows the covered rush-window days for a corridor position', () => {
+      const position = makePosition({
+        purchased_at: '2026-07-10T18:00:00Z', // 12:00 market-local (UTC-6)
+        expires_at: '2026-07-17T18:00:00Z',   // 7×24h later
+        contract: {
+          ...makePosition().contract,
+          corridor: { window_start: '06:00:00', window_end: '10:00:00' },
+        },
+      })
+      render(<ProtectionCard position={position} />)
+
+      // Jul 10's 6–10am window is already past at purchase, so coverage starts Jul 11.
+      expect(screen.getByText(/the 6–10am window daily, Jul 11 – Jul 17/)).toBeInTheDocument()
+    })
+
+    it('shows a plain coverage range for a recurring non-corridor position', () => {
+      const position = makePosition({
+        purchased_at: '2026-07-10T18:00:00Z',
+        expires_at: '2026-08-09T18:00:00Z', // 30×24h later
+      })
+      render(<ProtectionCard position={position} />)
+
+      expect(screen.getByText(/Jul 10, 12pm – Aug 9, 12pm/)).toBeInTheDocument()
+    })
+
+    it('does NOT show covered dates for a non-recurring contract', () => {
+      const position = makePosition({
+        contract: { ...makePosition().contract, is_recurring: false },
+      })
+      render(<ProtectionCard position={position} />)
+
+      expect(screen.queryByText(/Protects/)).not.toBeInTheDocument()
+    })
+  })
 })

@@ -173,7 +173,9 @@ export interface Payout {
 }
 
 export interface HedgerPositionWithContract extends HedgerPosition {
-  contract: Pick<Contract, 'id' | 'slug' | 'title' | 'trigger_type' | 'status' | 'is_recurring' | 'trigger_condition'>
+  contract: Pick<Contract, 'id' | 'slug' | 'title' | 'trigger_type' | 'status' | 'is_recurring' | 'trigger_condition'> & {
+    corridor?: Pick<Corridor, 'window_start' | 'window_end'> | null
+  }
   tier: Pick<CoverageTier, 'name' | 'base_probability' | 'max_payouts'>
   current_value_usd?: number | null
 }
