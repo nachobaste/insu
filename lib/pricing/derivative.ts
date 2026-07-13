@@ -31,14 +31,28 @@ export function probAtLeastK(T: number, p: number, k: number): number {
   return Math.max(0, Math.min(1, 1 - cdf))
 }
 
+/**
+ * Oracle multiplier for recurring window contracts. base_probability is already
+ * the calibrated daily window probability, so an off-window snapshot must not
+ * discount it (a sub-1.0 proximity double-counts and pinned every recurring
+ * premium to the 0.3 floor). Only the >1x near-trigger upside is kept, as
+ * adverse-selection protection. One-time contracts keep the full multiplier
+ * via the legacy priceTier path.
+ */
+export function recurringOracleMultiplier(
+  reading: { value: Record<string, unknown> } | null,
+  condition: TriggerCondition,
+): number {
+  return reading ? Math.max(1, computeOracleMultiplier(reading, condition)) : 1.0
+}
+
 /** Daily probability the trigger fires: clamp(base x oracleMultiplier). */
 export function dailyHazard(
   baseProbability: number,
   reading: { value: Record<string, unknown> } | null,
   condition: TriggerCondition,
 ): number {
-  const multiplier = reading ? computeOracleMultiplier(reading, condition) : 1.0
-  const raw = baseProbability * multiplier
+  const raw = baseProbability * recurringOracleMultiplier(reading, condition)
   return Math.min(P_MAX, Math.max(P_MIN, raw))
 }
 

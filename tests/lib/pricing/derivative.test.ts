@@ -64,9 +64,30 @@ describe('dailyHazard', () => {
     expect(result).toBe(P_MAX)
   })
 
-  it('reading delay_pct=5, base 0.001 -> clamps to P_MIN', () => {
+  it('off-window reading (delay_pct=5) never discounts below base — floor is 1.0, not 0.3', () => {
+    // base_probability is already the calibrated daily window probability; an
+    // off-window snapshot must not discount it (the old 0.3 floor pinned every
+    // recurring premium to 0.3x fair value).
+    const reading = { value: { delay_pct: 5 } }
+    const result = dailyHazard(0.05, reading, CONDITION)
+    expect(result).toBeCloseTo(0.05, 5)
+  })
+
+  it('off-window reading with tiny base (0.001) returns base, not base x 0.3', () => {
     const reading = { value: { delay_pct: 5 } }
     const result = dailyHazard(0.001, reading, CONDITION)
+    expect(result).toBeCloseTo(0.001, 6)
+  })
+
+  it('near-trigger upside still applies: delay_pct=100 doubles base', () => {
+    const reading = { value: { delay_pct: 100 } }
+    const result = dailyHazard(0.05, reading, CONDITION)
+    expect(result).toBeCloseTo(0.10, 5)
+  })
+
+  it('base below P_MIN clamps to P_MIN', () => {
+    const reading = { value: { delay_pct: 50 } }
+    const result = dailyHazard(0.0001, reading, CONDITION)
     expect(result).toBe(P_MIN)
   })
 

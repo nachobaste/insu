@@ -375,6 +375,35 @@ describe('recurring sticker = 1-day engine quote', () => {
     expect(pricingInputs.oracleMultiplier).toBe(1)
   })
 
+  it('recurring contract: off-window reading does not discount premium below base sticker', async () => {
+    // temp_c=1 vs threshold 25 → raw proximity 0.04 (old floor clamped it to 0.3);
+    // recurring pricing must ignore the sub-1.0 discount entirely.
+    const offWindow = makeRecurringDb({ reading: { value: { temp_c: 1 } } })
+    const noReading = makeRecurringDb()
+    await repriceTier('tier-r', offWindow)
+    await repriceTier('tier-r', noReading)
+
+    const discounted = offWindow._update.mock.calls[0][0].premium_usd
+    const base = noReading._update.mock.calls[0][0].premium_usd
+    expect(discounted).toBeCloseTo(base, 5)
+
+    const pricingInputs = offWindow._update.mock.calls[0][0].pricing_inputs
+    expect(pricingInputs.oracleMultiplier).toBe(1)
+  })
+
+  it('recurring contract: near-trigger reading still raises premium (upside kept)', async () => {
+    // temp_c=50 vs threshold 25 → multiplier 2.0 → premium doubles vs no reading.
+    const hot = makeRecurringDb({ reading: { value: { temp_c: 50 } } })
+    const noReading = makeRecurringDb()
+    await repriceTier('tier-r', hot)
+    await repriceTier('tier-r', noReading)
+
+    const raised = hot._update.mock.calls[0][0].premium_usd
+    const base = noReading._update.mock.calls[0][0].premium_usd
+    expect(raised).toBeCloseTo(base * 2, 5)
+    expect(hot._update.mock.calls[0][0].pricing_inputs.oracleMultiplier).toBeCloseTo(2.0, 5)
+  })
+
   it('recurring contract: repriceAll also uses derivative engine (pricing_inputs has tenorDays)', async () => {
     const db = makeRecurringDb()
     const count = await repriceAll(db)
