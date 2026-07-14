@@ -1,10 +1,9 @@
 name: Oracle Poll (air quality)
 
-# Hourly during CDMX daytime when ozone/PM peak. MX is permanently UTC-6.
-# MX 08:00–21:00 -> UTC 14:00–03:00 (next day).
+# Scheduled polling moved to cron-job.org (hourly during CDMX daytime,
+# UTC 14:00–03:00) — GH Actions schedules are throttled, producing multi-hour
+# gaps. This workflow is kept for manual/on-demand runs only.
 on:
-  schedule:
-    - cron: '0 14-23,0-3 * * *'
   workflow_dispatch: {}
 
 jobs:
