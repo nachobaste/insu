@@ -11,6 +11,13 @@ export const LOADING_FACTOR = 1.15
  * past — the payout itself, which no rational hedger would buy.
  */
 export const MAX_PREMIUM_FRACTION = 0.70
+/**
+ * A recurring premium is never quoted below this floor. Below ~$5 the Stripe
+ * fee (~$0.45) eats the margin and the sticker looks unserious; a floor is
+ * standard for real-world micro-risk products. Applies only to the recurring
+ * tenor path (one-time contracts price via priceTier and are unaffected).
+ */
+export const MIN_PREMIUM_USD = 5
 
 /**
  * P(N >= k) where N ~ Binomial(T, p) — probability of at least k trigger-days
@@ -95,7 +102,10 @@ export function priceTenor(
   }
   const rawPremiumUsd = payoutUsd * expectedPayouts * loading * cap
   const maxPremiumUsd = payoutUsd * maxPayouts * MAX_PREMIUM_FRACTION
-  const premiumUsd = Math.round(Math.min(rawPremiumUsd, maxPremiumUsd) * 100) / 100
+  // Floor then cap: raise tiny premiums to the floor, but never above the cap
+  // (the cap wins if the two ever cross, which only happens for tiny payouts).
+  const flooredUsd = Math.max(MIN_PREMIUM_USD, rawPremiumUsd)
+  const premiumUsd = Math.round(Math.min(flooredUsd, maxPremiumUsd) * 100) / 100
   return { premiumUsd, inputs: { p, tenorDays, maxPayouts, loading, capacityFactor: cap, expectedPayouts } }
 }
 
