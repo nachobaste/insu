@@ -5,9 +5,12 @@ import {
   capacityFactor,
   priceTenor,
   valuePosition,
+  tenorAvailable,
   P_MIN,
   P_MAX,
   MAX_PREMIUM_FRACTION,
+  MIN_PREMIUM_USD,
+  LOADING_FACTOR,
 } from '@/lib/pricing/derivative'
 import type { TriggerCondition } from '@/lib/oracle/trigger'
 
@@ -153,6 +156,53 @@ describe('priceTenor', () => {
     const pro = priceTenor(500, 30, 0.2, 3, { loading: 1.15, capacityFactor: 1.5 })
     expect(basic.premiumUsd).toBe(500 * 1 * MAX_PREMIUM_FRACTION) // 350
     expect(pro.premiumUsd).toBe(500 * 3 * MAX_PREMIUM_FRACTION)   // 1050
+  })
+})
+
+describe('priceTenor minimum premium floor', () => {
+  it('floors a tiny fair premium at MIN_PREMIUM_USD', () => {
+    // palmas-bosques Basic 1-day: payout 100, p 0.0198 -> fair ≈ $2.28, below floor
+    const { premiumUsd } = priceTenor(100, 1, 0.0198, 1)
+    expect(premiumUsd).toBe(MIN_PREMIUM_USD)
+  })
+
+  it('does not raise a premium already above the floor', () => {
+    // p 0.10 -> fair 100*0.10*1.15 = $11.50
+    const { premiumUsd } = priceTenor(100, 1, 0.10, 1)
+    expect(premiumUsd).toBeCloseTo(11.5, 2)
+  })
+
+  it('the cap still wins over the floor for high hazard', () => {
+    // p 0.20 over 30 days -> raw far above cap; cap = 100*1*0.70 = $70
+    const { premiumUsd } = priceTenor(100, 30, 0.20, 1)
+    expect(premiumUsd).toBe(70)
+  })
+
+  it('MIN_PREMIUM_USD is 5', () => {
+    expect(MIN_PREMIUM_USD).toBe(5)
+  })
+})
+
+describe('tenorAvailable', () => {
+  it('1-day is available for every realistic hazard', () => {
+    expect(tenorAvailable(1, 0.2045)).toBe(true) // hottest live corridor
+    expect(tenorAvailable(1, 0.0198)).toBe(true)
+  })
+
+  it('hot corridor (p≈0.20) allows 3 days but not 7', () => {
+    expect(tenorAvailable(3, 0.2045)).toBe(true)
+    expect(tenorAvailable(7, 0.2045)).toBe(false)
+  })
+
+  it('calm corridor (p≈0.02) allows 30 days', () => {
+    expect(tenorAvailable(30, 0.0198)).toBe(true)
+  })
+
+  it('gates exactly on LOADING_FACTOR * P(>=1) <= MAX_PREMIUM_FRACTION', () => {
+    // Construct p so P(>=1) over 1 day = 0.70/1.15 exactly at the boundary
+    const boundaryP = MAX_PREMIUM_FRACTION / LOADING_FACTOR // ≈ 0.6087
+    expect(tenorAvailable(1, boundaryP)).toBe(true)          // == boundary, allowed
+    expect(tenorAvailable(1, boundaryP + 0.001)).toBe(false) // just over, blocked
   })
 })
 

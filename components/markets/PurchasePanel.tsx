@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { ContractWithTiers, LatestOracleReading } from '@/lib/types'
 import { quoteTiers } from '@/lib/pricing/quote'
+import { availablePeriods } from '@/lib/pricing/tenors'
+import { dailyHazard } from '@/lib/pricing/derivative'
 import TierSelector from './TierSelector'
 import AuthGate from './AuthGate'
 import CoverageDates from './CoverageDates'
@@ -13,12 +15,6 @@ import { createHedgerPaymentIntent, createProviderPaymentIntent, activatePositio
 
 type PanelMode = 'buy' | 'provide'
 type Step = 'select' | 'payment' | 'done'
-
-const PERIOD_OPTIONS = [
-  { days: 1,  label: '1 day' },
-  { days: 7,  label: '7 days' },
-  { days: 30, label: '30 days' },
-] as const
 
 interface Props {
   contract: ContractWithTiers
@@ -60,6 +56,15 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   const basicTier = [...contract.coverage_tiers].sort((a, b) =>
     a.name === 'basic' ? -1 : b.name === 'basic' ? 1 : 0,
   )[0]
+
+  const hazard = basicTier
+    ? dailyHazard(
+        basicTier.base_probability,
+        latestReading ? { value: latestReading.value } : null,
+        contract.trigger_condition as never,
+      )
+    : 0
+  const periodOptions = availablePeriods(hazard)
 
   const selectedTier = contract.coverage_tiers.find((t) => t.id === selectedTierId)
 
@@ -247,7 +252,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                         Protection period
                       </p>
                       <div className="flex gap-2">
-                        {PERIOD_OPTIONS.map(({ days, label }) => {
+                        {periodOptions.map(({ days, label }) => {
                           const fromPrice = formatCurrency(
                             quoteForDays(days)[basicTier.id],
                             'USD',

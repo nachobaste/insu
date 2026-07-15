@@ -4,7 +4,7 @@ import Stripe from 'stripe'
 import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { validateProviderCapacity, validateBuyerCapacity } from '@/lib/utils/capacity'
-import { dailyHazard, priceTenor, capacityFactor } from '@/lib/pricing/derivative'
+import { dailyHazard, priceTenor, capacityFactor, tenorAvailable } from '@/lib/pricing/derivative'
 import { createNotification } from '@/lib/notifications/create'
 import { marketDay, marketDayStartUtc } from '@/lib/utils/marketDay'
 
@@ -103,6 +103,9 @@ export async function createHedgerPaymentIntent(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       contract.trigger_condition as any,
     )
+    if (!tenorAvailable(periodDays, p)) {
+      return { error: 'That protection period is not available for this market. Choose a shorter window or use recurring coverage.' }
+    }
     const cap = capacityFactor(tier.current_capacity_usd, tier.max_capacity_usd)
     periodPremium = priceTenor(tier.payout_usd, periodDays, p, tier.max_payouts, { capacityFactor: cap }).premiumUsd
     expiresAt = new Date(Date.now() + periodDays * 86_400_000).toISOString()
