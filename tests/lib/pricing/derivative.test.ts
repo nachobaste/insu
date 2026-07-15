@@ -183,6 +183,29 @@ describe('priceTenor minimum premium floor', () => {
   })
 })
 
+describe('tenorAvailable', () => {
+  it('1-day is available for every realistic hazard', () => {
+    expect(tenorAvailable(1, 0.2045)).toBe(true) // hottest live corridor
+    expect(tenorAvailable(1, 0.0198)).toBe(true)
+  })
+
+  it('hot corridor (p≈0.20) allows 3 days but not 7', () => {
+    expect(tenorAvailable(3, 0.2045)).toBe(true)
+    expect(tenorAvailable(7, 0.2045)).toBe(false)
+  })
+
+  it('calm corridor (p≈0.02) allows 30 days', () => {
+    expect(tenorAvailable(30, 0.0198)).toBe(true)
+  })
+
+  it('gates exactly on LOADING_FACTOR * P(>=1) <= MAX_PREMIUM_FRACTION', () => {
+    // Construct p so P(>=1) over 1 day = 0.70/1.15 exactly at the boundary
+    const boundaryP = MAX_PREMIUM_FRACTION / LOADING_FACTOR // ≈ 0.6087
+    expect(tenorAvailable(1, boundaryP)).toBe(true)          // == boundary, allowed
+    expect(tenorAvailable(1, boundaryP + 0.001)).toBe(false) // just over, blocked
+  })
+})
+
 describe('valuePosition', () => {
   it('returns 0 when remainingDays=0', () => {
     expect(valuePosition(500, 0, 0.1, 1)).toBe(0)

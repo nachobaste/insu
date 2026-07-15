@@ -110,6 +110,19 @@ export function priceTenor(
 }
 
 /**
+ * Is a tenor offerable without its Basic (one-touch) premium hitting the cap?
+ * A tenor is available iff the loaded fair premium fits under MAX_PREMIUM_FRACTION
+ * at capacity factor 1.0: LOADING_FACTOR * P(>=1 trigger in window) <= cap.
+ * Basic is the cap-binding tier, so this gate also protects the Pro strip.
+ * Keeps every listed tenor differentiated and priced above expected loss; long
+ * horizons on hot corridors are what recurring coverage is for.
+ */
+export function tenorAvailable(tenorDays: number, p: number): boolean {
+  const windowTriggerProb = probAtLeastK(tenorDays, p, 1)
+  return LOADING_FACTOR * windowTriggerProb <= MAX_PREMIUM_FRACTION + 1e-9
+}
+
+/**
  * Fair (mid) value of an open position — NO loading, NO capacity factor.
  * V = payout x sum_{k=1..payoutsRemaining} P(N_remaining >= k | pNow).
  */
