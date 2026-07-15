@@ -3,6 +3,8 @@
 import { useState, type ReactNode } from 'react'
 import { cn, categoryTextClass, countryFlag } from '@/lib/utils'
 import { quoteTiers } from '@/lib/pricing/quote'
+import { availablePeriods } from '@/lib/pricing/tenors'
+import { dailyHazard } from '@/lib/pricing/derivative'
 import type { ContractDetailData, LatestOracleReading } from '@/lib/types'
 import type { TriggerCondition } from '@/lib/oracle/trigger'
 import ContractMeta from './ContractMeta'
@@ -14,12 +16,6 @@ import TierSelector from './TierSelector'
 import ComingSoonPanel from './ComingSoonPanel'
 
 type PanelMode = 'buy' | 'provide'
-
-const PERIOD_OPTIONS = [
-  { days: 1,  label: '1 day' },
-  { days: 7,  label: '7 days' },
-  { days: 30, label: '30 days' },
-] as const
 
 interface Props {
   contract: ContractDetailData
@@ -47,6 +43,18 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
     a.name === 'basic' ? -1 : b.name === 'basic' ? 1 : 0,
   )
 
+  const basicTier = sortedTiers[0]
+  const hazard = basicTier
+    ? dailyHazard(
+        basicTier.base_probability,
+        latestReading ? { value: latestReading.value } : null,
+        contract.trigger_condition as never,
+      )
+    : 0
+  const periodOptions = availablePeriods(hazard)
+  const selectedStillOffered =
+    selectedPeriodDays == null || periodOptions.some((o) => o.days === selectedPeriodDays)
+
   const rawMultiplier = sortedTiers[0]?.pricing_inputs?.oracleMultiplier
   const oracleMultiplier = typeof rawMultiplier === 'number' ? rawMultiplier : 1.0
 
@@ -55,7 +63,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
     setPanelOpen(true)
   }
 
-  const priceByTier = isRecurring && selectedPeriodDays
+  const priceByTier = isRecurring && selectedPeriodDays && selectedStillOffered
     ? quoteTiers(contract.coverage_tiers, selectedPeriodDays, contract.trigger_condition, latestReading)
     : undefined
 
@@ -137,7 +145,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
                     Protection period
                   </p>
                   <div className="flex gap-2">
-                    {PERIOD_OPTIONS.map(({ days, label }) => (
+                    {periodOptions.map(({ days, label }) => (
                       <button
                         key={days}
                         onClick={() => selectPeriod(days)}
@@ -152,7 +160,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
                       </button>
                     ))}
                   </div>
-                  {selectedPeriodDays != null && (
+                  {selectedPeriodDays != null && selectedStillOffered && (
                     <CoverageDates
                       corridor={contract.corridor}
                       start={new Date()}
