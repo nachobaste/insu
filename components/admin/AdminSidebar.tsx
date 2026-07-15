@@ -10,6 +10,7 @@ const NAV = [
   { href: '/admin/oracle',    label: 'Oracle',    icon: '🌐' },
   { href: '/admin/scenario',  label: 'Scenario',  icon: '🧪' },
   { href: '/admin/payouts',   label: 'Payouts',   icon: '💸' },
+  { href: '/admin/activity',  label: 'Activity',  icon: '👥' },
 ] as const
 
 export function AdminSidebar() {
