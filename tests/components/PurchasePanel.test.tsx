@@ -94,12 +94,15 @@ describe('PurchasePanel', () => {
     expect(screen.getByRole('dialog').className).toContain('translate-x-full')
   })
 
-  // Period selector — recurring contract
-  it('shows period pills for weather contract in buy mode', () => {
+  // Period selector — recurring contract. base_probability 0.1 is a mid-hazard
+  // corridor: {1,3,7} fit under the premium cap, 30d would breach it and is
+  // filtered out by availablePeriods.
+  it('shows only the available period pills for weather contract in buy mode', () => {
     render(<PurchasePanel contract={recurringContract} userId="user-1" open initialMode="buy" latestReading={null} onClose={vi.fn()} />)
     expect(screen.getByText('1 day')).toBeInTheDocument()
+    expect(screen.getByText('3 days')).toBeInTheDocument()
     expect(screen.getByText('7 days')).toBeInTheDocument()
-    expect(screen.getByText('30 days')).toBeInTheDocument()
+    expect(screen.queryByText('30 days')).not.toBeInTheDocument()
   })
 
   it('does not show period pills for manual contract', () => {
