@@ -97,7 +97,7 @@ export function buildUserActivity(inputs: ActivityInputs): UserActivity[] {
     const payouts = payoutsById.get(p.id) ?? []
 
     const timeline: TimelineItem[] = [
-      { at: p.created_at, kind: 'signup', primary: 'Signed up' },
+      { at: p.created_at, kind: 'signup' as const, primary: 'Signed up' },
       ...buys.map((b): TimelineItem => ({
         at: b.purchased_at,
         kind: 'buy',

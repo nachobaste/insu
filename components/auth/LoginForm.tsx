@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { recordLogin } from '@/lib/actions/auth'
 
 export default function LoginForm() {
   const router = useRouter()
@@ -31,6 +32,7 @@ export default function LoginForm() {
       return
     }
 
+    await recordLogin()
     setLoading(false)
     router.push('/')
     router.refresh()
