@@ -41,6 +41,22 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
+  // Engagement heartbeat: stamp last_seen_at and count distinct active days for
+  // the signed-in user. Throttled to once per calendar day via a cookie so it is
+  // one DB write per user per day, not per navigation. Best-effort — never blocks
+  // the request. Sessions are long-lived, so this (not sign-ins) is what tells us
+  // whether a tester keeps coming back.
+  if (user) {
+    const today = new Date().toISOString().slice(0, 10)
+    if (request.cookies.get('insu_seen')?.value !== today) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.rpc as any)('touch_last_seen', { p_user_id: user.id })
+      supabaseResponse.cookies.set('insu_seen', today, {
+        httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24,
+      })
+    }
+  }
+
   // Optional IP allowlist for /admin — set ADMIN_IP_ALLOWLIST=ip1,ip2 in env to enable
   if (pathname.startsWith('/admin') && user) {
     const allowlist = (process.env.ADMIN_IP_ALLOWLIST ?? '')

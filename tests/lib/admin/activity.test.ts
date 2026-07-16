@@ -3,7 +3,7 @@ import { deriveTesterStatus, buildUserActivity } from '@/lib/admin/activity'
 import type { ActivityInputs } from '@/lib/admin/activity'
 
 const base = {
-  profiles: [{ id: 'u1', full_name: 'Ada', created_at: '2026-07-01T00:00:00Z', login_count: 3, last_login_at: '2026-07-05T00:00:00Z' }],
+  profiles: [{ id: 'u1', full_name: 'Ada', created_at: '2026-07-01T00:00:00Z', active_days: 3, last_seen_at: '2026-07-05T00:00:00Z' }],
   authUsers: [{ id: 'u1', email: 'ada@example.com' }],
   buys: [], deposits: [], payouts: [],
 } satisfies ActivityInputs
@@ -29,7 +29,7 @@ describe('deriveTesterStatus', () => {
 describe('buildUserActivity', () => {
   it('rolls up an idle signed-up user', () => {
     const [a] = buildUserActivity(base)
-    expect(a).toMatchObject({ userId: 'u1', name: 'Ada', email: 'ada@example.com', loginCount: 3, status: 'signed_up_idle', totalPremiumUsd: 0, totalPayoutUsd: 0 })
+    expect(a).toMatchObject({ userId: 'u1', name: 'Ada', email: 'ada@example.com', activeDays: 3, status: 'signed_up_idle', totalPremiumUsd: 0, totalPayoutUsd: 0 })
     expect(a.timeline).toHaveLength(1)
     expect(a.timeline[0].kind).toBe('signup')
   })
@@ -46,14 +46,14 @@ describe('buildUserActivity', () => {
     expect(a.status).toBe('completed_loop')
     // reverse chronological: payout (07-04) before buy (07-02) before signup (07-01)
     expect(a.timeline.map((t) => t.kind)).toEqual(['payout', 'buy', 'signup'])
-    expect(a.lastActivityAt).toBe('2026-07-05T00:00:00Z') // last_login is latest
+    expect(a.lastActivityAt).toBe('2026-07-05T00:00:00Z') // last_seen is latest
   })
 
   it('groups rows by user and sorts users by most recent activity', () => {
     const inputs: ActivityInputs = {
       profiles: [
-        { id: 'u1', full_name: 'Ada', created_at: '2026-07-01T00:00:00Z', login_count: 1, last_login_at: '2026-07-01T00:00:00Z' },
-        { id: 'u2', full_name: 'Bea', created_at: '2026-07-02T00:00:00Z', login_count: 1, last_login_at: '2026-07-09T00:00:00Z' },
+        { id: 'u1', full_name: 'Ada', created_at: '2026-07-01T00:00:00Z', active_days: 1, last_seen_at: '2026-07-01T00:00:00Z' },
+        { id: 'u2', full_name: 'Bea', created_at: '2026-07-02T00:00:00Z', active_days: 1, last_seen_at: '2026-07-09T00:00:00Z' },
       ],
       authUsers: [{ id: 'u1', email: 'a@x.com' }, { id: 'u2', email: 'b@x.com' }],
       buys: [], deposits: [], payouts: [],

@@ -41,8 +41,8 @@ export function UserActivityTable({ users }: { users: UserActivity[] }) {
         <thead className="bg-white/[0.03] text-[11px] uppercase tracking-wider text-insu-muted">
           <tr>
             <th className="px-3 py-2">Tester</th>
-            <th className="px-3 py-2">Logins</th>
-            <th className="px-3 py-2">Last login</th>
+            <th className="px-3 py-2">Active days</th>
+            <th className="px-3 py-2">Last seen</th>
             <th className="px-3 py-2">Buys</th>
             <th className="px-3 py-2">Deposits</th>
             <th className="px-3 py-2">Premium</th>
@@ -61,8 +61,8 @@ export function UserActivityTable({ users }: { users: UserActivity[] }) {
                   <div className="font-medium text-insu-text">{u.name || '(no name)'}</div>
                   <div className="text-[11px] text-insu-dim">{u.email ?? '—'}</div>
                 </td>
-                <td className="px-3 py-2 font-mono">{u.loginCount}</td>
-                <td className="px-3 py-2 text-insu-muted">{fmtDate(u.lastLoginAt)}</td>
+                <td className="px-3 py-2 font-mono">{u.activeDays}</td>
+                <td className="px-3 py-2 text-insu-muted">{fmtDate(u.lastSeenAt)}</td>
                 <td className="px-3 py-2 font-mono">{u.buys.length}</td>
                 <td className="px-3 py-2 font-mono">{u.deposits.length}</td>
                 <td className="px-3 py-2 font-mono">{formatCurrency(u.totalPremiumUsd, 'USD')}</td>

@@ -12,7 +12,7 @@ export async function getUserActivity(): Promise<UserActivity[]> {
   const db = createServiceClient()
 
   const [profilesRes, buysRes, depositsRes, payoutsRes, usersRes] = await Promise.all([
-    db.from('profiles').select('id, full_name, created_at, login_count, last_login_at'),
+    db.from('profiles').select('id, full_name, created_at, active_days, last_seen_at'),
     db.from('hedger_positions').select('user_id, status, purchased_at, premium_paid_usd, coverage_period_days, contract:contracts(title), tier:coverage_tiers(name)'),
     db.from('provider_positions').select('user_id, deposited_at, capital_deposited_usd, contract:contracts(title)'),
     db.from('payouts').select('amount_usd, created_at, trigger_day, hedger_position:hedger_positions(user_id)'),
@@ -27,8 +27,8 @@ export async function getUserActivity(): Promise<UserActivity[]> {
       id: p.id as string,
       full_name: (p.full_name as string) ?? null,
       created_at: p.created_at as string,
-      login_count: (p.login_count as number) ?? 0,
-      last_login_at: (p.last_login_at as string) ?? null,
+      active_days: (p.active_days as number) ?? 0,
+      last_seen_at: (p.last_seen_at as string) ?? null,
     })),
     authUsers: (usersRes.data?.users ?? []).map((u) => ({ id: u.id, email: u.email ?? null })),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

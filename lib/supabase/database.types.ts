@@ -633,8 +633,8 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
-          last_login_at: string | null
-          login_count: number
+          active_days: number
+          last_seen_at: string | null
           notification_prefs: Json
           preferred_currency: string
           role: string
@@ -645,8 +645,8 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
-          last_login_at?: string | null
-          login_count?: number
+          active_days?: number
+          last_seen_at?: string | null
           notification_prefs?: Json
           preferred_currency?: string
           role?: string
@@ -657,8 +657,8 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
-          last_login_at?: string | null
-          login_count?: number
+          active_days?: number
+          last_seen_at?: string | null
           notification_prefs?: Json
           preferred_currency?: string
           role?: string
