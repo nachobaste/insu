@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { recordLogin } from '@/lib/actions/auth'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -13,7 +12,6 @@ export async function GET(request: NextRequest) {
     if (error) {
       return NextResponse.redirect(`${origin}/auth/login?error=auth_callback_failed`)
     }
-    await recordLogin()
   }
 
   return NextResponse.redirect(`${origin}/`)

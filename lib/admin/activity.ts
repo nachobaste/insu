@@ -9,8 +9,8 @@ export interface ProfileRow {
   id: string
   full_name: string | null
   created_at: string
-  login_count: number
-  last_login_at: string | null
+  active_days: number
+  last_seen_at: string | null
 }
 export interface AuthUserRow { id: string; email: string | null }
 export interface BuyRow {
@@ -56,8 +56,8 @@ export interface UserActivity {
   name: string | null
   email: string | null
   createdAt: string
-  loginCount: number
-  lastLoginAt: string | null
+  activeDays: number
+  lastSeenAt: string | null
   buys: BuyRow[]
   deposits: DepositRow[]
   payouts: PayoutRow[]
@@ -126,14 +126,14 @@ export function buildUserActivity(inputs: ActivityInputs): UserActivity[] {
       name: p.full_name,
       email: emailById.get(p.id) ?? null,
       createdAt: p.created_at,
-      loginCount: p.login_count,
-      lastLoginAt: p.last_login_at,
+      activeDays: p.active_days,
+      lastSeenAt: p.last_seen_at,
       buys, deposits, payouts,
       totalPremiumUsd: round2(buys.reduce((s, b) => s + b.premium_paid_usd, 0)),
       totalPayoutUsd: round2(payouts.reduce((s, p2) => s + p2.amount_usd, 0)),
       status: deriveTesterStatus({ buys, deposits, payouts }),
       lastActivityAt: maxIso(
-        p.last_login_at, p.created_at,
+        p.last_seen_at, p.created_at,
         ...buys.map((b) => b.purchased_at),
         ...deposits.map((d) => d.deposited_at),
         ...payouts.map((p2) => p2.created_at),
