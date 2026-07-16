@@ -49,11 +49,18 @@ export async function proxy(request: NextRequest) {
   if (user) {
     const today = new Date().toISOString().slice(0, 10)
     if (request.cookies.get('insu_seen')?.value !== today) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.rpc as any)('touch_last_seen', { p_user_id: user.id })
-      supabaseResponse.cookies.set('insu_seen', today, {
-        httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24,
-      })
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.rpc as any)('touch_last_seen', { p_user_id: user.id })
+        // Set the throttle cookie only after a successful stamp, so a failed
+        // write is retried on the next navigation rather than skipped for the day.
+        supabaseResponse.cookies.set('insu_seen', today, {
+          httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24,
+        })
+      } catch {
+        // Best-effort engagement metric — a transient DB/network error must
+        // never break navigation. Swallow and move on.
+      }
     }
   }
 
