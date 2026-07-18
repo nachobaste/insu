@@ -44,6 +44,7 @@ export function CorridorMarketView({ bundles, initialPeriod, userId }: Props) {
       contract={contract}
       userId={userId}
       latestReading={active.latestReading}
+      metricSeries={active.metricSeries}
       periodToggle={
         <CorridorPeriodSwitch active={activePeriod} options={options} onSelect={handleSelect} />
       }

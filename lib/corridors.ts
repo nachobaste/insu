@@ -5,6 +5,7 @@ import type {
   LatestOracleReading,
   OracleReading,
 } from './types'
+import type { DailyMetricPoint } from './oracle/dailySeries'
 
 export type CommutePeriod = 'morning' | 'evening'
 
@@ -16,6 +17,7 @@ export interface PeriodBundle {
   corridor: Corridor
   latestReading: LatestOracleReading | null
   sparklineReadings: OracleReading[]
+  metricSeries: DailyMetricPoint[]
 }
 
 /** Morning if the corridor's window starts before noon, else evening. */
