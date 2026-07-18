@@ -13,7 +13,7 @@ export interface DailyMetricPoint {
 
 /** Minutes since local midnight (market tz) for an instant. */
 function localMinutes(iso: string): number {
-  const hm = new Intl.DateTimeFormat('en-US', {
+  const hm = new Intl.DateTimeFormat('en-CA', {
     timeZone: MARKET_TIMEZONE,
     hour: '2-digit',
     minute: '2-digit',
@@ -32,36 +32,36 @@ function windowMinutes(t: string): number {
 /**
  * One point per day = the max of the trigger metric.
  *
- * When `window` is given (corridor contracts), only readings whose market-local
+ * When `timeWindow` is given (corridor contracts), only readings whose market-local
  * time falls within [start, end) count — the value that determines a trigger.
  * The day key is the market-local date (marketDay). Windows spanning midnight
  * are unsupported (all corridors are daytime), matching TrafficPulseBar.
  *
- * When `window` is null (air quality, flood, fuel — UTC-published feeds), the
+ * When `timeWindow` is null (air quality, flood, fuel — UTC-published feeds), the
  * day key is the UTC calendar date (read_at ISO slice). No time filter is
  * applied; all readings contribute to their UTC day's max.
  */
 export function aggregateDailyOracleSeries(
   readings: Pick<OracleReading, 'read_at' | 'value'>[],
   metric: string,
-  window: { start: string; end: string } | null,
+  timeWindow: { start: string; end: string } | null,
 ): DailyMetricPoint[] {
-  const start = window ? windowMinutes(window.start) : 0
-  const end = window ? windowMinutes(window.end) : 0
+  const start = timeWindow ? windowMinutes(timeWindow.start) : 0
+  const end = timeWindow ? windowMinutes(timeWindow.end) : 0
   const maxByDay = new Map<string, number>()
 
   for (const r of readings) {
     const raw = (r.value as Record<string, unknown>)[metric]
     const v = typeof raw === 'number' ? raw : Number(raw)
     if (!Number.isFinite(v)) continue
-    if (window) {
+    if (timeWindow) {
       const mins = localMinutes(r.read_at)
       if (mins < start || mins >= end) continue
     }
     // Corridor contracts bucket by market-local day (UTC-6); non-corridor feeds
     // (air quality, flood, fuel) publish on UTC calendar days so we use the UTC
     // date to avoid splitting a single publish day across two market-local days.
-    const day = window ? marketDay(r.read_at) : r.read_at.substring(0, 10)
+    const day = timeWindow ? marketDay(r.read_at) : r.read_at.substring(0, 10)
     const prev = maxByDay.get(day)
     if (prev === undefined || v > prev) maxByDay.set(day, v)
   }

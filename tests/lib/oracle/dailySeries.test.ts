@@ -72,6 +72,25 @@ describe('aggregateDailyOracleSeries', () => {
   it('returns [] for empty input', () => {
     expect(aggregateDailyOracleSeries([], 'traffic_index', WINDOW)).toEqual([])
   })
+
+  it('includes a reading exactly at the window START (07:00 local = 13:00Z)', () => {
+    // [start, end) — the start boundary is inclusive
+    const readings = [reading('2026-07-10T13:00:00Z', 55)] // exactly 07:00 local
+    expect(aggregateDailyOracleSeries(readings, 'traffic_index', WINDOW)).toEqual([
+      { date: '2026-07-10', value: 55 },
+    ])
+  })
+
+  it('excludes a reading exactly at the window END (10:00 local = 16:00Z)', () => {
+    // [start, end) — the end boundary is exclusive
+    const readings = [
+      reading('2026-07-10T14:00:00Z', 40), // 08:00 local — in window
+      reading('2026-07-10T16:00:00Z', 99), // exactly 10:00 local — excluded
+    ]
+    expect(aggregateDailyOracleSeries(readings, 'traffic_index', WINDOW)).toEqual([
+      { date: '2026-07-10', value: 40 },
+    ])
+  })
 })
 
 describe('metricLabel', () => {
