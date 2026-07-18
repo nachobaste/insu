@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/Header'
 import BrowseClient from './BrowseClient'
 import type { ContractWithTiers } from '@/lib/types'
+import type { DisplayMode } from '@/lib/currency/config'
 
 async function getContracts(): Promise<ContractWithTiers[]> {
   const supabase = await createClient()
@@ -53,7 +54,7 @@ async function getPlatformStats() {
   }
 }
 
-async function getDisplayMode(): Promise<'USD' | 'LOCAL'> {
+async function getDisplayMode(): Promise<DisplayMode> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return 'USD'
