@@ -86,7 +86,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
     ? Object.fromEntries(
         contract.coverage_tiers
           .filter((t) => t.max_payouts > 1)
-          .map((t) => [t.id, 'Needs 7+ days']),
+          .map((t) => [t.id, 'Needs 3+ days']),
       )
     : undefined
 
