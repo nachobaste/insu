@@ -68,5 +68,6 @@ describe('PriceChart', () => {
       />,
     )
     expect(container).toBeTruthy()
+    expect(screen.getByText('Price history')).toBeInTheDocument()
   })
 })
