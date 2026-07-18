@@ -8,7 +8,12 @@ import {
   type LocalCurrency,
 } from './config'
 
-/** Country code (or legacy "Mexico") -> local currency, or null if unconfigured. */
+/**
+ * Country code (or legacy "Mexico") -> local currency, or null if unconfigured.
+ * Only "Mexico" was ever stored as a freeform name in production data (one legacy
+ * cancelled contract); no such freeform value exists for Guatemala, hence the
+ * asymmetric normalization.
+ */
 export function localCurrencyForCountry(country?: string | null): LocalCurrency | null {
   if (!country) return null
   const raw = country.trim()
@@ -31,7 +36,13 @@ export function convertFromUsd(amountUsd: number, currency: DisplayCurrency): nu
   return Math.round(amountUsd * FX_RATES[currency])
 }
 
-/** One-call helper for render sites: resolve currency, convert, and format. */
+/**
+ * One-call helper for render sites: resolve currency, convert, and format.
+ * `amount` is the authoritative numeric value in the display currency — a rounded
+ * whole unit for local currencies, and the exact (possibly fractional) USD value
+ * in USD mode. `formatted` always renders whole units, so prefer `formatted` for
+ * display and treat `amount` as the underlying figure.
+ */
 export function displayPrice(
   amountUsd: number,
   mode: DisplayMode,

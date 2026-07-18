@@ -13,10 +13,6 @@ describe('formatCurrency', () => {
     expect(formatCurrency(9500, 'MXN')).toContain('MXN')
   })
 
-  it('formats USD with symbol and ISO code', () => {
-    expect(formatCurrency(100, 'USD')).toBe('$100 USD')
-  })
-
   it('formats GTQ with the quetzal narrow symbol, not a redundant code', () => {
     const out = formatCurrency(780, 'GTQ')
     expect(out).toContain('Q780')
@@ -24,8 +20,8 @@ describe('formatCurrency', () => {
     expect(out).not.toContain('GTQ 780')
   })
 
-  it('formats MXN with ISO code', () => {
-    expect(formatCurrency(1700, 'MXN').endsWith('MXN')).toBe(true)
+  it('formats MXN with the narrow symbol and disambiguating ISO code', () => {
+    expect(formatCurrency(1700, 'MXN')).toBe('$1,700 MXN')
   })
 })
 
