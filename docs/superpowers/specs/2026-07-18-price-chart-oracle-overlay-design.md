@@ -50,10 +50,14 @@ dailyOracleSeries(contractId, days = 30) -> { date: string (YYYY-MM-DD), value: 
 - Metric key comes from `trigger_condition.metric`; value read from `oracle_readings.value[metric]`.
 - **Timezone:** windows are local (America/Mexico_City for MX, America/Guatemala for GT,
   keyed off the contract/corridor country). Readings' `read_at` is UTC and must be
-  converted before the in-window comparison.
-- **Implementation:** a Postgres RPC doing `AT TIME ZONE` + `date_trunc('day')` +
-  `max(value)` returns ~30 aggregated rows (efficient, tz-correct) rather than shipping
-  ~weeks of 15-min rows to the client. Exact RPC signature is a plan-level detail.
+  converted before the in-window comparison — reuse the `Intl.DateTimeFormat`
+  timezone-extraction pattern already in `TrafficPulseBar.isCurrentlyInWindow`.
+- **Implementation: JS, no new DB object.** Fetch the contract's `oracle_readings`
+  (`read_at`, `value`) for the last `days` (`.gte('read_at', cutoff)`), then aggregate to
+  daily in-window max in a pure, unit-testable function. The fetch is a server-side query
+  in the existing loaders (service or anon client already in use there). In-window
+  readings are few per day (~4–8 over a 1–2 h commute window), so even ~30 days is a small
+  result set; aggregation cost is trivial.
 
 Plumbed through the existing bundle (`lib/corridors.ts`) for corridor contracts and the
 non-corridor page loader in `app/markets/[slug]/page.tsx`, then passed into `PriceChart`
@@ -81,14 +85,14 @@ rule). Metric label localized only as far as existing copy already is.
 
 | Unit | Responsibility | Depends on |
 |------|----------------|------------|
-| `dailyOracleSeries` helper / RPC | daily in-window (or all-day) max of the trigger metric | `oracle_readings`, contract window + tz |
+| `dailyOracleSeries` (fetch) + pure aggregator | daily in-window (or all-day) max of the trigger metric | `oracle_readings`, contract window + tz |
 | `lib/corridors.ts` bundle + page loader | fetch the series, pass to the view | the helper |
 | `PriceChart.tsx` | render price (left) + metric (right) + threshold line | series + `trigger_condition` |
 
 ## Testing
 
-- Helper/RPC: in-window filtering picks the right readings; tz conversion correct for MX
-  and GT; non-corridor fallback = daily max; empty history → empty series.
+- Pure aggregator: in-window filtering picks the right readings; tz conversion correct for
+  MX and GT; non-corridor fallback = daily max; empty history → empty series.
 - `PriceChart`: renders a single price line (no Pro), a metric line, and a threshold line;
   handles empty metric series (price-only) and empty price history (existing "No pricing
   history yet" state); dual-axis scales independent.
