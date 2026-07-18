@@ -6,7 +6,8 @@ import CorridorPairCard from './CorridorPairCard'
 import AddContractCard from './AddContractCard'
 import { cn } from '@/lib/utils'
 import { getContractPeriod, getRecommendedPeriod, getUrbanRoads } from '@/lib/corridors'
-import type { ContractWithTiers, Currency } from '@/lib/types'
+import type { ContractWithTiers } from '@/lib/types'
+import type { DisplayMode } from '@/lib/currency/config'
 
 const SECTION_STYLES: Record<string, string> = {
   urban:       'text-category-urban',
@@ -40,7 +41,7 @@ interface Props {
   icon?: string
   description?: string
   contracts: ContractWithTiers[]
-  currency: Currency
+  displayMode: DisplayMode
 }
 
 export default function ContractSection({
@@ -49,7 +50,7 @@ export default function ContractSection({
   icon,
   description,
   contracts,
-  currency,
+  displayMode,
 }: Props) {
   const [activeRoad, setActiveRoad] = useState<string | null>(null)
 
@@ -131,7 +132,7 @@ export default function ContractSection({
                 key={road}
                 morning={morning}
                 evening={evening}
-                currency={currency}
+                displayMode={displayMode}
               />
             )
           })}
@@ -139,7 +140,7 @@ export default function ContractSection({
             <ContractCard
               key={contract.id}
               contract={contract}
-              currency={currency}
+              displayMode={displayMode}
               badge={getBadge(contract)}
             />
           ))}
@@ -151,7 +152,7 @@ export default function ContractSection({
             <ContractCard
               key={contract.id}
               contract={contract}
-              currency={currency}
+              displayMode={displayMode}
               badge={getBadge(contract)}
             />
           ))}

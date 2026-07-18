@@ -1,8 +1,10 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { cn, formatCurrency, countryFlag } from '@/lib/utils'
-import type { ContractWithTiers, Currency } from '@/lib/types'
+import { cn, countryFlag } from '@/lib/utils'
+import type { ContractWithTiers } from '@/lib/types'
+import type { DisplayMode } from '@/lib/currency/config'
+import { displayPrice } from '@/lib/currency/resolve'
 
 const CATEGORY_STYLES: Record<string, { topBar: string; icon: string; text: string; pill: string }> = {
   urban:       { topBar: 'before:bg-category-urban',       icon: 'bg-category-urban/10',       text: 'text-category-urban',       pill: 'bg-category-urban/10 text-category-urban' },
@@ -17,10 +19,10 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 interface Props {
   contracts: ContractWithTiers[]
-  currency: Currency
+  displayMode: DisplayMode
 }
 
-export default function TrendingSection({ contracts, currency }: Props) {
+export default function TrendingSection({ contracts, displayMode }: Props) {
   const router = useRouter()
 
   if (contracts.length === 0) return null
@@ -40,10 +42,10 @@ export default function TrendingSection({ contracts, currency }: Props) {
           const slug = contract.category?.slug ?? 'urban'
           const styles = CATEGORY_STYLES[slug] ?? CATEGORY_STYLES.urban
           const cheapestTier = [...contract.coverage_tiers].sort((a, b) =>
-            (currency === 'USD' ? a.premium_usd - b.premium_usd : a.premium_mxn - b.premium_mxn)
+            (a.premium_usd - b.premium_usd)
           )[0]
           const fromPrice = cheapestTier
-            ? formatCurrency(currency === 'USD' ? cheapestTier.premium_usd : cheapestTier.premium_mxn, currency)
+            ? displayPrice(cheapestTier.premium_usd, displayMode, contract.location?.country).formatted
             : '—'
 
           return (

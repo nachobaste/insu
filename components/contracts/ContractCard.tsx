@@ -2,8 +2,10 @@
 
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { cn, formatCurrency, formatVolume, countryFlag } from '@/lib/utils'
-import type { ContractWithTiers, Currency, CoverageLevel } from '@/lib/types'
+import { cn, formatVolume, countryFlag } from '@/lib/utils'
+import type { ContractWithTiers, CoverageLevel } from '@/lib/types'
+import type { DisplayMode } from '@/lib/currency/config'
+import { displayPrice } from '@/lib/currency/resolve'
 
 const CARD_STYLES: Record<string, string> = {
   urban:       'before:bg-category-urban hover:shadow-[0_8px_32px_rgba(148,163,184,0.08),0_0_0_1px_rgba(148,163,184,0.15)]',
@@ -26,7 +28,7 @@ const TIER_LABELS: Record<CoverageLevel, string> = {
 
 interface Props {
   contract: ContractWithTiers
-  currency: Currency
+  displayMode: DisplayMode
   badge?: 'trending' | 'new' | 'live' | 'recommended'
   /** Dimmed teaser: badge, no prices, Notify me CTA. Card still opens the detail page. Takes precedence over the `badge` prop. */
   comingSoon?: boolean
@@ -43,7 +45,7 @@ const BADGE_BASE = 'absolute right-3.5 top-3.5 rounded px-[7px] py-[3px] text-[1
 
 const COMING_SOON_BADGE = 'bg-amber-400/10 text-amber-300 border border-amber-400/25'
 
-export default function ContractCard({ contract, currency, badge, comingSoon }: Props) {
+export default function ContractCard({ contract, displayMode, badge, comingSoon }: Props) {
   const router = useRouter()
   const slug = contract.category.slug
   const tiers = [...contract.coverage_tiers].sort((a, b) =>
@@ -115,10 +117,10 @@ export default function ContractCard({ contract, currency, badge, comingSoon }: 
                 {TIER_LABELS[tier.name]}
               </span>
               <span className="font-mono text-[13px] font-bold text-insu-text">
-                {formatCurrency(currency === 'USD' ? tier.premium_usd : tier.premium_mxn, currency)}
+                {displayPrice(tier.premium_usd, displayMode, contract.location?.country).formatted}
                 <span className="mx-1 font-normal text-insu-muted">/</span>
                 <span className="text-insu-green">
-                  {formatCurrency(currency === 'USD' ? tier.payout_usd : tier.payout_mxn, currency)}
+                  {displayPrice(tier.payout_usd, displayMode, contract.location?.country).formatted}
                 </span>
               </span>
             </div>

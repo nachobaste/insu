@@ -53,6 +53,18 @@ async function getPlatformStats() {
   }
 }
 
+async function getDisplayMode(): Promise<'USD' | 'LOCAL'> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return 'USD'
+  const { data } = await supabase
+    .from('profiles')
+    .select('preferred_currency')
+    .eq('id', user.id)
+    .single()
+  return data?.preferred_currency === 'LOCAL' ? 'LOCAL' : 'USD'
+}
+
 export default async function BrowsePage() {
   const isConfigured = !!(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -67,14 +79,16 @@ export default async function BrowsePage() {
         <BrowseClient
           initialContracts={[]}
           stats={{ totalVolumeUsd: 0, activeContracts: 0, protectionsSold: 0, avgPayoutMinutes: 4.2 }}
+          displayMode="USD"
         />
       </>
     )
   }
 
-  const [contracts, stats] = await Promise.all([
+  const [contracts, stats, displayMode] = await Promise.all([
     getContracts(),
     getPlatformStats(),
+    getDisplayMode(),
   ])
 
   return (
@@ -83,6 +97,7 @@ export default async function BrowsePage() {
       <BrowseClient
         initialContracts={contracts}
         stats={stats}
+        displayMode={displayMode}
       />
     </>
   )

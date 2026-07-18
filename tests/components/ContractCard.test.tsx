@@ -71,41 +71,41 @@ const mockContract: ContractWithTiers = {
 
 describe('ContractCard', () => {
   it('renders the contract title', () => {
-    render(<ContractCard contract={mockContract} currency="USD" />)
+    render(<ContractCard contract={mockContract} displayMode="USD" />)
     expect(
       screen.getByText('Power outage in CDMX of more than 2 hours?')
     ).toBeInTheDocument()
   })
 
   it('renders basic tier premium and payout', () => {
-    render(<ContractCard contract={mockContract} currency="USD" />)
+    render(<ContractCard contract={mockContract} displayMode="USD" />)
     expect(screen.getByText('$100 USD')).toBeInTheDocument()
     expect(screen.getByText('$500 USD')).toBeInTheDocument()
   })
 
   it('renders premium tier premium and payout', () => {
-    render(<ContractCard contract={mockContract} currency="USD" />)
+    render(<ContractCard contract={mockContract} displayMode="USD" />)
     expect(screen.getByText('$600 USD')).toBeInTheDocument()
     expect(screen.getByText('$1,700 USD')).toBeInTheDocument()
   })
 
   it('renders volume', () => {
-    render(<ContractCard contract={mockContract} currency="USD" />)
+    render(<ContractCard contract={mockContract} displayMode="USD" />)
     expect(screen.getByText('$9.0m Vol.')).toBeInTheDocument()
   })
 
   it('renders a Buy now button', () => {
-    render(<ContractCard contract={mockContract} currency="USD" />)
+    render(<ContractCard contract={mockContract} displayMode="USD" />)
     expect(screen.getByRole('button', { name: /buy now/i })).toBeInTheDocument()
   })
 
   it('renders a recommended badge when badge="recommended"', () => {
-    render(<ContractCard contract={mockContract} currency="USD" badge="recommended" />)
+    render(<ContractCard contract={mockContract} displayMode="USD" badge="recommended" />)
     expect(screen.getByText('recommended')).toBeInTheDocument()
   })
 
   it('renders the coming-soon variant: badge, no prices, Notify me CTA', () => {
-    render(<ContractCard contract={mockContract} currency="USD" comingSoon />)
+    render(<ContractCard contract={mockContract} displayMode="USD" comingSoon />)
     expect(screen.getByText(/coming soon/i)).toBeInTheDocument()
     expect(screen.getByText(/pricing available at launch/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /notify me/i })).toBeInTheDocument()
@@ -118,7 +118,7 @@ describe('ContractCard', () => {
   })
 
   it('does not show coming-soon UI on live cards', () => {
-    render(<ContractCard contract={mockContract} currency="USD" />)
+    render(<ContractCard contract={mockContract} displayMode="USD" />)
     expect(screen.queryByText(/coming soon/i)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /buy now/i })).toBeInTheDocument()
   })

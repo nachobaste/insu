@@ -3,9 +3,11 @@
 import { useMemo, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { cn, formatCurrency, formatVolume, countryFlag } from '@/lib/utils'
+import { cn, formatVolume, countryFlag } from '@/lib/utils'
 import { getRecommendedPeriod, formatWindow, type CommutePeriod } from '@/lib/corridors'
-import type { ContractWithTiers, Currency, CoverageLevel } from '@/lib/types'
+import type { ContractWithTiers, CoverageLevel } from '@/lib/types'
+import type { DisplayMode } from '@/lib/currency/config'
+import { displayPrice } from '@/lib/currency/resolve'
 
 const TIER_LABELS: Record<CoverageLevel, string> = {
   basic:   'Basic protection',
@@ -15,7 +17,7 @@ const TIER_LABELS: Record<CoverageLevel, string> = {
 interface Props {
   morning: ContractWithTiers | null
   evening: ContractWithTiers | null
-  currency: Currency
+  displayMode: DisplayMode
 }
 
 function stripPeriodSuffix(title: string): string {
@@ -25,7 +27,7 @@ function stripPeriodSuffix(title: string): string {
 
 const emptySubscribe = () => () => {}
 
-export default function CorridorPairCard({ morning, evening, currency }: Props) {
+export default function CorridorPairCard({ morning, evening, displayMode }: Props) {
   const router = useRouter()
 
   const hasBoth = morning !== null && evening !== null
@@ -148,10 +150,10 @@ export default function CorridorPairCard({ morning, evening, currency }: Props) 
               {TIER_LABELS[tier.name]}
             </span>
             <span className="font-mono text-[13px] font-bold text-insu-text">
-              {formatCurrency(currency === 'USD' ? tier.premium_usd : tier.premium_mxn, currency)}
+              {displayPrice(tier.premium_usd, displayMode, active.location?.country).formatted}
               <span className="mx-1 font-normal text-insu-muted">/</span>
               <span className="text-insu-green">
-                {formatCurrency(currency === 'USD' ? tier.payout_usd : tier.payout_mxn, currency)}
+                {displayPrice(tier.payout_usd, displayMode, active.location?.country).formatted}
               </span>
             </span>
           </div>
