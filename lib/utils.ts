@@ -11,12 +11,16 @@ export function formatCurrency(amount: number, currency: Currency = 'USD'): stri
   const formatted = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
+    currencyDisplay: 'narrowSymbol',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount)
+  // Some ICU builds insert a non-breaking space between the symbol and digits
+  // (e.g. "Q 780"). Collapse it so the output is consistently "Q780".
+  const compact = formatted.replace(/([^\d,.\s]) (\d)/g, '$1$2')
   // Append the ISO code so the currency is unambiguous (e.g. "$1,234 USD"),
   // important in MX where a bare "$" can read as pesos.
-  return `${formatted} ${currency}`
+  return `${compact} ${currency}`
 }
 
 export function formatVolume(usd: number): string {
