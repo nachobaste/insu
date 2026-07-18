@@ -6,6 +6,7 @@ import { CorridorEvidence } from '@/components/markets/CorridorEvidence'
 import { CorridorMarketView } from '@/components/markets/CorridorMarketView'
 import { getContractPeriod, type PeriodBundle } from '@/lib/corridors'
 import type { ContractDetailData, LatestOracleReading, OracleReading, Corridor } from '@/lib/types'
+import type { DisplayMode } from '@/lib/currency/config'
 
 const CONTRACT_SELECT = `
   *,
@@ -80,7 +81,7 @@ export default async function MarketPage({
   const contract = contractData as unknown as ContractDetailData
   const userId = userResult.data.user?.id ?? null
 
-  let displayMode: 'USD' | 'LOCAL' = 'USD'
+  let displayMode: DisplayMode = 'USD'
   if (userId) {
     const { data: prof } = await supabase
       .from('profiles')
