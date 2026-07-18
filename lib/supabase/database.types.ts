@@ -636,6 +636,7 @@ export type Database = {
           active_days: number
           last_seen_at: string | null
           notification_prefs: Json
+          // 'USD' | 'LOCAL' display mode (see lib/currency/config.ts)
           preferred_currency: string
           role: string
           stripe_customer_id: string | null

@@ -1,7 +1,9 @@
 'use client'
 
 import { cn, formatCurrency } from '@/lib/utils'
+import { convertFromUsd } from '@/lib/currency/resolve'
 import type { CoverageTier, CoverageLevel } from '@/lib/types'
+import type { DisplayCurrency } from '@/lib/currency/config'
 
 interface Props {
   tiers: CoverageTier[]
@@ -11,6 +13,7 @@ interface Props {
   priceByTier?: Record<string, number>
   /** Tier ids that can't be chosen for the current selection, mapped to a short reason (e.g. Pro on a 1-day window). */
   lockedReasonByTier?: Record<string, string>
+  currency?: DisplayCurrency
 }
 
 const TIER_LABELS: Record<CoverageLevel, string> = {
@@ -23,7 +26,7 @@ function payoutDescription(maxPayouts: number): string {
   return maxPayouts > 1 ? `Pays out up to ${maxPayouts} times` : 'Pays out once'
 }
 
-export default function TierSelector({ tiers, selectedTierId, onSelect, mode = 'buy', priceByTier, lockedReasonByTier }: Props) {
+export default function TierSelector({ tiers, selectedTierId, onSelect, mode = 'buy', priceByTier, lockedReasonByTier, currency = 'USD' }: Props) {
   const sorted = [...tiers].sort((a, b) => (a.name === 'basic' ? -1 : b.name === 'basic' ? 1 : 0))
 
   return (
@@ -69,11 +72,14 @@ export default function TierSelector({ tiers, selectedTierId, onSelect, mode = '
             </p>
 
             {mode === 'buy' ? (
-              <div className="mt-1 flex items-center gap-1 font-mono text-[13px]">
-                <span className="text-insu-text">{formatCurrency(displayPremium, 'USD')}</span>
+              <div className="mt-1 flex flex-wrap items-center gap-1 font-mono text-[13px]">
+                <span className="text-insu-text">{formatCurrency(convertFromUsd(displayPremium, currency), currency)}</span>
                 <span className="text-insu-muted">price →</span>
-                <span className="text-insu-green">{formatCurrency(tier.payout_usd, 'USD')}</span>
+                <span className="text-insu-green">{formatCurrency(convertFromUsd(tier.payout_usd, currency), currency)}</span>
                 <span className="text-insu-muted">{tier.max_payouts > 1 ? 'payout/event' : 'payout'}</span>
+                {currency !== 'USD' && (
+                  <span className="text-insu-muted">≈ {formatCurrency(displayPremium, 'USD')}</span>
+                )}
               </div>
             ) : (
               <p className="mt-1 font-mono text-[13px] text-insu-muted">

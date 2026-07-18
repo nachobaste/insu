@@ -7,6 +7,8 @@ import { availablePeriods } from '@/lib/pricing/tenors'
 import { dailyHazard } from '@/lib/pricing/derivative'
 import type { ContractDetailData, LatestOracleReading } from '@/lib/types'
 import type { TriggerCondition } from '@/lib/oracle/trigger'
+import type { DisplayMode } from '@/lib/currency/config'
+import { resolveDisplayCurrency } from '@/lib/currency/resolve'
 import ContractMeta from './ContractMeta'
 import CoverageDates from './CoverageDates'
 import OracleConditions from './OracleConditions'
@@ -28,9 +30,11 @@ interface Props {
   /** Coming-soon market: replace all purchase UI with the notify-me panel. */
   comingSoon?: boolean
   initiallyInterested?: boolean
+  displayMode?: DisplayMode
 }
 
-export default function ContractDetailClient({ contract, userId, latestReading, periodToggle, evidence, comingSoon, initiallyInterested }: Props) {
+export default function ContractDetailClient({ contract, userId, latestReading, periodToggle, evidence, comingSoon, initiallyInterested, displayMode = 'USD' }: Props) {
+  const displayCurrency = resolveDisplayCurrency(displayMode, contract.location?.country)
   const isRecurring = contract.is_recurring
 
   const [panelOpen, setPanelOpen] = useState(false)
@@ -182,6 +186,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
                 mode="buy"
                 priceByTier={priceByTier}
                 lockedReasonByTier={lockedReasonByTier}
+                currency={displayCurrency}
               />
 
               <div className="space-y-2 pt-1">
@@ -214,6 +219,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
           initialTierId={selectedTierId}
           latestReading={latestReading}
           onClose={() => setPanelOpen(false)}
+          currency={displayCurrency}
         />
       )}
     </main>

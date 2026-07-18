@@ -6,7 +6,7 @@ import { DEFAULT_NOTIFICATION_PREFS, type NotificationPrefs } from '@/lib/types'
 
 interface UpdateProfileInput {
   full_name?: string
-  preferred_currency?: 'USD' | 'MXN'
+  preferred_currency?: 'USD' | 'LOCAL'
   notification_prefs?: NotificationPrefs
 }
 
@@ -20,7 +20,7 @@ function validPrefs(p: unknown): p is NotificationPrefs {
 export async function updateProfile(
   input: UpdateProfileInput,
 ): Promise<{ ok: true } | { error: string }> {
-  if (input.preferred_currency && !['USD', 'MXN'].includes(input.preferred_currency)) {
+  if (input.preferred_currency && !['USD', 'LOCAL'].includes(input.preferred_currency)) {
     return { error: 'Invalid currency' }
   }
   if (input.notification_prefs !== undefined && !validPrefs(input.notification_prefs)) {

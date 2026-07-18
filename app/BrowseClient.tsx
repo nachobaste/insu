@@ -13,6 +13,7 @@ import { filterByRegion, type Region } from '@/lib/region'
 import { partitionByLaunchStage, groupLiveContracts } from '@/lib/launch'
 import { useSearch } from '@/lib/search-context'
 import type { ContractWithTiers } from '@/lib/types'
+import type { DisplayMode } from '@/lib/currency/config'
 
 interface Props {
   initialContracts: ContractWithTiers[]
@@ -22,9 +23,10 @@ interface Props {
     protectionsSold: number
     avgPayoutMinutes: number
   }
+  displayMode: DisplayMode
 }
 
-export default function BrowseClient({ initialContracts, stats }: Props) {
+export default function BrowseClient({ initialContracts, stats, displayMode }: Props) {
   const [region, setRegion] = useState<Region>('MX')
   const allContracts = useRealtimeContracts(initialContracts)
   // Scope everything below (trending, sections, search) to the selected
@@ -74,7 +76,7 @@ export default function BrowseClient({ initialContracts, stats }: Props) {
                 <ContractCard
                   key={contract.id}
                   contract={contract}
-                  currency="USD"
+                  displayMode={displayMode}
                   comingSoon={contract.launch_stage === 'coming_soon'}
                 />
               ))}
@@ -84,7 +86,7 @@ export default function BrowseClient({ initialContracts, stats }: Props) {
       ) : (
         <>
           {trendingContracts.length >= 2 && (
-            <TrendingSection contracts={trendingContracts} currency="USD" />
+            <TrendingSection contracts={trendingContracts} displayMode={displayMode} />
           )}
 
           {groups.map((group) => (
@@ -95,11 +97,11 @@ export default function BrowseClient({ initialContracts, stats }: Props) {
               icon={group.icon}
               description={group.description}
               contracts={group.contracts}
-              currency="USD"
+              displayMode={displayMode}
             />
           ))}
 
-          <ComingSoonSection contracts={comingSoon} currency="USD" />
+          <ComingSoonSection contracts={comingSoon} displayMode={displayMode} />
         </>
       )}
     </main>

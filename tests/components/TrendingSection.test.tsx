@@ -52,7 +52,7 @@ function makeContract(overrides: Partial<ContractWithTiers>): ContractWithTiers 
 
 describe('TrendingSection', () => {
   it('renders the section heading', () => {
-    render(<TrendingSection contracts={[makeContract({})]} currency="USD" />)
+    render(<TrendingSection contracts={[makeContract({})]} displayMode="USD" />)
     expect(screen.getByText('Trending Now')).toBeInTheDocument()
   })
 
@@ -61,23 +61,23 @@ describe('TrendingSection', () => {
       makeContract({ id: '1', title: 'Contract Alpha' }),
       makeContract({ id: '2', title: 'Contract Beta' }),
     ]
-    render(<TrendingSection contracts={contracts} currency="USD" />)
+    render(<TrendingSection contracts={contracts} displayMode="USD" />)
     expect(screen.getByText('Contract Alpha')).toBeInTheDocument()
     expect(screen.getByText('Contract Beta')).toBeInTheDocument()
   })
 
   it('renders the cheapest tier premium as the "from" price in USD', () => {
-    render(<TrendingSection contracts={[makeContract({})]} currency="USD" />)
+    render(<TrendingSection contracts={[makeContract({})]} displayMode="USD" />)
     expect(screen.getByText('$100 USD')).toBeInTheDocument()
   })
 
   it('renders nothing when contracts array is empty', () => {
-    const { container } = render(<TrendingSection contracts={[]} currency="USD" />)
+    const { container } = render(<TrendingSection contracts={[]} displayMode="USD" />)
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders the cheapest tier premium as the "from" price in MXN', () => {
-    render(<TrendingSection contracts={[makeContract({})]} currency="MXN" />)
-    expect(screen.getByText('MX$1,700 MXN')).toBeInTheDocument()
+  it('renders the cheapest tier premium as the "from" price in MXN when LOCAL mode and MX country', () => {
+    render(<TrendingSection contracts={[makeContract({})]} displayMode="LOCAL" />)
+    expect(screen.getByText(/1,700 MXN/)).toBeInTheDocument()
   })
 })

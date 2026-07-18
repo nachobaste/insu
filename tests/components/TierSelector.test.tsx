@@ -76,6 +76,15 @@ describe('TierSelector', () => {
     expect(screen.getByText('$3 USD')).toBeInTheDocument()
   })
 
+  it('renders converted prices with a USD reference hint in a local currency (GTQ)', () => {
+    render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={() => {}} currency="GTQ" />)
+    // basic: premium 12 USD * 7.75 = 93 Q ; payout 500 USD * 7.75 = 3,875 Q
+    expect(screen.getByText('Q93 GTQ')).toBeInTheDocument()
+    expect(screen.getByText('Q3,875 GTQ')).toBeInTheDocument()
+    // the actual (USD) charge is shown as a reference next to the converted price
+    expect(screen.getByText(/≈\s*\$12 USD/)).toBeInTheDocument()
+  })
+
   it('describes the payout count per tier (Basic one-time, Pro up to 3)', () => {
     render(<TierSelector tiers={tiers} selectedTierId={null} onSelect={vi.fn()} />)
     expect(screen.getByText('Pays out once')).toBeInTheDocument()

@@ -1,15 +1,16 @@
 'use client'
 
 import ContractCard from './ContractCard'
-import type { ContractWithTiers, Currency } from '@/lib/types'
+import type { ContractWithTiers } from '@/lib/types'
+import type { DisplayMode } from '@/lib/currency/config'
 
 interface Props {
   contracts: ContractWithTiers[]
-  currency: Currency
+  displayMode: DisplayMode
 }
 
 /** Dimmed rail of not-yet-live coverage at the bottom of the browse page. */
-export default function ComingSoonSection({ contracts, currency }: Props) {
+export default function ComingSoonSection({ contracts, displayMode }: Props) {
   if (contracts.length === 0) return null
 
   return (
@@ -23,7 +24,7 @@ export default function ComingSoonSection({ contracts, currency }: Props) {
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {contracts.map((contract) => (
-          <ContractCard key={contract.id} contract={contract} currency={currency} comingSoon />
+          <ContractCard key={contract.id} contract={contract} displayMode={displayMode} comingSoon />
         ))}
       </div>
     </section>

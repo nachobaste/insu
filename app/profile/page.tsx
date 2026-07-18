@@ -23,7 +23,7 @@ export default async function ProfilePage() {
   const p = (profile ?? {}) as {
     full_name: string | null
     role: string
-    preferred_currency: 'USD' | 'MXN'
+    preferred_currency: 'USD' | 'LOCAL'
     notification_prefs: NotificationPrefs | null
     created_at: string
   }
@@ -38,7 +38,7 @@ export default async function ProfilePage() {
           role={p.role ?? 'hedger'}
           createdAt={p.created_at}
           fullName={p.full_name ?? ''}
-          preferredCurrency={p.preferred_currency ?? 'USD'}
+          preferredCurrency={p.preferred_currency === 'LOCAL' ? 'LOCAL' : 'USD'}
           notificationPrefs={{ ...DEFAULT_NOTIFICATION_PREFS, ...(p.notification_prefs ?? {}) }}
         />
       </main>

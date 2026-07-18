@@ -4,7 +4,7 @@ export type CategoryName = 'Urban' | 'Nature' | 'Experiences' | 'Events'
 export type ContractStatus = 'active' | 'settled' | 'cancelled' | 'pending'
 export type TriggerType = 'weather' | 'urban' | 'event' | 'manual' | 'fuel' | 'air_quality' | 'flood'
 export type CoverageLevel = 'basic' | 'premium'
-export type Currency = 'USD' | 'MXN'
+export type Currency = 'USD' | 'MXN' | 'GTQ'
 export type UserRole = 'hedger' | 'provider' | 'admin' | 'both'
 
 export interface Category {

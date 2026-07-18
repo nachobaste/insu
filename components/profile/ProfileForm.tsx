@@ -10,7 +10,7 @@ interface Props {
   role: string
   createdAt: string
   fullName: string
-  preferredCurrency: 'USD' | 'MXN'
+  preferredCurrency: 'USD' | 'LOCAL'
   notificationPrefs: NotificationPrefs
 }
 
@@ -29,7 +29,7 @@ const cardCls = 'rounded-xl border border-white/[0.07] bg-bg-card/40 p-5'
 
 export default function ProfileForm(props: Props) {
   const [fullName, setFullName] = useState(props.fullName)
-  const [currency, setCurrency] = useState<'USD' | 'MXN'>(props.preferredCurrency)
+  const [currency, setCurrency] = useState<'USD' | 'LOCAL'>(props.preferredCurrency)
   const [prefs, setPrefs] = useState<NotificationPrefs>(props.notificationPrefs)
   const [savingProfile, setSavingProfile] = useState(false)
   const [profileMsg, setProfileMsg] = useState<string | null>(null)
@@ -85,10 +85,10 @@ export default function ProfileForm(props: Props) {
         </div>
 
         <div>
-          <label htmlFor="currency" className={labelCls}>Preferred currency</label>
-          <select id="currency" value={currency} onChange={(e) => setCurrency(e.target.value as 'USD' | 'MXN')} className={fieldCls}>
-            <option value="USD">USD</option>
-            <option value="MXN">MXN</option>
+          <label htmlFor="currency" className={labelCls}>Show prices in</label>
+          <select id="currency" value={currency} onChange={(e) => setCurrency(e.target.value as 'USD' | 'LOCAL')} className={fieldCls}>
+            <option value="USD">US Dollars (USD)</option>
+            <option value="LOCAL">Local currency</option>
           </select>
         </div>
 

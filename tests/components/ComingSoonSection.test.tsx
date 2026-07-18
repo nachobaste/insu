@@ -26,7 +26,7 @@ describe('ComingSoonSection', () => {
     render(
       <ComingSoonSection
         contracts={[makeContract('Water shortage'), makeContract('Blackout')]}
-        currency="USD"
+        displayMode="USD"
       />,
     )
     expect(screen.getByRole('heading', { name: /coming soon/i })).toBeInTheDocument()
@@ -36,7 +36,7 @@ describe('ComingSoonSection', () => {
   })
 
   it('renders nothing when the list is empty', () => {
-    const { container } = render(<ComingSoonSection contracts={[]} currency="USD" />)
+    const { container } = render(<ComingSoonSection contracts={[]} displayMode="USD" />)
     expect(container).toBeEmptyDOMElement()
   })
 })
