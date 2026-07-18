@@ -7,6 +7,7 @@ import { CorridorMarketView } from '@/components/markets/CorridorMarketView'
 import { getContractPeriod, type PeriodBundle } from '@/lib/corridors'
 import type { ContractDetailData, LatestOracleReading, OracleReading, Corridor } from '@/lib/types'
 import type { DisplayMode } from '@/lib/currency/config'
+import { aggregateDailyOracleSeries, type DailyMetricPoint } from '@/lib/oracle/dailySeries'
 
 const CONTRACT_SELECT = `
   *,
@@ -16,6 +17,38 @@ const CONTRACT_SELECT = `
   corridor:corridors(*)
 `
 
+/** Fetch ~30 days of readings and reduce to a daily in-window-max metric series. */
+async function loadOracleSeries(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  contract: ContractDetailData,
+): Promise<DailyMetricPoint[]> {
+  const tc = contract.trigger_condition as Record<string, unknown>
+  const metric = typeof tc.metric === 'string' ? tc.metric : null
+  if (!metric) return []
+
+  const cutoff = new Date(Date.now() - 30 * 86_400_000).toISOString()
+  const { data, error } = await supabase
+    .from('oracle_readings')
+    .select('read_at, value')
+    .eq('contract_id', contract.id)
+    .gte('read_at', cutoff)
+    .order('read_at', { ascending: false })
+    .limit(5000)
+
+  if (error) {
+    console.error('[MarketPage] series fetch failed:', error.message)
+    return []
+  }
+
+  const corridor = contract.corridor as Corridor | null
+  const timeWindow = corridor ? { start: corridor.window_start, end: corridor.window_end } : null
+  return aggregateDailyOracleSeries(
+    (data ?? []) as { read_at: string; value: Record<string, unknown> }[],
+    metric,
+    timeWindow,
+  )
+}
+
 /** Load the oracle readings for one corridor contract into a renderable bundle. */
 async function loadBundle(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -23,7 +56,7 @@ async function loadBundle(
 ): Promise<PeriodBundle> {
   const corridor = contract.corridor as Corridor
 
-  const [latestReadingResult, sparklineResult] = await Promise.all([
+  const [latestReadingResult, sparklineResult, metricSeries] = await Promise.all([
     supabase
       .from('oracle_readings')
       .select('value, read_at, source, trigger_met')
@@ -37,6 +70,7 @@ async function loadBundle(
       .eq('contract_id', contract.id)
       .order('read_at', { ascending: false })
       .limit(6),
+    loadOracleSeries(supabase, contract),
   ])
 
   if (latestReadingResult.error) {
@@ -53,6 +87,7 @@ async function loadBundle(
     corridor,
     latestReading: latestReadingResult.data as LatestOracleReading | null,
     sparklineReadings: (sparklineResult.data ?? []) as OracleReading[],
+    metricSeries,
   }
 }
 
@@ -136,7 +171,7 @@ export default async function MarketPage({
   }
 
   // Single contract: non-corridor, or a road with only one active period.
-  const [latestReadingResult, sparklineResult, interestResult] = await Promise.all([
+  const [latestReadingResult, sparklineResult, interestResult, metricSeries] = await Promise.all([
     supabase
       .from('oracle_readings')
       .select('value, read_at, source, trigger_met')
@@ -160,6 +195,7 @@ export default async function MarketPage({
           .eq('user_id', userId)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    loadOracleSeries(supabase, contract),
   ])
 
   if (latestReadingResult.error) {
@@ -184,6 +220,7 @@ export default async function MarketPage({
         comingSoon={comingSoon}
         initiallyInterested={initiallyInterested}
         displayMode={displayMode}
+        metricSeries={metricSeries}
         evidence={
           contract.trigger_type === 'urban' && corridor ? (
             <CorridorEvidence

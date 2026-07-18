@@ -34,6 +34,7 @@ function makeBundle(period: 'morning' | 'evening', slug: string, title: string):
     } as unknown as PeriodBundle['corridor'],
     latestReading: null,
     sparklineReadings: [],
+    metricSeries: [],
   }
 }
 

@@ -8,6 +8,7 @@ import { dailyHazard } from '@/lib/pricing/derivative'
 import type { ContractDetailData, LatestOracleReading } from '@/lib/types'
 import type { TriggerCondition } from '@/lib/oracle/trigger'
 import type { DisplayMode } from '@/lib/currency/config'
+import { metricLabel as toMetricLabel, type DailyMetricPoint } from '@/lib/oracle/dailySeries'
 import { resolveDisplayCurrency } from '@/lib/currency/resolve'
 import ContractMeta from './ContractMeta'
 import CoverageDates from './CoverageDates'
@@ -31,9 +32,10 @@ interface Props {
   comingSoon?: boolean
   initiallyInterested?: boolean
   displayMode?: DisplayMode
+  metricSeries?: DailyMetricPoint[]
 }
 
-export default function ContractDetailClient({ contract, userId, latestReading, periodToggle, evidence, comingSoon, initiallyInterested, displayMode = 'USD' }: Props) {
+export default function ContractDetailClient({ contract, userId, latestReading, periodToggle, evidence, comingSoon, initiallyInterested, displayMode = 'USD', metricSeries }: Props) {
   const displayCurrency = resolveDisplayCurrency(displayMode, contract.location?.country)
   const isRecurring = contract.is_recurring
 
@@ -92,6 +94,11 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
 
   const hasPoolCoverage = sortedTiers.some(t => t.current_capacity_usd >= t.payout_usd)
 
+  const tc = contract.trigger_condition as Record<string, unknown>
+  const metricKey = typeof tc.metric === 'string' ? tc.metric : ''
+  const rawThreshold = typeof tc.threshold === 'number' ? tc.threshold : Number(tc.threshold)
+  const chartThreshold = Number.isFinite(rawThreshold) ? rawThreshold : undefined
+
   return (
     <main className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_360px]">
@@ -118,7 +125,13 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
 
           {evidence}
 
-          <PriceChart history={contract.pricing_history} tiers={contract.coverage_tiers} />
+          <PriceChart
+            history={contract.pricing_history}
+            tiers={contract.coverage_tiers}
+            metricSeries={metricSeries}
+            threshold={chartThreshold}
+            metricLabel={metricKey ? toMetricLabel(metricKey) : undefined}
+          />
 
           {latestReading && (
             <OracleConditions
