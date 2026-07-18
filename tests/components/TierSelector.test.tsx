@@ -108,10 +108,10 @@ describe('TierSelector', () => {
         tiers={fundedTiers}
         selectedTierId={null}
         onSelect={vi.fn()}
-        lockedReasonByTier={{ 'tier-premium': 'Needs 7+ days' }}
+        lockedReasonByTier={{ 'tier-premium': 'Needs 3+ days' }}
       />,
     )
-    expect(screen.getByText('Needs 7+ days')).toBeInTheDocument()
+    expect(screen.getByText('Needs 3+ days')).toBeInTheDocument()
     expect(screen.getByText('Pro').closest('button')).toBeDisabled()
     expect(screen.getByText('Basic').closest('button')).not.toBeDisabled()
   })
@@ -123,7 +123,7 @@ describe('TierSelector', () => {
         tiers={fundedTiers}
         selectedTierId={null}
         onSelect={onSelect}
-        lockedReasonByTier={{ 'tier-premium': 'Needs 7+ days' }}
+        lockedReasonByTier={{ 'tier-premium': 'Needs 3+ days' }}
       />,
     )
     await userEvent.click(screen.getByText('Pro'))
