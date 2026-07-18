@@ -122,4 +122,22 @@ describe('ContractCard', () => {
     expect(screen.queryByText(/coming soon/i)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /buy now/i })).toBeInTheDocument()
   })
+
+  it('renders peso prices for a Mexican contract in LOCAL mode', () => {
+    render(<ContractCard contract={mockContract} displayMode="LOCAL" />)
+    // MX contract, FX 17.0: 100 USD -> 1,700 MXN, 500 USD -> 8,500 MXN
+    expect(screen.getByText('$1,700 MXN')).toBeInTheDocument()
+    expect(screen.getByText('$8,500 MXN')).toBeInTheDocument()
+  })
+
+  it('renders quetzal prices for a Guatemalan contract in LOCAL mode', () => {
+    const gtContract: ContractWithTiers = {
+      ...mockContract,
+      location: { ...mockContract.location, country: 'GT' },
+    }
+    render(<ContractCard contract={gtContract} displayMode="LOCAL" />)
+    // GT contract, FX 7.75: 100 USD -> 775 Q, 500 USD -> 3,875 Q
+    expect(screen.getByText('Q775 GTQ')).toBeInTheDocument()
+    expect(screen.getByText('Q3,875 GTQ')).toBeInTheDocument()
+  })
 })
