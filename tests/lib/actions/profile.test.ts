@@ -11,6 +11,8 @@ vi.mock('@/lib/supabase/server', () => ({
   })),
 }))
 
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+
 import { updateProfile } from '@/lib/actions/profile'
 
 beforeEach(() => {
@@ -22,13 +24,13 @@ describe('updateProfile', () => {
   it('writes valid fields', async () => {
     const res = await updateProfile({
       full_name: 'Ada',
-      preferred_currency: 'MXN',
+      preferred_currency: 'USD',
       notification_prefs: { coverage_paid: true, coverage_expired: false, protection_purchased: true, provider_settled: true, product_launched: true },
     })
     expect(res).toEqual({ ok: true })
     expect(update).toHaveBeenCalledWith(expect.objectContaining({
       full_name: 'Ada',
-      preferred_currency: 'MXN',
+      preferred_currency: 'USD',
     }))
   })
 
@@ -42,5 +44,16 @@ describe('updateProfile', () => {
     const res = await updateProfile({ notification_prefs: { coverage_paid: 'yes' } as never })
     expect(res).toEqual({ error: 'Invalid notification preferences' })
     expect(update).not.toHaveBeenCalled()
+  })
+})
+
+describe('updateProfile currency validation', () => {
+  it('rejects the legacy MXN value', async () => {
+    const res = await updateProfile({ preferred_currency: 'MXN' as never })
+    expect(res).toEqual({ error: 'Invalid currency' })
+  })
+  it('rejects an arbitrary currency', async () => {
+    const res = await updateProfile({ preferred_currency: 'GTQ' as never })
+    expect(res).toEqual({ error: 'Invalid currency' })
   })
 })
