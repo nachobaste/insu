@@ -182,7 +182,6 @@ export default function PriceChart({ history, tiers, metricSeries = [], threshol
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4, fill: '#22c55e' }}
-              connectNulls
             />
           )}
         </ComposedChart>
