@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn, formatCurrency } from '@/lib/utils'
+import { convertFromUsd } from '@/lib/currency/resolve'
 import type { ContractWithTiers, LatestOracleReading } from '@/lib/types'
+import type { DisplayCurrency } from '@/lib/currency/config'
 import { quoteTiers } from '@/lib/pricing/quote'
 import { availablePeriods } from '@/lib/pricing/tenors'
 import { dailyHazard } from '@/lib/pricing/derivative'
@@ -25,9 +27,10 @@ interface Props {
   initialTierId?: string | null
   latestReading: LatestOracleReading | null
   onClose: () => void
+  currency?: DisplayCurrency
 }
 
-export default function PurchasePanel({ contract, userId, open, initialMode, initialPeriodDays, initialTierId, latestReading, onClose }: Props) {
+export default function PurchasePanel({ contract, userId, open, initialMode, initialPeriodDays, initialTierId, latestReading, onClose, currency = 'USD' }: Props) {
   const router = useRouter()
   const isRecurring = contract.is_recurring
 
@@ -200,7 +203,8 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                 <p className="text-[13px] text-insu-muted">
                   You&apos;re protected up to{' '}
                   <span className="font-semibold text-insu-green">
-                    ${selectedTier.payout_usd.toLocaleString()} USD
+                    {formatCurrency(convertFromUsd(selectedTier.payout_usd, currency), currency)}
+                    {currency !== 'USD' && ` (≈ $${selectedTier.payout_usd.toLocaleString()} USD)`}
                   </span>
                 </p>
               )}
@@ -253,10 +257,8 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                       </p>
                       <div className="flex gap-2">
                         {periodOptions.map(({ days, label }) => {
-                          const fromPrice = formatCurrency(
-                            quoteForDays(days)[basicTier.id],
-                            'USD',
-                          )
+                          const fromUsd = quoteForDays(days)[basicTier.id]
+                          const fromPrice = formatCurrency(convertFromUsd(fromUsd, currency), currency)
                           return (
                             <button
                               key={days}
@@ -297,6 +299,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
                     mode={mode}
                     priceByTier={mode === 'buy' ? priceByTier : undefined}
                     lockedReasonByTier={lockedReasonByTier}
+                    currency={mode === 'buy' ? currency : 'USD'}
                   />
 
                   {mode === 'provide' && selectedTierId && (

@@ -79,6 +79,16 @@ export default async function MarketPage({
 
   const contract = contractData as unknown as ContractDetailData
   const userId = userResult.data.user?.id ?? null
+
+  let displayMode: 'USD' | 'LOCAL' = 'USD'
+  if (userId) {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('preferred_currency')
+      .eq('id', userId)
+      .single()
+    displayMode = prof?.preferred_currency === 'LOCAL' ? 'LOCAL' : 'USD'
+  }
   const corridor = contract.corridor as Corridor | null
   const comingSoon = contract.launch_stage === 'coming_soon'
 
@@ -172,6 +182,7 @@ export default async function MarketPage({
         latestReading={latestReading}
         comingSoon={comingSoon}
         initiallyInterested={initiallyInterested}
+        displayMode={displayMode}
         evidence={
           contract.trigger_type === 'urban' && corridor ? (
             <CorridorEvidence
