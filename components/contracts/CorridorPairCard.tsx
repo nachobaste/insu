@@ -105,7 +105,7 @@ export default function CorridorPairCard({ morning, evening, displayMode }: Prop
 
       {/* Period toggle */}
       {hasBoth && (
-        <div className="mb-3 flex gap-1.5" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-3 flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={(e) => handleToggle(e, 'morning')}
             className={cn(
@@ -144,12 +144,12 @@ export default function CorridorPairCard({ morning, evening, displayMode }: Prop
         {tiers.map((tier) => (
           <div
             key={tier.id}
-            className="flex items-center justify-between border-b border-white/[0.04] py-1.5 last:border-none"
+            className="flex flex-col gap-0.5 border-b border-white/[0.04] py-1.5 last:border-none lg:flex-row lg:items-center lg:justify-between lg:gap-0"
           >
             <span className="text-[12px] font-medium text-insu-muted">
               {TIER_LABELS[tier.name]}
             </span>
-            <span className="font-mono text-[13px] font-bold text-insu-text">
+            <span className="whitespace-nowrap font-mono text-[13px] font-bold text-insu-text">
               {displayPrice(tier.premium_usd, displayMode, active.location?.country).formatted}
               <span className="mx-1 font-normal text-insu-muted">/</span>
               <span className="text-insu-green">

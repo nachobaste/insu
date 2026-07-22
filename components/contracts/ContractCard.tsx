@@ -111,12 +111,12 @@ export default function ContractCard({ contract, displayMode, badge, comingSoon 
           {tiers.map((tier) => (
             <div
               key={tier.id}
-              className="flex items-center justify-between border-b border-white/[0.04] py-1.5 last:border-none"
+              className="flex flex-col gap-0.5 border-b border-white/[0.04] py-1.5 last:border-none lg:flex-row lg:items-center lg:justify-between lg:gap-0"
             >
               <span className="text-[12px] font-medium text-insu-muted">
                 {TIER_LABELS[tier.name]}
               </span>
-              <span className="font-mono text-[13px] font-bold text-insu-text">
+              <span className="whitespace-nowrap font-mono text-[13px] font-bold text-insu-text">
                 {displayPrice(tier.premium_usd, displayMode, contract.location?.country).formatted}
                 <span className="mx-1 font-normal text-insu-muted">/</span>
                 <span className="text-insu-green">
