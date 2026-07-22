@@ -24,7 +24,7 @@ function getClient(): DbClient {
   )
 }
 
-function isWithinWindow(windowStart: string, windowEnd: string): boolean {
+export function isWithinWindow(windowStart: string, windowEnd: string): boolean {
   // Mexico City abolished DST in 2023 — permanently UTC-6.
   const mexicoCityTime = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Mexico_City',
