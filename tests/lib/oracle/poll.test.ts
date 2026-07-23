@@ -325,6 +325,25 @@ describe('pollContracts', () => {
     expect(fetchGasPrice).not.toHaveBeenCalled()
     expect(db._insert).toHaveBeenCalledTimes(1)
   })
+
+  it('skips a guatemala fuel contract with a non-regular fuel_type (no fetch, no write)', async () => {
+    const { fetchGuatemalaFuelPrice } = await import('@/lib/oracle/guatemalaFuelFetcher')
+    vi.mocked(fetchGuatemalaFuelPrice).mockClear()
+    const gtContract: Contract = {
+      ...mockContract,
+      id: 'gt2',
+      trigger_type: 'fuel',
+      is_recurring: true,
+      trigger_condition: {
+        metric: 'gas_price_quetzales', operator: 'gte', threshold: 45,
+        region: 'guatemala', fuel_type: 'diesel',
+      } as never,
+    }
+    const db = makeDb({ contracts: [gtContract] })
+    await pollContracts(db as never)
+    expect(fetchGuatemalaFuelPrice).not.toHaveBeenCalled()
+    expect(db._insert).not.toHaveBeenCalled()
+  })
 })
 
 describe('ensureCorridorPolylines', () => {

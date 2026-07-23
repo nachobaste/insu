@@ -94,7 +94,11 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
     }
     try {
       if (condition.region === 'guatemala') {
-        return [await fetchGuatemalaFuelPrice(condition.fuel_type as 'regular')]
+        if (condition.fuel_type !== 'regular') {
+          console.error(`Invalid GT fuel_type "${condition.fuel_type}" for contract ${contract.id}`)
+          return []
+        }
+        return [await fetchGuatemalaFuelPrice(condition.fuel_type)]
       }
       const VALID_FUEL_TYPES = ['magna', 'premium', 'diesel'] as const
       if (!VALID_FUEL_TYPES.includes(condition.fuel_type as never)) {
