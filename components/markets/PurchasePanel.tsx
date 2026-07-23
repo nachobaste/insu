@@ -34,12 +34,15 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   const router = useRouter()
   const isRecurring = contract.is_recurring
 
+  // Default protection period: the first (smallest) tenor the contract's menu
+  // offers — 7d for fuel {7,14,30}, 1d for the global {1,3,7,30}; null when the
+  // contract isn't recurring.
+  const defaultPeriodDays = isRecurring ? periodMenuForContract(contract)[0].days : null
+
   const [mode, setMode] = useState<PanelMode>(initialMode)
   const [step, setStep] = useState<Step>('select')
   const [selectedTierId, setSelectedTierId] = useState<string | null>(initialTierId ?? null)
-  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(
-    initialPeriodDays ?? (isRecurring ? periodMenuForContract(contract)[0].days : null),
-  )
+  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(initialPeriodDays ?? defaultPeriodDays)
   const [depositAmount, setDepositAmount] = useState('')
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [expiresAt, setExpiresAt] = useState<string | null>(null)
@@ -50,8 +53,8 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   // Sync initialPeriodDays prop into state when it changes (e.g. parent passes a different default).
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? periodMenuForContract(contract)[0].days : null))
-  }, [initialPeriodDays, isRecurring, contract])
+    setSelectedPeriodDays(initialPeriodDays ?? defaultPeriodDays)
+  }, [initialPeriodDays, defaultPeriodDays])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -78,7 +81,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
 
   const priceByTier = quoteTiers(
     contract.coverage_tiers,
-    selectedPeriodDays ?? 1,
+    selectedPeriodDays ?? periodMenuForContract(contract)[0].days,
     contract.trigger_condition,
     latestReading,
   )
@@ -111,7 +114,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   function switchMode(next: PanelMode) {
     setMode(next)
     setSelectedTierId(next === 'buy' ? (initialTierId ?? null) : null)
-    setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? periodMenuForContract(contract)[0].days : null))
+    setSelectedPeriodDays(initialPeriodDays ?? defaultPeriodDays)
     setStep('select')
     setClientSecret(null)
     setExpiresAt(null)
@@ -122,7 +125,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   function handleClose() {
     setStep('select')
     setSelectedTierId(initialTierId ?? null)
-    setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? periodMenuForContract(contract)[0].days : null))
+    setSelectedPeriodDays(initialPeriodDays ?? defaultPeriodDays)
     setClientSecret(null)
     setExpiresAt(null)
     setConfirmationNumber(null)
