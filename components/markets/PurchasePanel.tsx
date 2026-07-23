@@ -7,7 +7,7 @@ import { convertFromUsd } from '@/lib/currency/resolve'
 import type { ContractWithTiers, LatestOracleReading } from '@/lib/types'
 import type { DisplayCurrency } from '@/lib/currency/config'
 import { quoteTiers } from '@/lib/pricing/quote'
-import { availablePeriods } from '@/lib/pricing/tenors'
+import { availablePeriods, periodMenuForContract } from '@/lib/pricing/tenors'
 import { dailyHazard } from '@/lib/pricing/derivative'
 import TierSelector from './TierSelector'
 import AuthGate from './AuthGate'
@@ -37,7 +37,9 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   const [mode, setMode] = useState<PanelMode>(initialMode)
   const [step, setStep] = useState<Step>('select')
   const [selectedTierId, setSelectedTierId] = useState<string | null>(initialTierId ?? null)
-  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(initialPeriodDays ?? (isRecurring ? 1 : null))
+  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(
+    initialPeriodDays ?? (isRecurring ? periodMenuForContract(contract)[0].days : null),
+  )
   const [depositAmount, setDepositAmount] = useState('')
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [expiresAt, setExpiresAt] = useState<string | null>(null)
@@ -48,8 +50,8 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   // Sync initialPeriodDays prop into state when it changes (e.g. parent passes a different default).
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSelectedPeriodDays(initialPeriodDays ?? null)
-  }, [initialPeriodDays])
+    setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? periodMenuForContract(contract)[0].days : null))
+  }, [initialPeriodDays, isRecurring, contract])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -67,7 +69,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
         contract.trigger_condition as never,
       )
     : 0
-  const periodOptions = availablePeriods(hazard)
+  const periodOptions = availablePeriods(hazard, periodMenuForContract(contract))
 
   const selectedTier = contract.coverage_tiers.find((t) => t.id === selectedTierId)
 
