@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { evaluateTrigger, type TriggerCondition } from './trigger'
 import { fetchWeatherReading, fetchTomorrowReading, fetchGoogleMapsReading, fetchCorridorPolyline, fetchAirQualityReading, fetchFloodReading } from './fetcher'
 import { fetchGasPrice } from './gasFetcher'
+import { fetchGuatemalaFuelPrice } from './guatemalaFuelFetcher'
 import type { Contract, Corridor } from '@/lib/types'
 
 interface FetchedReading {
@@ -88,17 +89,25 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
 
   if (contract.trigger_type === 'fuel') {
     const condition = contract.trigger_condition as unknown as {
-      fuel_type: 'magna' | 'premium' | 'diesel'
-    }
-    const VALID_FUEL_TYPES = ['magna', 'premium', 'diesel'] as const
-    if (!VALID_FUEL_TYPES.includes(condition.fuel_type as never)) {
-      console.error(`Invalid fuel_type "${condition.fuel_type}" for contract ${contract.id}`)
-      return []
+      fuel_type: 'magna' | 'premium' | 'diesel' | 'regular'
+      region?: string
     }
     try {
-      return [await fetchGasPrice(condition.fuel_type)]
+      if (condition.region === 'guatemala') {
+        if (condition.fuel_type !== 'regular') {
+          console.error(`Invalid GT fuel_type "${condition.fuel_type}" for contract ${contract.id}`)
+          return []
+        }
+        return [await fetchGuatemalaFuelPrice(condition.fuel_type)]
+      }
+      const VALID_FUEL_TYPES = ['magna', 'premium', 'diesel'] as const
+      if (!VALID_FUEL_TYPES.includes(condition.fuel_type as never)) {
+        console.error(`Invalid fuel_type "${condition.fuel_type}" for contract ${contract.id}`)
+        return []
+      }
+      return [await fetchGasPrice(condition.fuel_type as 'magna' | 'premium' | 'diesel')]
     } catch (err) {
-      console.error(`CRE fetch error for contract ${contract.id}:`, err)
+      console.error(`Fuel fetch error for contract ${contract.id}:`, err)
       return []
     }
   }

@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react'
 import { cn, categoryTextClass, countryFlag } from '@/lib/utils'
 import { quoteTiers } from '@/lib/pricing/quote'
-import { availablePeriods } from '@/lib/pricing/tenors'
+import { availablePeriods, periodMenuForContract } from '@/lib/pricing/tenors'
 import { dailyHazard } from '@/lib/pricing/derivative'
 import type { ContractDetailData, LatestOracleReading } from '@/lib/types'
 import type { TriggerCondition } from '@/lib/oracle/trigger'
@@ -41,7 +41,9 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
 
   const [panelOpen, setPanelOpen] = useState(false)
   const [panelMode, setPanelMode] = useState<PanelMode>('buy')
-  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(isRecurring ? 1 : null)
+  const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(
+    isRecurring ? periodMenuForContract(contract)[0].days : null,
+  )
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null)
 
   const slug = contract.category.slug
@@ -57,7 +59,7 @@ export default function ContractDetailClient({ contract, userId, latestReading, 
         contract.trigger_condition as never,
       )
     : 0
-  const periodOptions = availablePeriods(hazard)
+  const periodOptions = availablePeriods(hazard, periodMenuForContract(contract))
   const selectedStillOffered =
     selectedPeriodDays == null || periodOptions.some((o) => o.days === selectedPeriodDays)
 

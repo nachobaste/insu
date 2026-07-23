@@ -2,6 +2,19 @@ import { describe, it, expect, vi } from 'vitest'
 import { pollContracts, ensureCorridorPolylines, POLLABLE_TRIGGER_TYPES } from '@/lib/oracle/poll'
 import type { Contract } from '@/lib/types'
 
+vi.mock('@/lib/oracle/gasFetcher', () => ({
+  fetchGasPrice: vi.fn().mockResolvedValue({
+    source: 'cre_datos_gob', reading_type: 'fuel',
+    value: { price_mxn_per_liter: 24, fuel_type: 'magna', sample_size: 700 },
+  }),
+}))
+vi.mock('@/lib/oracle/guatemalaFuelFetcher', () => ({
+  fetchGuatemalaFuelPrice: vi.fn().mockResolvedValue({
+    source: 'agn_mem', reading_type: 'fuel',
+    value: { gas_price_quetzales: 40.09, fuel_type: 'regular', reference_week: '2026-07-21' },
+  }),
+}))
+
 const mockContract: Contract = {
   id: 'c1',
   slug: 'rain-cdmx',
@@ -290,6 +303,46 @@ describe('pollContracts', () => {
       source: 'cre_datos_gob',
       trigger_met: true, // 26.49 > 25.0
     })
+  })
+
+  it('routes a guatemala fuel contract to the AGN fetcher, not the CRE fetcher', async () => {
+    const { fetchGasPrice } = await import('@/lib/oracle/gasFetcher')
+    const { fetchGuatemalaFuelPrice } = await import('@/lib/oracle/guatemalaFuelFetcher')
+    const gtContract: Contract = {
+      ...mockContract,
+      id: 'gt1',
+      trigger_type: 'fuel',
+      is_recurring: true,
+      trigger_condition: {
+        metric: 'gas_price_quetzales', operator: 'gte', threshold: 45,
+        region: 'guatemala', fuel_type: 'regular',
+      } as never,
+    }
+    const db = makeDb({ contracts: [gtContract] })
+    // No readingFetcher passed → exercises the real defaultFetcher dispatch.
+    await pollContracts(db as never)
+    expect(fetchGuatemalaFuelPrice).toHaveBeenCalledWith('regular')
+    expect(fetchGasPrice).not.toHaveBeenCalled()
+    expect(db._insert).toHaveBeenCalledTimes(1)
+  })
+
+  it('skips a guatemala fuel contract with a non-regular fuel_type (no fetch, no write)', async () => {
+    const { fetchGuatemalaFuelPrice } = await import('@/lib/oracle/guatemalaFuelFetcher')
+    vi.mocked(fetchGuatemalaFuelPrice).mockClear()
+    const gtContract: Contract = {
+      ...mockContract,
+      id: 'gt2',
+      trigger_type: 'fuel',
+      is_recurring: true,
+      trigger_condition: {
+        metric: 'gas_price_quetzales', operator: 'gte', threshold: 45,
+        region: 'guatemala', fuel_type: 'diesel',
+      } as never,
+    }
+    const db = makeDb({ contracts: [gtContract] })
+    await pollContracts(db as never)
+    expect(fetchGuatemalaFuelPrice).not.toHaveBeenCalled()
+    expect(db._insert).not.toHaveBeenCalled()
   })
 })
 
