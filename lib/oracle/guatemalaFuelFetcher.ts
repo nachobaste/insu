@@ -36,8 +36,10 @@ export function parseRegularPriceGTQ(html: string): number | null {
     .replace(/&#x?[0-9a-f]+;/gi, ' ')
     .replace(/\s+/g, ' ')
   const patterns = [
-    /regular[^0-9]{0,30}Q?\s*(\d{1,3}(?:\.\d{1,2})?)/i,          // "regular en Q40.09"
-    /Q?\s*(\d{1,3}(?:\.\d{1,2})?)\s*(?:quetzales?|q)\b[^.]{0,30}regular/i, // "40.09 quetzales ... regular"
+    // "31.09 para la regular" / "31.09 quetzales para la gasolina regular"
+    /(\d{2}\.\d{2})\s*(?:quetzales?\s+)?para\s+la\s+(?:gasolina\s+)?regular/i,
+    // "la regular en Q40.09" / "regular Q40.09"
+    /(?:la\s+)?regular\s+(?:en\s+)?Q?\s*(\d{2}\.\d{2})/i,
   ]
   for (const re of patterns) {
     const m = text.match(re)
@@ -54,7 +56,7 @@ export function pickFreshPricePost(posts: AgnPost[], nowMs: number): AgnPost | n
   const maxAgeMs = FRESH_DAYS * 86_400_000
   for (const p of posts) {
     const title = (p.title?.rendered ?? '').toLowerCase()
-    const isSeries = title.includes('combustible') && title.includes('precios')
+    const isSeries = title.includes('quedaron los precios')
     const publishedMs = Date.parse(p.date_gmt.endsWith('Z') ? p.date_gmt : `${p.date_gmt}Z`)
     const fresh = Number.isFinite(publishedMs) && nowMs - publishedMs <= maxAgeMs
     if (isSeries && fresh) return p

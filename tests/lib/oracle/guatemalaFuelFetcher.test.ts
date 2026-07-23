@@ -31,6 +31,14 @@ describe('parseRegularPriceGTQ', () => {
   it('returns null when no regular price is present', () => {
     expect(parseRegularPriceGTQ('no fuel prices in this text at all')).toBeNull()
   })
+  it('extracts regular (not the adjacent diesel price) from the real MEM table phrasing', () => {
+    const real = 'se estableció un precio de referencia de 32.09 quetzales para la gasolina superior, 31.09 para la regular y para el diésel 27.29.'
+    expect(parseRegularPriceGTQ(real)).toBeCloseTo(31.09, 2)
+  })
+  it('does not extract a price from a centavos-delta news sentence', () => {
+    const delta = 'incrementos de 50 centavos por galón en la superior, 49 centavos por galón en la regular y un quetzal 96 centavos en el diésel.'
+    expect(parseRegularPriceGTQ(delta)).toBeNull()
+  })
 })
 
 describe('pickFreshPricePost', () => {
@@ -44,6 +52,10 @@ describe('pickFreshPricePost', () => {
   })
   it('rejects posts whose title is not the price series', () => {
     const off = post({ title: 'Presidente analiza el alza de combustibles' })
+    expect(pickFreshPricePost([off], nowMs)).toBeNull()
+  })
+  it('rejects a news article whose title lacks the price-series phrase', () => {
+    const off = post({ title: 'Tensiones geopolíticas internacionales impactan precios de combustibles' })
     expect(pickFreshPricePost([off], nowMs)).toBeNull()
   })
   it('accepts a fresh post whose date_gmt already ends in Z', () => {
@@ -84,7 +96,7 @@ describe('fetchGuatemalaFuelPrice', () => {
   })
 
   it('throws when the parsed price is out of plausible bounds', async () => {
-    mockAgn([post({ content: '<p>la regular en Q5.00 por galón.</p>' })])
+    mockAgn([post({ content: '<p>la regular en Q95.00 por galón.</p>' })])
     await expect(fetchGuatemalaFuelPrice('regular')).rejects.toThrow(/out of bounds/i)
   })
 
