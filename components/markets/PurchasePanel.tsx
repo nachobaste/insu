@@ -111,7 +111,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   function switchMode(next: PanelMode) {
     setMode(next)
     setSelectedTierId(next === 'buy' ? (initialTierId ?? null) : null)
-    setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? 1 : null))
+    setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? periodMenuForContract(contract)[0].days : null))
     setStep('select')
     setClientSecret(null)
     setExpiresAt(null)
@@ -122,7 +122,7 @@ export default function PurchasePanel({ contract, userId, open, initialMode, ini
   function handleClose() {
     setStep('select')
     setSelectedTierId(initialTierId ?? null)
-    setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? 1 : null))
+    setSelectedPeriodDays(initialPeriodDays ?? (isRecurring ? periodMenuForContract(contract)[0].days : null))
     setClientSecret(null)
     setExpiresAt(null)
     setConfirmationNumber(null)
