@@ -33,6 +33,7 @@ export function parseRegularPriceGTQ(html: string): number | null {
   const text = html
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
+    .replace(/&#x?[0-9a-f]+;/gi, ' ')
     .replace(/\s+/g, ' ')
   const patterns = [
     /regular[^0-9]{0,30}Q?\s*(\d{1,3}(?:\.\d{1,2})?)/i,          // "regular en Q40.09"
@@ -54,13 +55,17 @@ export function pickFreshPricePost(posts: AgnPost[], nowMs: number): AgnPost | n
   for (const p of posts) {
     const title = (p.title?.rendered ?? '').toLowerCase()
     const isSeries = title.includes('combustible') && title.includes('precios')
-    const publishedMs = Date.parse(`${p.date_gmt}Z`)
+    const publishedMs = Date.parse(p.date_gmt.endsWith('Z') ? p.date_gmt : `${p.date_gmt}Z`)
     const fresh = Number.isFinite(publishedMs) && nowMs - publishedMs <= maxAgeMs
     if (isSeries && fresh) return p
   }
   return null
 }
 
+// Only 'regular' is oracle-backed today. The wider union + guard is deliberate
+// defensive validation: `trigger_condition.fuel_type` comes from the DB as an
+// untyped string, so an unexpected value throws (poller skips the write) rather
+// than silently pricing the wrong fuel.
 export async function fetchGuatemalaFuelPrice(fuelType: FuelType): Promise<FetchedReading> {
   if (fuelType !== 'regular') {
     throw new Error(`GT fuel oracle only supports 'regular', got '${fuelType}'`)

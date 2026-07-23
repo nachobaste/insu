@@ -14,7 +14,6 @@ function post(overrides: Partial<{ title: string; content: string; date_gmt: str
   return {
     title: { rendered: overrides.title ?? 'Así quedaron los precios de los combustibles para esta semana' },
     content: { rendered: overrides.content ?? '<p>La gasolina superior se ubicó en Q41.09, la regular en Q40.09 y el diésel en Q42.29 por galón.</p>' },
-    date: (overrides.date_gmt ?? '2026-07-21T06:00:00'),
     date_gmt: overrides.date_gmt ?? '2026-07-21T06:00:00',
   }
 }
@@ -46,6 +45,10 @@ describe('pickFreshPricePost', () => {
   it('rejects posts whose title is not the price series', () => {
     const off = post({ title: 'Presidente analiza el alza de combustibles' })
     expect(pickFreshPricePost([off], nowMs)).toBeNull()
+  })
+  it('accepts a fresh post whose date_gmt already ends in Z', () => {
+    const p = pickFreshPricePost([post({ date_gmt: '2026-07-21T06:00:00Z' })], nowMs)
+    expect(p).not.toBeNull()
   })
 })
 
@@ -92,5 +95,9 @@ describe('fetchGuatemalaFuelPrice', () => {
 
   it('rejects unsupported fuel types', async () => {
     await expect(fetchGuatemalaFuelPrice('superior')).rejects.toThrow(/only supports 'regular'/i)
+  })
+  it('propagates a network error from fetch', async () => {
+    mockFetch.mockRejectedValue(new Error('network failure'))
+    await expect(fetchGuatemalaFuelPrice('regular')).rejects.toThrow(/network failure/i)
   })
 })
