@@ -233,6 +233,7 @@ const recurringContract = {
   ...mockContract,
   id: 'c-r',
   is_recurring: true,
+  trigger_type: 'weather',
   coverage_tiers: [recurringTier],
   trigger_condition: { metric: 'temp_c', threshold: 25, operator: 'gte' },
 }
@@ -286,7 +287,8 @@ describe('fuel recurring: sticker uses the 7-day min tenor', () => {
 
     const p = dailyHazard(0.0043, null, fuelRecurringContract.trigger_condition as never)
     const cap = capacityFactor(0, 100000)
-    const expected = priceTenor(fuelRecurringContract.coverage_tiers[0].payout_usd, 7, p, 1, { capacityFactor: cap }).premiumUsd
+    const fuelTier = fuelRecurringContract.coverage_tiers[0]
+    const expected = priceTenor(fuelTier.payout_usd, 7, p, fuelTier.max_payouts, { capacityFactor: cap }).premiumUsd
     expect(db._update.mock.calls[0][0].premium_usd).toBeCloseTo(expected, 5)
   })
 })
