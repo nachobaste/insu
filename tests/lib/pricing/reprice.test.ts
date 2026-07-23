@@ -237,6 +237,60 @@ const recurringContract = {
   trigger_condition: { metric: 'temp_c', threshold: 25, operator: 'gte' },
 }
 
+const fuelRecurringContract = {
+  ...recurringContract,
+  id: 'c-fuel',
+  trigger_type: 'fuel',
+  trigger_condition: { metric: 'gas_price_quetzales', threshold: 45, operator: 'gte', region: 'guatemala', fuel_type: 'regular' },
+  coverage_tiers: [{ ...recurringTier, id: 'tier-fuel', base_probability: 0.0043 }],
+}
+
+function makeFuelRecurringDb() {
+  const updateEq = vi.fn().mockResolvedValue({ error: null })
+  const update = vi.fn().mockReturnValue({ eq: updateEq })
+  const insert = vi.fn().mockResolvedValue({ error: null })
+  const db = {
+    from: vi.fn((table: string) => {
+      if (table === 'contracts') {
+        const single = vi.fn().mockResolvedValue({ data: fuelRecurringContract, error: null })
+        const eq = vi.fn().mockReturnValue(
+          Object.assign(Promise.resolve({ data: [fuelRecurringContract], error: null }), { single }),
+        )
+        return { select: vi.fn().mockReturnValue({ eq }) }
+      }
+      if (table === 'coverage_tiers') {
+        const single = vi.fn().mockResolvedValue({ data: fuelRecurringContract.coverage_tiers[0], error: null })
+        const eq = vi.fn().mockReturnValue({ single })
+        return { select: vi.fn().mockReturnValue({ eq }), update }
+      }
+      if (table === 'pricing_history') return { insert }
+      if (table === 'oracle_readings') {
+        const limit = vi.fn().mockResolvedValue({ data: [], error: null })
+        const order = vi.fn().mockReturnValue({ limit })
+        const eq = vi.fn().mockReturnValue({ order })
+        return { select: vi.fn().mockReturnValue({ eq }) }
+      }
+      return {}
+    }),
+    _update: update, _updateEq: updateEq, _insert: insert,
+  }
+  return db as MockDb
+}
+
+describe('fuel recurring: sticker uses the 7-day min tenor', () => {
+  it('prices the sticker at tenorDays=7 (not 1)', async () => {
+    const db = makeFuelRecurringDb()
+    await repriceTier('tier-fuel', db)
+    const pricingInputs = db._update.mock.calls[0][0].pricing_inputs
+    expect(pricingInputs.tenorDays).toBe(7)
+
+    const p = dailyHazard(0.0043, null, fuelRecurringContract.trigger_condition as never)
+    const cap = capacityFactor(0, 100000)
+    const expected = priceTenor(fuelRecurringContract.coverage_tiers[0].payout_usd, 7, p, 1, { capacityFactor: cap }).premiumUsd
+    expect(db._update.mock.calls[0][0].premium_usd).toBeCloseTo(expected, 5)
+  })
+})
+
 const oneTimeContract = {
   ...mockContract,
   id: 'c-ot',
