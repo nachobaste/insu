@@ -51,7 +51,7 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
       try {
         readings.push(await fetchWeatherReading(lat, lng, owmKey))
       } catch (err) {
-        console.error(`OpenWeatherMap fetch error for contract ${contract.id}:`, err)
+        console.error('OpenWeatherMap fetch error for contract', contract.id, err)
       }
     }
 
@@ -60,7 +60,7 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
       try {
         readings.push(await fetchTomorrowReading(lat, lng, tioKey))
       } catch (err) {
-        console.error(`Tomorrow.io fetch error for contract ${contract.id}:`, err)
+        console.error('Tomorrow.io fetch error for contract', contract.id, err)
       }
     }
 
@@ -82,7 +82,7 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
         corridor.baseline_duration_s,
       )]
     } catch (err) {
-      console.error(`Google Maps fetch error for contract ${contract.id}:`, err)
+      console.error('Google Maps fetch error for contract', contract.id, err)
       return []
     }
   }
@@ -95,19 +95,19 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
     try {
       if (condition.region === 'guatemala') {
         if (condition.fuel_type !== 'regular') {
-          console.error(`Invalid GT fuel_type "${condition.fuel_type}" for contract ${contract.id}`)
+          console.error('Invalid GT fuel_type', condition.fuel_type, 'for contract', contract.id)
           return []
         }
         return [await fetchGuatemalaFuelPrice(condition.fuel_type)]
       }
       const VALID_FUEL_TYPES = ['magna', 'premium', 'diesel'] as const
       if (!VALID_FUEL_TYPES.includes(condition.fuel_type as never)) {
-        console.error(`Invalid fuel_type "${condition.fuel_type}" for contract ${contract.id}`)
+        console.error('Invalid fuel_type', condition.fuel_type, 'for contract', contract.id)
         return []
       }
       return [await fetchGasPrice(condition.fuel_type as 'magna' | 'premium' | 'diesel')]
     } catch (err) {
-      console.error(`Fuel fetch error for contract ${contract.id}:`, err)
+      console.error('Fuel fetch error for contract', contract.id, err)
       return []
     }
   }
@@ -119,7 +119,7 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
     try {
       return [await fetchAirQualityReading(lat, lng, apiKey)]
     } catch (err) {
-      console.error(`Air-quality fetch error for contract ${contract.id}:`, err)
+      console.error('Air-quality fetch error for contract', contract.id, err)
       return []
     }
   }
@@ -131,7 +131,7 @@ async function defaultFetcher(contract: Contract): Promise<FetchedReading[]> {
     try {
       return [await fetchFloodReading(lat, lng, apiKey)]
     } catch (err) {
-      console.error(`Flood fetch error for contract ${contract.id}:`, err)
+      console.error('Flood fetch error for contract', contract.id, err)
       return []
     }
   }
@@ -180,7 +180,7 @@ export async function ensureCorridorPolylines(
       await db.from('corridors').update({ path_polyline: encoded }).eq('id', c.id)
       count++
     } catch (err) {
-      console.error(`Polyline backfill error for corridor ${c.id}:`, err)
+      console.error('Polyline backfill error for corridor', c.id, err)
     }
   }
   return count
@@ -239,7 +239,7 @@ export async function pollContracts(
       }
       count++
     } catch {
-      console.error(`Oracle poll error for contract ${contract.id}`)
+      console.error('Oracle poll error for contract', contract.id)
     }
   }
   return count
