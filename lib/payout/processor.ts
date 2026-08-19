@@ -185,7 +185,7 @@ async function payoutPosition(
     .single()
 
   if (!payout) {
-    console.error(`Failed to create payout record for position ${position.id}`)
+    console.error('Failed to create payout record for position', position.id)
     return 0
   }
 
@@ -197,7 +197,7 @@ async function payoutPosition(
     })
     txnId = txn.id
   } catch (err) {
-    console.error(`Stripe balance transaction failed for position ${position.id}:`, err)
+    console.error('Stripe balance transaction failed for position', position.id, err)
     await db.from('payouts')
       .update({ status: 'failed' })
       .eq('id', (payout as { id: string }).id)
@@ -325,7 +325,7 @@ async function payoutOnce(
     .single()
 
   if (!payout) {
-    console.error(`Failed to create payout record for position ${position.id} day ${day}`)
+    console.error('Failed to create payout record for position', position.id, 'day', day)
     return 0
   }
 
@@ -337,7 +337,7 @@ async function payoutOnce(
     })
     txnId = txn.id
   } catch (err) {
-    console.error(`Stripe balance transaction failed for position ${position.id} day ${day}:`, err)
+    console.error('Stripe balance transaction failed for position', position.id, 'day', day, err)
     await db.from('payouts')
       .update({ status: 'failed' })
       .eq('id', (payout as { id: string }).id)

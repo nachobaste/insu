@@ -95,7 +95,7 @@ export async function upsertContract(input: UpsertContractInput): Promise<string
           path_polyline = await fetchCorridorPolyline(origin_lat, origin_lng, dest_lat, dest_lng, apiKey)
         }
       } catch (err) {
-        console.error(`Polyline refresh failed for corridor ${corridorId}:`, err)
+        console.error('Polyline refresh failed for corridor', corridorId, err)
       }
       await supabase.from('corridors').update({
         origin_lat, origin_lng, dest_lat, dest_lng, path_polyline,
@@ -276,7 +276,7 @@ export async function overrideContractTrigger({
       await supabase.from('hedger_positions').update({ status: 'paid_out' }).eq('id', position.id)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      console.error(`Payout failed for position ${position.id}:`, msg)
+      console.error('Payout failed for position', position.id, msg)
       await supabase.from('payouts').update({ status: 'failed' }).eq('id', (newPayout as { id: string }).id)
     }
   }

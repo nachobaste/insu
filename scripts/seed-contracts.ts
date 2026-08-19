@@ -336,7 +336,7 @@ async function seed() {
       .single()
 
     if (error) {
-      console.error(`Failed to insert contract "${c.slug}":`, error.message)
+      console.error('Failed to insert contract', c.slug, error.message)
       continue
     }
 
@@ -345,10 +345,10 @@ async function seed() {
         .from('coverage_tiers')
         .insert({ ...tier, contract_id: contract.id })
 
-      if (tierErr) console.error(`Tier error for ${c.slug}:`, tierErr.message)
+      if (tierErr) console.error('Tier error for', c.slug, tierErr.message)
     }
 
-    console.log(`✓ Created: ${c.slug}`)
+    console.log('✓ Created:', c.slug)
   }
 
   console.log('\nSeed complete.')
