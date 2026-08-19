@@ -60,9 +60,19 @@ function parseLocations(xml: string): Map<string, { lat: number; lng: number }> 
   return locations
 }
 
+// Hardcoded per field value — building the RegExp from the field argument
+// would let a future caller feed it attacker-controlled input and open a
+// ReDoS path (Semgrep: detect-non-literal-regexp).
+const PRICE_REGEXES: Record<string, RegExp> = {
+  regular: /<gas_price type="regular">([\d.]+)<\/gas_price>/,
+  premium: /<gas_price type="premium">([\d.]+)<\/gas_price>/,
+  diesel: /<gas_price type="diesel">([\d.]+)<\/gas_price>/,
+}
+
 function parsePrices(xml: string, field: string): Map<string, number> {
   const prices = new Map<string, number>()
-  const priceRe = new RegExp(`<gas_price type="${field}">([\\d.]+)</gas_price>`)
+  const priceRe = PRICE_REGEXES[field]
+  if (!priceRe) return prices
   for (const { id, body } of placeBlocks(xml)) {
     const m = body.match(priceRe)
     if (!m) continue
